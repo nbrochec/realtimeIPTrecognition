@@ -10,10 +10,10 @@
 # Utilities defition
 #############################################################################
 
-from os.path import join, dirname, basename, abspath, normpath, isdir
-from os import listdir
+from os.path import join, dirname, basename, abspath, normpath, isdir, exists
+from os import listdir, makedirs
 from glob import glob
-import torch
+import torch, torchaudio, h5py
 import torchaudio.transforms as Taudio
 import torch.nn.functional as Fnn
 
@@ -43,19 +43,81 @@ class customLogMelSpectrogram():
     def __call__(self, waveform):
         mel_spec = self.mel_scale(waveform)
         mel_spec_db = self.amplitude_to_db(mel_spec)
+        mel_spec_db = Fnn.normalize(mel_spec_db, dim=1)
         mel_spec_db = Fnn.normalize(mel_spec_db, dim=2)
-        mel_spec_db = Fnn.normalize(mel_spec_db, dim=3)
         return mel_spec_db
     
+    def pad_segment(self, segment, current_segment_length, segment_length):
+        pad_length = segment_length - current_segment_length
+        segment = Fnn.pad(segment, (0, pad_length), mode='constant', value=0)
+        return segment
+        
     def process_segment(self, waveform, segment_length=7680):
         """Divides the waveform into segments of a fixed length and applies the Mel transformation."""
         segments = []
-        for start in range(0, waveform.size(1) - segment_length + 1, segment_length):
+        total_length = waveform.size(1)
+        # print(total_length)
+
+        if total_length < segment_length:
+            pad_length = segment_length - total_length
+            waveform = Fnn.pad(waveform, (0, pad_length), mode='constant', value=0)
+            total_length = waveform.size(1)
+        
+        for start in range(0, total_length - segment_length + 1, segment_length):
             segment = waveform[:, start:start + segment_length]
-            mel_spec_db = self.__call__(segment)
+            mel_spec_db = self.__call__(segment)[..., :-1]
             segments.append(mel_spec_db)
-        return torch.stack(segments, dim=0)  # (num_segments, 1, 128, 15)
 
+        stacked_segments = torch.stack(segments, dim=0)
+        return stacked_segments
+    
+def remove_silence(waveform, sample_rate, silence_threshold=1e-4, min_silence_len=0.2):
+    
+    min_silence_samples = int(min_silence_len * sample_rate)
+    amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
+    non_silent_indices = torch.where(amplitude > silence_threshold)[0]
 
+    if len(non_silent_indices) == 0:
+        return waveform
 
+    start = max(0, non_silent_indices[0] - min_silence_samples)
+    end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
+    return waveform[:, start:end]
 
+def ensure_dir_exists(directory):
+    if not exists(directory):
+        makedirs(directory)
+        print(f'{directory} have been created.')
+
+def check_hdf5_sanity(hdf5_file):
+    try:
+        with h5py.File(hdf5_file, 'r') as h5f:
+            print("HDF5 file opened successfully.")
+
+            labels = list(h5f.keys())
+            num_classes = len(labels)
+            if num_classes == 0:
+                print("Error: No classes found in the HDF5 file.")
+                return False
+            elif num_classes == 1:
+                print("Error: Only one class found in the HDF5 file. Should be more than one.")
+                return False
+            else:
+                print(f"Number of classes: {num_classes}")
+
+            for label in labels:
+                class_group = h5f[label]
+                for file_key in class_group.keys():
+                    dataset = class_group[file_key]['mel_spec']
+                    for i in range(dataset.shape[0]):
+                        if dataset[i].shape != (128, 15):
+                            print(f"Error: Segment {i} in dataset '{file_key}' in class '{label}' does not have the expected shape (128, 15).")
+                            print(f"Actual shape: {dataset[i].shape}")
+                            return False
+
+            print("HDF5 file passed all checks.")
+            return True
+
+    except Exception as e:
+        print(f"Error opening or processing HDF5 file: {e}")
+        return False
