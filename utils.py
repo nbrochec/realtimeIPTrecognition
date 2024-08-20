@@ -102,8 +102,8 @@ def check_hdf5_sanity(hdf5_file):
             elif num_classes == 1:
                 print("Error: Only one class found in the HDF5 file. Should be more than one.")
                 return False
-            else:
-                print(f"Number of classes: {num_classes}")
+            # else:
+            #     print(f"Number of classes: {num_classes}")
 
             for label in labels:
                 class_group = h5f[label]
