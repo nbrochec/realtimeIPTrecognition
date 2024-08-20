@@ -36,7 +36,7 @@ def preprocess_and_save(data_dir, hdf5_file):
     with h5py.File(hdf5_file, 'w') as h5f:
         for root, dirs, files in os.walk(data_dir):
             for file in files:
-                if file.lower().endswith(('.wav', '.aiff', '.mp3')):
+                if file.lower().endswith(('.wav', '.aiff', '.aif', '.mp3')):
                     label = os.path.basename(root)
                     file_path = os.path.join(root, file)
 
