@@ -7,7 +7,7 @@
 # MIT license 2024
 #############################################################################
 # Code description:
-# Different architectures for the RT-IPT-R
+# Implement different model architectures
 #############################################################################
 
 import torch
