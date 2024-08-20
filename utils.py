@@ -10,11 +10,25 @@
 # Utilities defition
 #############################################################################
 
-from os.path import join, dirname, basename, abspath, normpath
+from os.path import join, dirname, basename, abspath, normpath, isdir
+from os import listdir
 from glob import glob
 
-def get_sound_files(database_name):
-    database_path = dirname(database_name+'/')
+def browse_subfolders(folder):
+    subfolder_list = []
+    
+    for folder_name in listdir(folder):
+        path = join(folder, folder_name)
+        if isdir(path):
+            subfolder_list.append(folder_name)
+            sous_dossiers = browse_subfolders(path) 
+            subfolder_list.extend(sous_dossiers)
+        
+    subfolder_list.sort()
+    return subfolder_list
+
+def get_sound_files(datafolderpath):
+    database_path = dirname(datafolderpath+'/')
 
     all_path = []
     extensions = ['*.wav', '*.mp3', '*.aiff']
@@ -25,5 +39,5 @@ def get_sound_files(database_name):
     for path in range(len(all_path)):
         all_names.append(basename(all_path[path]))
     
-    print(f'{database_name} : {len(all_path)} files found')
+    print(f'{len(all_path)} files found')
     return all_path, all_names
