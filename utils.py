@@ -65,13 +65,13 @@ class customLogMelSpectrogram():
         
         for start in range(0, total_length - segment_length + 1, segment_length):
             segment = waveform[:, start:start + segment_length]
-            mel_spec_db = self.__call__(segment)[..., :-1]
+            mel_spec_db = self.__call__(segment)[..., :-1] # manually remove the last frame to keep 15 frames only
             segments.append(mel_spec_db)
 
         stacked_segments = torch.stack(segments, dim=0)
         return stacked_segments
     
-def remove_silence(waveform, sample_rate, silence_threshold=1e-4, min_silence_len=0.2):
+def remove_silence(waveform, sample_rate, silence_threshold=1e-4, min_silence_len=0.1):
     
     min_silence_samples = int(min_silence_len * sample_rate)
     amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
