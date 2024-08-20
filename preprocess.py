@@ -33,6 +33,8 @@ test_hdf5_file = os.path.join(args.save_dir, 'test_data.h5')
 segment_length = 7680
 mel_transform = customLogMelSpectrogram(sample_rate=args.sr)
 
+# Check if train and test datasets have the same class names
+
 def preprocess_and_save(data_dir, hdf5_file):
     with h5py.File(hdf5_file, 'w') as h5f:
         for root, dirs, files in os.walk(data_dir):
