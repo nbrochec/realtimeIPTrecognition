@@ -13,9 +13,9 @@
 from os.path import join, dirname, basename, abspath, normpath, isdir
 from os import listdir
 from glob import glob
+import torch
 import torchaudio.transforms as Taudio
 import torch.nn.functional as Fnn
-import torch
 
 class customLogMelSpectrogram():
     def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
