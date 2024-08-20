@@ -1,1 +1,1 @@
-# Real-Time - Instrumental Playing Techniques - Recognition
+# Real-Time Instrumental Playing Techniques Recognition
