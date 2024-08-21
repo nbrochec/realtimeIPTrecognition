@@ -11,13 +11,12 @@
 #############################################################################
 
 import argparse, sys, math, os
-from architectures import v1, v2, one_residual, two_residual, transformer
-import torch, torchaudio
+from architectures import LoadModel, ModelSummary
+import torch, torchaudio, h5py
 from glob import glob
 from os.path import join
 
 from utils import BalancedDataLoader, HDF5Dataset, DirectoryManager
-
 from augmentations import ApplyAugmentations
 
 parser = argparse.ArgumentParser(description='train CNN model for RT-IPT-R')
@@ -31,6 +30,11 @@ parser.add_argument('--augment', type=str, help='augmentations', default='pitchs
 parser.add_argument('--early_stopping', type=bool, help='early stopping', default=False)
 parser.add_argument('--reduceLR', type=bool, help='reduce LR on plateau', default=False)
 parser.add_argument('--lr', type=float, help='learning rate', default=0.001)
+
+"""
+Command example:
+python train.py --dataset_dir save_dir --config transformer --augment pitchshift --early_stopping True --reduceLR True 
+"""
 
 args = parser.parse_args()
 
@@ -54,9 +58,6 @@ lr = args.lr
 dir_manager = DirectoryManager()
 DirectoryManager.ensure_dir_exists(args.log_dir)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f'Current device: {device}')
-
 train_hdf5_file_path = join(dataset_dir, "train_data.h5")
 data_loader_factory = BalancedDataLoader(train_hdf5_file_path)
 
@@ -75,6 +76,32 @@ val_hdf5_file_path = join(dataset_dir, "val_data.h5")
 val_loader = HDF5Dataset(val_hdf5_file_path)
 print("validation data samples have been loaded.")
 
-# Load model
-# Display number of parameters
-# Display chosen config for the training (reduceLR etc...)
+num_labels = test_loader.get_num_classes()
+
+model = LoadModel().get_model(config, num_labels).to(device)
+summary = ModelSummary(model, num_labels, args.config)
+summary.print_summary()
+
+
+# Training loop (to be completed with validation data)
+# augmentations = args.augment.split()
+# augmentation_instance = ApplyAugmentations(augmentations)
+
+# for batch_data, batch_labels in balanced_loader:
+#     # Apply augmentations
+#     augmented_data = []
+#     augmented_labels = []
+
+#     for i in range(batch_data.size(0)):  # Use size(0) to get batch size
+#         sample_data = batch_data[i]
+#         sample_labels = batch_labels[i]
+        
+#         augmented_samples = augmentation_instance.apply(sample_data.unsqueeze(0))
+#         num_samples = augmented_samples.size(0)
+
+#         augmented_data.append(augmented_samples)
+#         augmented_labels.extend([sample_labels] * num_samples)
+
+#     # Concatenate augmented data and labels
+#     batch_data = torch.cat(augmented_data, dim=0)
+#     batch_labels = torch.tensor(augmented_labels, dtype=torch.long)
