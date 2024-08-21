@@ -18,6 +18,8 @@ from os.path import join
 
 from utils import BalancedDataLoader, HDF5Dataset, DirectoryManager
 
+from augmentations import ApplyAugmentations
+
 parser = argparse.ArgumentParser(description='train CNN model for RT-IPT-R')
 parser.add_argument('--dataset_dir', type=str, help='dataset directory where h5 files are saved', required=True)
 parser.add_argument('--epochs', type=int, help='number of train epochs', default=100)
@@ -73,3 +75,6 @@ val_hdf5_file_path = join(dataset_dir, "val_data.h5")
 val_loader = HDF5Dataset(val_hdf5_file_path)
 print("validation data samples have been loaded.")
 
+# Load model
+# Display number of parameters
+# Display chosen config for the training (reduceLR etc...)
