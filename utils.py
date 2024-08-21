@@ -72,7 +72,6 @@ class customLogMelSpectrogram():
         return stacked_segments
     
 def remove_silence(waveform, sample_rate, silence_threshold=1e-4, min_silence_len=0.1):
-    
     min_silence_samples = int(min_silence_len * sample_rate)
     amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
     non_silent_indices = torch.where(amplitude > silence_threshold)[0]
@@ -92,7 +91,7 @@ def ensure_dir_exists(directory):
 def check_hdf5_sanity(hdf5_file):
     try:
         with h5py.File(hdf5_file, 'r') as h5f:
-            print("HDF5 file opened successfully.")
+            # print("HDF5 file opened successfully.")
 
             labels = list(h5f.keys())
             num_classes = len(labels)
@@ -108,10 +107,10 @@ def check_hdf5_sanity(hdf5_file):
             for label in labels:
                 class_group = h5f[label]
                 for file_key in class_group.keys():
-                    dataset = class_group[file_key]['mel_spec']
+                    dataset = class_group[file_key]['samples']
                     for i in range(dataset.shape[0]):
-                        if dataset[i].shape != (128, 15):
-                            print(f"Error: Segment {i} in dataset '{file_key}' in class '{label}' does not have the expected shape (128, 15).")
+                        if dataset[i].shape != (7680,):
+                            print(f"Error: Segment {i} in dataset '{file_key}' in class '{label}' does not have the expected shape (7680,).")
                             print(f"Actual shape: {dataset[i].shape}")
                             return False
 
@@ -120,4 +119,25 @@ def check_hdf5_sanity(hdf5_file):
 
     except Exception as e:
         print(f"Error opening or processing HDF5 file: {e}")
+        return False
+
+def check_matching_labels(train_hdf5_file, test_hdf5_file):
+    try:
+        with h5py.File(train_hdf5_file, 'r') as train_h5f, h5py.File(test_hdf5_file, 'r') as test_h5f:
+            # Get the unique labels from both HDF5 files
+            train_labels = set(train_h5f.keys())
+            test_labels = set(test_h5f.keys())
+
+            # Compare the labels
+            if train_labels == test_labels:
+                print("Labels are consistent between the train and test HDF5 files.")
+                return True
+            else:
+                print("Error: Labels do not match.")
+                print(f"Labels in train file but not in test file: {train_labels - test_labels}")
+                print(f"Labels in test file but not in train file: {test_labels - train_labels}")
+                return False
+
+    except Exception as e:
+        print(f"Error opening or processing HDF5 files: {e}")
         return False
