@@ -99,20 +99,15 @@ class v1(nn.Module):
             custom2DCNN(1, 40, (2,3), "same"),
             custom2DCNN(40, 40, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(40, 80, (2,3), "same"),
             custom2DCNN(80, 80, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
-
             custom2DCNN(80, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d(2),
-
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((4, 1)),
         )
@@ -137,23 +132,17 @@ class v2(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
-
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
-
             custom2DCNN(256, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
         )
@@ -182,7 +171,6 @@ class one_residual(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
@@ -193,16 +181,12 @@ class one_residual(nn.Module):
         self.cnn_part2 = nn.Sequential(
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
-
             custom2DCNN(256, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
         )
@@ -221,10 +205,8 @@ class one_residual(nn.Module):
         x = self.cnn_part1(x)
         y = self.downsample(x)
         x = self.cnn_part2(x)
-
         x_flat = x.view(x.size(0), -1)
         y_flat = y.view(y.size(0), -1)
-
         z = torch.cat((x_flat, y_flat), dim=1)
         z = self.fc(z)
         return z
@@ -239,7 +221,6 @@ class two_residual(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
@@ -250,10 +231,8 @@ class two_residual(nn.Module):
         self.cnn_part2 = nn.Sequential(
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
-
             custom2DCNN(256, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
         )
@@ -263,7 +242,6 @@ class two_residual(nn.Module):
         self.cnn_part3 = nn.Sequential(
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
-
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
         )
@@ -281,16 +259,12 @@ class two_residual(nn.Module):
         x = self.logmel(x)
         x = self.cnn_part1(x)
         y = self.downsample1(x)
-
         x = self.cnn_part2(x)
         z = self.downsample2(x)
-
         x = self.cnn_part3(x)
-
         x_flat = x.view(x.size(0), -1)
         y_flat = y.view(y.size(0), -1)
         z_flat = y.view(z.size(0), -1)
-
         w = torch.cat((x_flat, y_flat, z_flat), dim=1)
         return w
 
@@ -303,20 +277,16 @@ class transformer(nn.Module):
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
-            nn.MaxPool2d((2, 1)), #64, 15
-
+            nn.MaxPool2d((2, 1)), 
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
-            nn.MaxPool2d((2, 3)), #32, 5
-
+            nn.MaxPool2d((2, 3)),
             custom2DCNN(128, 256, 2, "same"),
-            nn.MaxPool2d((2, 1)), #16, 5
-
+            nn.MaxPool2d((2, 1)), 
             custom2DCNN(256, 256, 2, "same"),
-            nn.MaxPool2d(2), #8, 2
-
+            nn.MaxPool2d(2),
             custom2DCNN(256, 512, 2, "same"),
-            nn.MaxPool2d(2), #4
+            nn.MaxPool2d(2),
         )
 
         self.transformer = nn.Transformer(512, 8, 6, 6)
@@ -334,13 +304,24 @@ class transformer(nn.Module):
     def forward(self, x):
         x = self.logmel(x)
         x = self.cnn(x)
-
         x = x.permute(2, 0, 1)
-
         x = self.transformer(x, x)
-
         x = self.maxpool2d(x)
-
         x = self.fc(x)
         return x
 
+class LoadModel:
+    def __init__(self):
+        self.models = {
+            'v1': v1,
+            'v2': v2,
+            'one_residual': one_residual,
+            'two_residual': two_residual,
+            'transformer': transformer,
+        }
+    
+    def get_model(self, model_name):
+        if model_name in self.models:
+            return self.models[model_name]()
+        else:
+            raise ValueError(f"Model {model_name} is not recognized.")
