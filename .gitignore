@@ -4,4 +4,4 @@ save_dir/
 val_dir/
 __pycache__/
 .DS_Store
-pytorch-balanced-sampler/
+pytorch_balanced_sampler/
