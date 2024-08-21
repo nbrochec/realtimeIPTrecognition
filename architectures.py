@@ -93,7 +93,7 @@ class custom1DCNN(nn.Module):
 
 class v1(nn.Module):
     def __init__(self, output_nbr):
-        super(v2, self).__init__()
+        super(v1, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
         
@@ -111,7 +111,7 @@ class v1(nn.Module):
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 1)),
+            nn.MaxPool2d((4, 2)),
         )
 
         self.fc = nn.Sequential(
@@ -121,8 +121,9 @@ class v1(nn.Module):
     def forward(self, x):
         x = self.logmel(x)
         x = self.cnn(x)
-        x = self.fc(x)
-        return x
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
 
 class v2(nn.Module):
     def __init__(self, output_nbr):
@@ -160,8 +161,9 @@ class v2(nn.Module):
     def forward(self, x):
         x = self.logmel(x)
         x = self.cnn(x)
-        x = self.fc(x)
-        return x
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
 
 class one_residual(nn.Module):
     def __init__(self, output_nbr):
@@ -178,7 +180,7 @@ class one_residual(nn.Module):
             nn.MaxPool2d((2, 3)),
             )
         
-        self.downsample = nn.MaxPool2d((5, 32))
+        self.downsample = nn.MaxPool2d((32, 5))
         
         self.cnn_part2 = nn.Sequential(
             custom2DCNN(128, 256, 2, "same"),
@@ -266,8 +268,9 @@ class two_residual(nn.Module):
         x = self.cnn_part3(x)
         x_flat = x.view(x.size(0), -1)
         y_flat = y.view(y.size(0), -1)
-        z_flat = y.view(z.size(0), -1)
+        z_flat = z.view(z.size(0), -1)
         w = torch.cat((x_flat, y_flat, z_flat), dim=1)
+        w = self.fc(w)
         return w
 
 class transformer(nn.Module):
@@ -349,3 +352,43 @@ class ModelSummary:
         print(f"Number of labels: {self.num_labels}")
         print(f"Total number of parameters: {formatted_params}")
         print('-----------------------------------------------')
+
+class ModelTester:
+    def __init__(self, model, input_shape=(1, 1, 7680), device='cpu'):
+        """
+        Initializes the ModelTester class.
+
+        Parameters
+        ----------
+        model : torch.nn.Module
+            The model to be tested.
+        input_shape : tuple
+            The shape of the input data (default is (1, 1, 7680)).
+        device : str
+            The device to run the model on ('cpu' or 'cuda').
+        """
+        self.model = model
+        self.input_shape = input_shape
+        self.device = device
+
+    def test(self):
+        """
+        Tests the model with a random input tensor.
+
+        Returns
+        -------
+        torch.Tensor
+            The output of the model for the random input tensor.
+        """
+        self.model.to(self.device)
+        self.model.eval()  # Set the model to evaluation mode
+
+        # Generate a random input tensor with the specified shape
+        random_input = torch.randn(self.input_shape).to(self.device)
+        
+        # Forward pass through the model
+        with torch.no_grad():
+            output = self.model(random_input)
+            # proba_distrib = F.softmax(output, dim=1)
+        
+        return output
