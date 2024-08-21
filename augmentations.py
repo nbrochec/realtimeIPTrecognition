@@ -62,7 +62,7 @@ class ApplyAugmentations:
             if augmentation == 'pitchshift':
                 augmented_data_list.append(self.pitch_shift(data))
             elif augmentation == 'timeshift':
-                augmented_data_list.append(self.time_shift(data))
+                augmented_data_list.append(self.shift(data))
             elif augmentation == 'addnoise':
                 augmented_data_list.append(self.add_noise(data))
             elif augmentation == 'polarityinversion':
@@ -75,7 +75,7 @@ class ApplyAugmentations:
                 augmented_data_list.append(self.lowpassfilter(data))
             elif augmentation == 'all':
                 augmented_data_list.append(self.pitch_shift(data))
-                augmented_data_list.append(self.time_shift(data))
+                augmented_data_list.append(self.shift(data))
                 augmented_data_list.append(self.add_noise(data))
                 augmented_data_list.append(self.polarity_inversion(data))
                 augmented_data_list.append(self.gain(data))
@@ -101,7 +101,7 @@ class ApplyAugmentations:
         data = transform(data, sample_rate=self.sr)
         return data
 
-    def time_shift(self, data):
+    def shift(self, data):
         """
         Applies time shift augmentation to the data.
         """
