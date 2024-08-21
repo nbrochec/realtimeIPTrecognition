@@ -10,7 +10,7 @@
 # Preprocess the data
 #############################################################################
 
-from utils import customLogMelSpectrogram, DirectoryManager, HDF5Checker, SilenceRemover, HDF5LabelChecker, DatasetSplitter
+from utils import DirectoryManager, HDF5Checker, SilenceRemover, HDF5LabelChecker, DatasetSplitter
 import os, h5py, torch, torchaudio, argparse
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
