@@ -15,9 +15,13 @@ from os import listdir, makedirs, walk
 from glob import glob
 from pathlib import Path
 import os
+import numpy as np
 import torch, torchaudio, h5py, random, shutil
 import torchaudio.transforms as Taudio
 import torch.nn.functional as Fnn
+
+from torch.utils.data import Dataset, DataLoader
+from pytorch_balanced_sampler.sampler import SamplerFactory
 
 class customLogMelSpectrogram():
     def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
@@ -180,3 +184,60 @@ def split_train_validation(train_dir, val_ratio=0.2, val_dir_name='val_dir'):
         shutil.move(file_path, val_file_path)
 
     print(f"Moved {num_val_files} files to validation set.")
+
+class HDF5Dataset(Dataset):
+    def __init__(self, hdf5_file):
+        self.hdf5_file = hdf5_file
+        self.data = []
+        self.labels = []
+
+        with h5py.File(hdf5_file, 'r') as h5f:
+            for label in h5f.keys():
+                group = h5f[label]
+                for key in group.keys():
+                    sample = group[key]['samples'][:]
+                    self.data.append(sample)
+                    self.labels.append(label)
+
+        self.data = np.array(self.data)
+        self.data = torch.tensor(self.data, dtype=torch.float32)
+
+        # Convert labels to integers
+        self.labels = np.array(self.labels)
+        unique_labels, label_to_int = np.unique(self.labels, return_inverse=True)
+        self.labels = torch.tensor(label_to_int, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx], self.labels[idx]
+
+class BalancedDataLoader:
+    def __init__(self, hdf5_file):
+        self.dataset = HDF5Dataset(hdf5_file)
+        self.num_classes = len(set(self.dataset.labels.tolist()))  # Number of classes from labels
+        batch_size = self.num_classes * 2 
+
+        # Get class indexes
+        class_idxs = [[] for _ in range(self.num_classes)]
+        for i in range(self.num_classes):
+            indexes = torch.nonzero(self.dataset.labels == i).squeeze()
+            class_idxs[i] = indexes.tolist()
+
+        total_samples = len(self.dataset)
+        n_batches = total_samples // batch_size
+
+        self.batch_sampler = SamplerFactory().get(
+            class_idxs=class_idxs,
+            batch_size=batch_size,
+            n_batches=n_batches,
+            alpha=1,
+            kind='fixed'
+        )
+
+    def get_dataloader(self):
+        return DataLoader(
+            self.dataset,
+            batch_sampler=self.batch_sampler
+        )
