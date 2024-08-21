@@ -54,14 +54,21 @@ ensure_dir_exists(args.log_dir)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'Current device: {device}')
 
-hdf5_file_path = join(dataset_dir, "train_data.h5")
-
-data_loader_factory = BalancedDataLoader(hdf5_file_path)
+train_hdf5_file_path = join(dataset_dir, "train_data.h5")
+data_loader_factory = BalancedDataLoader(train_hdf5_file_path)
 
 balanced_loader = data_loader_factory.get_dataloader()
 for batch_data, batch_labels in balanced_loader:
-    # batch_data est un tensor de dimension (batch_size, 128, 15)
-    # batch_labels est un tensor de dimension (batch_size,)
     print(f"Batch data shape: {batch_data.shape}")
     print(f"Batch labels shape: {batch_labels.shape}")
-    break  # Utilisé pour sortir après le premier batch pour cet exemple
+    print("Train data samples have been loaded.")
+    break
+
+test_hdf5_file_path = join(dataset_dir, "test_data.h5")
+test_loader = HDF5Dataset(test_hdf5_file_path)
+print("Test data samples have been loaded.")
+
+val_hdf5_file_path = join(dataset_dir, "val_data.h5")
+val_loader = HDF5Dataset(val_hdf5_file_path)
+print("validation data samples have been loaded.")
+
