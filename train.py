@@ -16,30 +16,52 @@ import torch, torchaudio
 from glob import glob
 from os.path import join
 
+from utils import BalancedDataLoader, HDF5Dataset, ensure_dir_exists
+
 parser = argparse.ArgumentParser(description='train CNN model for RT-IPT-R')
-parser.add_argument('--datasets_dir', type=str, required=True, help='dataset directory where h5 files are saved')
+parser.add_argument('--dataset_dir', type=str, help='dataset directory where h5 files are saved', required=True)
 parser.add_argument('--epochs', type=int, help='number of train epochs', default=100)
 parser.add_argument('--config', type=str, help='version of the CNN', default='v2')
-parser.add_argument('--device', type=int, help='gpu device', default='cuda')
+parser.add_argument('--device', type=str, help='gpu device', default='cpu')
 parser.add_argument('--gpu', type=int, help='gpu device number', default=0)
-parser.add_argument('--log_dir', type=int, help='log directory', default='./log_dir')
+parser.add_argument('--log_dir', type=str, help='log directory', default='log_dir')
 parser.add_argument('--augment', type=str, help='augmentations', default='pitchshift')
+parser.add_argument('--early_stopping', type=bool, help='early stopping', default=False)
+parser.add_argument('--reduceLR', type=bool, help='reduce LR on plateau', default=False)
+parser.add_argument('--lr', type=float, help='learning rate', default=0.001)
 
 args = parser.parse_args()
 
-if not args.datasets_dir:
-    print('Error: datasets directory is required to launch training.')
-    print('Please indicate the path of the datasets directory.')
+if not args.dataset_dir:
+    print('Error: dataset directory is required to launch training.')
+    print('Please indicate the path of the dataset directory.')
     parser.print_help()
     sys.exit(1)
 
-datasets_dir = args.train_dir
+dataset_dir = args.dataset_dir
 epochs = args.epochs
 config = args.config
 device = args.device
 gpu = args.gpu
 log_dir = args.log_dir
 augment = args.augment
+early_stopping = args.early_stopping
+reduceLR = args.reduceLR
+lr = args.lr
+
+ensure_dir_exists(args.log_dir)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'Current device: {device}')
+
+hdf5_file_path = join(dataset_dir, "train_data.h5")
+
+data_loader_factory = BalancedDataLoader(hdf5_file_path)
+
+balanced_loader = data_loader_factory.get_dataloader()
+for batch_data, batch_labels in balanced_loader:
+    # batch_data est un tensor de dimension (batch_size, 128, 15)
+    # batch_labels est un tensor de dimension (batch_size,)
+    print(f"Batch data shape: {batch_data.shape}")
+    print(f"Batch labels shape: {batch_labels.shape}")
+    break  # Utilisé pour sortir après le premier batch pour cet exemple
