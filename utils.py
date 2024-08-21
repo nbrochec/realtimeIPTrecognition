@@ -291,6 +291,8 @@ class BalancedDataLoader:
     ----------
     hdf5_file : str
         Path to the HDF5 file containing the dataset.
+    device : torch.device, optional
+        Device on which to load the data (e.g., 'cuda' or 'cpu').
 
     Attributes
     ----------
