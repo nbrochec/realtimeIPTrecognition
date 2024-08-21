@@ -9,3 +9,13 @@
 # Code description:
 # Implement data augmentation methods
 #############################################################################
+
+import torch
+import torch_audiomentations
+
+'''
+Principally using torch_audiomentations because:
+1. Augmentations are generated inside the training loop.
+2. torch_audiomentations provide cuda support enabling GPU computation.
+'''
+
