@@ -235,8 +235,18 @@ class DatasetSplitter:
         print(f"Moved {num_val_files} files to validation set.")
 
 class HDF5Dataset(Dataset):
-    def __init__(self, hdf5_file):
-        self.hdf5_file = hdf5_file
+    def __init__(self, hdf5_file, device=None):
+        """
+        Initializes the HDF5Dataset.
+
+        Parameters
+        ----------
+        hdf5_file : str
+            Path to the HDF5 file.
+        device : torch.device, optional
+            Device on which to load the data (e.g., 'cuda' or 'cpu').
+        """
+        self.device = device
         self.data = []
         self.labels = []
 
@@ -256,8 +266,12 @@ class HDF5Dataset(Dataset):
         _, label_to_int = np.unique(self.labels, return_inverse=True)
         self.labels = torch.tensor(label_to_int, dtype=torch.long)
 
+        if self.device:
+            self.data = self.data.to(self.device)
+            self.labels = self.labels.to(self.device)
+
     def __len__(self):
-        return len(self.data)
+        return self.data.size(0)
 
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
@@ -295,21 +309,21 @@ class BalancedDataLoader:
         Returns a DataLoader instance configured with the balanced batch sampler.
     """
     
-    def __init__(self, hdf5_file):
+    def __init__(self, hdf5_file, device=None):
         """
-        Initializes the BalancedDataLoader with the provided HDF5 file.
+        Initializes the BalancedDataLoader.
 
         Parameters
         ----------
         hdf5_file : str
-            Path to the HDF5 file containing the dataset.
+            Path to the HDF5 file.
+        device : torch.device, optional
+            Device on which to load the data (e.g., 'cuda' or 'cpu').
         """
-        # Load the dataset from the HDF5 file
-        self.dataset = HDF5Dataset(hdf5_file)
-        
-        # Determine the number of unique classes from the labels
-        self.num_classes = len(set(self.dataset.labels.tolist()))
-        batch_size = self.num_classes * 2  # Set the batch size to twice the number of classes
+        self.dataset = HDF5Dataset(hdf5_file, device=device)
+        self.device = device
+        self.num_classes = len(set(self.dataset.labels.tolist()))  # Number of classes from labels
+        batch_size = self.num_classes * 2 
 
         # Initialize lists to store indexes for each class
         class_idxs = [[] for _ in range(self.num_classes)]
@@ -320,7 +334,7 @@ class BalancedDataLoader:
             class_idxs[i] = indexes.tolist()
 
         # Calculate the number of batches
-        total_samples = len(self.dataset)
+        total_samples = self.dataset.data.size(0)
         n_batches = total_samples // batch_size
 
         # Create a balanced batch sampler using the SamplerFactory
