@@ -10,7 +10,7 @@
 # Preprocess the data
 #############################################################################
 
-from utils import customLogMelSpectrogram, ensure_dir_exists, check_hdf5_sanity, remove_silence
+from utils import customLogMelSpectrogram, ensure_dir_exists, check_hdf5_sanity, remove_silence, check_matching_labels
 import os, h5py, torch, torchaudio, argparse
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -33,7 +33,6 @@ test_hdf5_file = os.path.join(args.save_dir, 'test_data.h5')
 segment_length = 7680
 mel_transform = customLogMelSpectrogram(sample_rate=args.sr)
 
-# Check if train and test datasets have the same class names
 
 def preprocess_and_save(data_dir, hdf5_file):
     with h5py.File(hdf5_file, 'w') as h5f:
@@ -50,11 +49,17 @@ def preprocess_and_save(data_dir, hdf5_file):
                     
                     waveform = remove_silence(waveform, sample_rate=args.sr)
 
-                    mel_spectrograms = mel_transform.process_segment(waveform, segment_length=segment_length)
+                    # mel_spectrograms = mel_transform.process_segment(waveform, segment_length=segment_length)
+                    # for i, mel_spec in enumerate(mel_spectrograms):
+                    #     grp = h5f.create_group(f"{label}/{file}_{i * segment_length}")
+                    #     grp.create_dataset('mel_spec', data=mel_spec.numpy())
+                    #     grp.attrs['label'] = label
 
-                    for i, mel_spec in enumerate(mel_spectrograms):
+                    num_samples = waveform.size(1)
+                    for i, start in enumerate(range(0, num_samples - segment_length + 1, segment_length)):
+                        segment = waveform[:, start:start + segment_length]
                         grp = h5f.create_group(f"{label}/{file}_{i * segment_length}")
-                        grp.create_dataset('mel_spec', data=mel_spec.numpy())
+                        grp.create_dataset('samples', data=segment.numpy())
                         grp.attrs['label'] = label
 
 if __name__ == '__main__':
@@ -66,3 +71,4 @@ if __name__ == '__main__':
     print('Sanity check of h5 files')
     check_hdf5_sanity(train_hdf5_file)
     check_hdf5_sanity(test_hdf5_file)
+    check_matching_labels(train_hdf5_file, test_hdf5_file)
