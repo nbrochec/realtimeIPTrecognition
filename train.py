@@ -33,7 +33,7 @@ parser.add_argument('--lr', type=float, help='learning rate', default=0.001)
 
 """
 Command example:
-python train.py --dataset_dir save_dir --config transformer --augment pitchshift --early_stopping True --reduceLR True 
+python train.py --dataset_dir save_dir --config two_residual --augment pitchshift --early_stopping True --reduceLR True 
 """
 
 args = parser.parse_args()
@@ -44,21 +44,10 @@ if not args.dataset_dir:
     parser.print_help()
     sys.exit(1)
 
-dataset_dir = args.dataset_dir
-epochs = args.epochs
-config = args.config
-device = args.device
-gpu = args.gpu
-log_dir = args.log_dir
-augment = args.augment
-early_stopping = args.early_stopping
-reduceLR = args.reduceLR
-lr = args.lr
-
 dir_manager = DirectoryManager()
 DirectoryManager.ensure_dir_exists(args.log_dir)
 
-train_hdf5_file_path = join(dataset_dir, "train_data.h5")
+train_hdf5_file_path = join(args.dataset_dir, "train_data.h5")
 data_loader_factory = BalancedDataLoader(train_hdf5_file_path)
 
 balanced_loader = data_loader_factory.get_dataloader()
@@ -68,17 +57,17 @@ for batch_data, batch_labels in balanced_loader:
     print("Train data samples have been loaded.")
     break
 
-test_hdf5_file_path = join(dataset_dir, "test_data.h5")
+test_hdf5_file_path = join(args.dataset_dir, "test_data.h5")
 test_loader = HDF5Dataset(test_hdf5_file_path)
 print("Test data samples have been loaded.")
 
-val_hdf5_file_path = join(dataset_dir, "val_data.h5")
+val_hdf5_file_path = join(args.dataset_dir, "val_data.h5")
 val_loader = HDF5Dataset(val_hdf5_file_path)
 print("validation data samples have been loaded.")
 
 num_labels = test_loader.get_num_classes()
 
-model = LoadModel().get_model(config, num_labels).to(device)
+model = LoadModel().get_model(args.config, num_labels).to(args.device)
 summary = ModelSummary(model, num_labels, args.config)
 summary.print_summary()
 
