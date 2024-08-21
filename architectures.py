@@ -1,5 +1,5 @@
 #############################################################################
-# CNN_arch.py 
+# architectures.py 
 # Nicolas Brochec
 # TOKYO UNIVERSITY OF THE ARTS
 # 東京藝術大学音楽音響創造科
