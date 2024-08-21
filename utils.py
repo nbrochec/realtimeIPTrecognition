@@ -13,6 +13,7 @@
 from os.path import join, dirname, basename, abspath, normpath, isdir, exists, relpath
 from os import listdir, makedirs, walk
 from glob import glob
+from pathlib import Path
 import os
 import torch, torchaudio, h5py, random, shutil
 import torchaudio.transforms as Taudio
@@ -148,6 +149,11 @@ def check_matching_labels(train_hdf5_file, val_hdf5_file, test_hdf5_file):
 def split_train_validation(train_dir, val_ratio=0.2, val_dir_name='val_dir'):
     parent_dir = dirname(train_dir)
     val_dir = join(parent_dir, val_dir_name)
+
+    if os.path.exists(val_dir) and any(Path(val_dir).rglob("*.wav")):
+        print(f"Validation directory '{val_dir}' already exists and is not empty.")
+        print("Skipping sample separation.")
+        return
 
     all_files = []
     for root, dirs, files in walk(train_dir):
