@@ -11,7 +11,7 @@
 #############################################################################
 
 import torch
-from torch_audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
+from torch_audiomentations import PitchShift, AddColoredNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
 
 '''
 Principally using torch_audiomentations because:
@@ -53,8 +53,6 @@ class ApplyAugmentations:
             data = data.to(self.device)
 
         # Prepare to accumulate the augmented samples
-        num_augmentations = len(self.augmentations)
-        batch_size = data.size(0)
         augmented_data_list = []
 
         # Apply each augmentation and store results in a list
@@ -120,7 +118,7 @@ class ApplyAugmentations:
         Adds noise to the data.
         """
         transform=[
-            AddColorNoise(
+            AddColoredNoise(
                 f_decay=0,
                 p=1
             )
