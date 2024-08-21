@@ -16,7 +16,7 @@ import torch, torchaudio
 from glob import glob
 from os.path import join
 
-from utils import BalancedDataLoader, HDF5Dataset, ensure_dir_exists
+from utils import BalancedDataLoader, HDF5Dataset, DirectoryManager
 
 parser = argparse.ArgumentParser(description='train CNN model for RT-IPT-R')
 parser.add_argument('--dataset_dir', type=str, help='dataset directory where h5 files are saved', required=True)
@@ -49,7 +49,8 @@ early_stopping = args.early_stopping
 reduceLR = args.reduceLR
 lr = args.lr
 
-ensure_dir_exists(args.log_dir)
+dir_manager = DirectoryManager()
+DirectoryManager.ensure_dir_exists(args.log_dir)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'Current device: {device}')
