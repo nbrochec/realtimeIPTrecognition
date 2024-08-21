@@ -10,7 +10,7 @@
 # Preprocess the data
 #############################################################################
 
-from utils import customLogMelSpectrogram, ensure_dir_exists, check_hdf5_sanity, remove_silence, check_matching_labels, split_train_validation
+from utils import customLogMelSpectrogram, DirectoryManager, HDF5Checker, SilenceRemover, HDF5LabelChecker, DatasetSplitter
 import os, h5py, torch, torchaudio, argparse
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -25,17 +25,17 @@ parser.add_argument('--save_dir', type=str, help='Directory to save the HDF5 fil
 parser.add_argument('--sr', type=int, help='Sampling rate', default=24000)
 
 args = parser.parse_args()
-ensure_dir_exists(args.save_dir)
+DirectoryManager.ensure_dir_exists(args.save_dir)
 
 val_dir = 'val_dir'
-ensure_dir_exists(val_dir)
+DirectoryManager.ensure_dir_exists(val_dir)
 
 # Configuration
-train_hdf5_file = os.path.join(args.save_dir, 'train_data.h5')
-test_hdf5_file = os.path.join(args.save_dir, 'test_data.h5')
+train_hdf5_file_path = os.path.join(args.save_dir, 'train_data.h5')
+test_hdf5_file_path = os.path.join(args.save_dir, 'test_data.h5')
 segment_length = 7680
-mel_transform = customLogMelSpectrogram(sample_rate=args.sr)
-
+# mel_transform = customLogMelSpectrogram(sample_rate=args.sr)
+silence_remover = SilenceRemover(silence_threshold=1e-4, min_silence_len=0.1)
 
 def preprocess_and_save(data_dir, hdf5_file):
     with h5py.File(hdf5_file, 'w') as h5f:
@@ -50,7 +50,7 @@ def preprocess_and_save(data_dir, hdf5_file):
                     if original_sr != args.sr:
                         waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=args.sr)(waveform)
                     
-                    waveform = remove_silence(waveform, sample_rate=args.sr)
+                    waveform = silence_remover.remove_silence(waveform, sample_rate=args.sr)
 
                     # mel_spectrograms = mel_transform.process_segment(waveform, segment_length=segment_length)
                     # for i, mel_spec in enumerate(mel_spectrograms):
@@ -67,18 +67,18 @@ def preprocess_and_save(data_dir, hdf5_file):
 
 if __name__ == '__main__':
     print('Preparing the validation set')
-    split_train_validation(args.train_dir, 0.2)
-    val_hdf5_file = os.path.join(args.save_dir, 'val_data.h5')
+    DatasetSplitter.split_train_validation(args.train_dir, val_ratio=0.2, val_dir_name='val_dir')
+    val_hdf5_file_path = os.path.join(args.save_dir, 'val_data.h5')
 
     print('Preprocessing training data samples...')
-    preprocess_and_save(args.train_dir, train_hdf5_file)
+    preprocess_and_save(args.train_dir, train_hdf5_file_path)
     print('Preprocessing validation data samples...')
-    preprocess_and_save(val_dir, val_hdf5_file)
+    preprocess_and_save(val_dir, val_hdf5_file_path)
     print('Preprocessing test data samples...')
-    preprocess_and_save(args.test_dir, test_hdf5_file)
+    preprocess_and_save(args.test_dir, test_hdf5_file_path)
 
     print('Sanity check of h5 files')
-    check_hdf5_sanity(train_hdf5_file, 'train_data.h5')
-    check_hdf5_sanity(test_hdf5_file, 'test_data.h5')
-    check_hdf5_sanity(val_hdf5_file, 'val_data.h5')
-    check_matching_labels(train_hdf5_file, test_hdf5_file, val_hdf5_file)
+    HDF5Checker.check_sanity(train_hdf5_file_path)
+    HDF5Checker.check_sanity(test_hdf5_file_path)
+    HDF5Checker.check_sanity(val_hdf5_file_path)
+    HDF5LabelChecker.check_matching_labels(train_hdf5_file_path, test_hdf5_file_path, val_hdf5_file_path)
