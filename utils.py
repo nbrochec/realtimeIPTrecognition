@@ -325,6 +325,9 @@ class BalancedDataLoader:
     balanced batches for training. The balanced batches are created using a fixed sampling strategy
     to include samples from each class in every batch.
 
+    pytorch_balanced_sampler have been implemented by Karl Hornlund
+    https://github.com/khornlund/pytorch-balanced-sampler
+
     Parameters
     ----------
     hdf5_file : str
