@@ -16,6 +16,8 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
+import humanize
+
 class LogMelSpectrogramLayer(nn.Module):
     def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
         super(LogMelSpectrogramLayer, self).__init__()
@@ -285,20 +287,20 @@ class transformer(nn.Module):
             nn.MaxPool2d((2, 1)), 
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
-            custom2DCNN(256, 512, 2, "same"),
+            custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
         )
 
-        self.transformer = nn.Transformer(512, 8, 6, 6)
+        self.transformer = nn.Transformer(256, 4, 3, 3)
 
         self.maxpool2d = nn.MaxPool2d((4, 1)) 
 
         self.fc = nn.Sequential(
-            nn.Linear(512, 256),
+            nn.Linear(256, 128),
             nn.ELU(),
-            nn.Linear(128, 128),
+            nn.Linear(128, 64),
             nn.ELU(),
-            nn.Linear(128, output_nbr),
+            nn.Linear(64, output_nbr),
         )
 
     def forward(self, x):
@@ -320,8 +322,30 @@ class LoadModel:
             'transformer': transformer,
         }
     
-    def get_model(self, model_name):
+    def get_model(self, model_name, output_nbr):
         if model_name in self.models:
-            return self.models[model_name]()
+            return self.models[model_name](output_nbr)
         else:
             raise ValueError(f"Model {model_name} is not recognized.")
+
+
+class ModelSummary:
+    def __init__(self, model, num_labels, config):
+        self.model = model
+        self.num_labels = num_labels
+        self.config = config
+
+    def get_total_parameters(self):
+        return sum(p.numel() for p in self.model.parameters())
+
+    def print_summary(self):
+        total_params = self.get_total_parameters()
+        formatted_params = humanize.intcomma(total_params)
+
+        print('\n')
+        print('-----------------------------------------------')
+        print(f"Model Summary:")
+        print(f"Model's name: {self.config}")
+        print(f"Number of labels: {self.num_labels}")
+        print(f"Total number of parameters: {formatted_params}")
+        print('-----------------------------------------------')
