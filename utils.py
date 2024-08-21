@@ -204,7 +204,7 @@ class HDF5Dataset(Dataset):
 
         # Convert labels to integers
         self.labels = np.array(self.labels)
-        unique_labels, label_to_int = np.unique(self.labels, return_inverse=True)
+        _, label_to_int = np.unique(self.labels, return_inverse=True)
         self.labels = torch.tensor(label_to_int, dtype=torch.long)
 
     def __len__(self):
