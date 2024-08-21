@@ -34,7 +34,6 @@ DirectoryManager.ensure_dir_exists(val_dir)
 train_hdf5_file_path = os.path.join(args.save_dir, 'train_data.h5')
 test_hdf5_file_path = os.path.join(args.save_dir, 'test_data.h5')
 segment_length = 7680
-# mel_transform = customLogMelSpectrogram(sample_rate=args.sr)
 silence_remover = SilenceRemover(silence_threshold=1e-4, min_silence_len=0.1)
 
 def preprocess_and_save(data_dir, hdf5_file):
@@ -52,13 +51,8 @@ def preprocess_and_save(data_dir, hdf5_file):
                     
                     waveform = silence_remover.remove_silence(waveform, sample_rate=args.sr)
 
-                    # mel_spectrograms = mel_transform.process_segment(waveform, segment_length=segment_length)
-                    # for i, mel_spec in enumerate(mel_spectrograms):
-                    #     grp = h5f.create_group(f"{label}/{file}_{i * segment_length}")
-                    #     grp.create_dataset('mel_spec', data=mel_spec.numpy())
-                    #     grp.attrs['label'] = label
-
                     num_samples = waveform.size(1)
+                    
                     for i, start in enumerate(range(0, num_samples - segment_length + 1, segment_length)):
                         segment = waveform[:, start:start + segment_length]
                         grp = h5f.create_group(f"{label}/{file}_{i * segment_length}")
