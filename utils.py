@@ -275,6 +275,9 @@ class HDF5Dataset(Dataset):
 
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
+    
+    def get_num_classes(self):
+        return len(torch.unique(self.labels))
 
 class BalancedDataLoader:
     """
