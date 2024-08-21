@@ -10,7 +10,7 @@
 # Preprocess the data
 #############################################################################
 
-from utils import customLogMelSpectrogram, ensure_dir_exists, check_hdf5_sanity, remove_silence, check_matching_labels
+from utils import customLogMelSpectrogram, ensure_dir_exists, check_hdf5_sanity, remove_silence, check_matching_labels, split_train_validation
 import os, h5py, torch, torchaudio, argparse
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -26,6 +26,9 @@ parser.add_argument('--sr', type=int, help='Sampling rate', default=24000)
 
 args = parser.parse_args()
 ensure_dir_exists(args.save_dir)
+
+val_dir = 'val_dir'
+ensure_dir_exists(val_dir)
 
 # Configuration
 train_hdf5_file = os.path.join(args.save_dir, 'train_data.h5')
@@ -63,12 +66,19 @@ def preprocess_and_save(data_dir, hdf5_file):
                         grp.attrs['label'] = label
 
 if __name__ == '__main__':
+    print('Preparing the validation set')
+    split_train_validation(args.train_dir, 0.2)
+    val_hdf5_file = os.path.join(args.save_dir, 'val_data.h5')
+
     print('Preprocessing training data samples...')
     preprocess_and_save(args.train_dir, train_hdf5_file)
+    print('Preprocessing validation data samples...')
+    preprocess_and_save(val_dir, val_hdf5_file)
     print('Preprocessing test data samples...')
     preprocess_and_save(args.test_dir, test_hdf5_file)
 
     print('Sanity check of h5 files')
-    check_hdf5_sanity(train_hdf5_file)
-    check_hdf5_sanity(test_hdf5_file)
-    check_matching_labels(train_hdf5_file, test_hdf5_file)
+    check_hdf5_sanity(train_hdf5_file, 'train_data.h5')
+    check_hdf5_sanity(test_hdf5_file, 'test_data.h5')
+    check_hdf5_sanity(val_hdf5_file, 'val_data.h5')
+    check_matching_labels(train_hdf5_file, test_hdf5_file, val_hdf5_file)
