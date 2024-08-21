@@ -11,7 +11,7 @@
 #############################################################################
 
 import argparse, sys, math, os
-from architectures import LoadModel, ModelSummary
+from architectures import LoadModel, ModelSummary, ModelTester
 import torch, torchaudio, h5py
 from glob import glob
 from os.path import join
@@ -33,7 +33,7 @@ parser.add_argument('--lr', type=float, help='learning rate', default=0.001)
 
 """
 Command example:
-python train.py --dataset_dir save_dir --config two_residual --augment pitchshift --early_stopping True --reduceLR True 
+python train.py --dataset_dir save_dir --config v1 --augment pitchshift --early_stopping True --reduceLR True 
 """
 
 args = parser.parse_args()
@@ -71,6 +71,13 @@ model = LoadModel().get_model(args.config, num_labels).to(args.device)
 summary = ModelSummary(model, num_labels, args.config)
 summary.print_summary()
 
+tester = ModelTester(model, input_shape=(1, 1, 7680), device=args.device)
+output = tester.test()
+if output.size(1) == num_labels:
+    pass
+else:
+    print("Error: output dimension do not correspond to the number of classes")
+    sys.exit(1)
 
 # Training loop (to be completed with validation data)
 # augmentations = args.augment.split()
