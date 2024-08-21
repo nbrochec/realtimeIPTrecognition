@@ -10,10 +10,11 @@
 # Utilities defition
 #############################################################################
 
-from os.path import join, dirname, basename, abspath, normpath, isdir, exists
-from os import listdir, makedirs
+from os.path import join, dirname, basename, abspath, normpath, isdir, exists, relpath
+from os import listdir, makedirs, walk
 from glob import glob
-import torch, torchaudio, h5py
+import os
+import torch, torchaudio, h5py, random, shutil
 import torchaudio.transforms as Taudio
 import torch.nn.functional as Fnn
 
@@ -88,7 +89,7 @@ def ensure_dir_exists(directory):
         makedirs(directory)
         print(f'{directory} have been created.')
 
-def check_hdf5_sanity(hdf5_file):
+def check_hdf5_sanity(hdf5_file, h5_file_name):
     try:
         with h5py.File(hdf5_file, 'r') as h5f:
             # print("HDF5 file opened successfully.")
@@ -114,30 +115,62 @@ def check_hdf5_sanity(hdf5_file):
                             print(f"Actual shape: {dataset[i].shape}")
                             return False
 
-            print("HDF5 file passed all checks.")
+            print(f"{h5_file_name} file passed all checks.")
             return True
 
     except Exception as e:
         print(f"Error opening or processing HDF5 file: {e}")
         return False
 
-def check_matching_labels(train_hdf5_file, test_hdf5_file):
+def check_matching_labels(train_hdf5_file, val_hdf5_file, test_hdf5_file):
     try:
-        with h5py.File(train_hdf5_file, 'r') as train_h5f, h5py.File(test_hdf5_file, 'r') as test_h5f:
+        with h5py.File(train_hdf5_file, 'r') as train_h5f, h5py.File(test_hdf5_file, 'r') as test_h5f, h5py.File(val_hdf5_file, 'r') as val_h5f:
             # Get the unique labels from both HDF5 files
             train_labels = set(train_h5f.keys())
             test_labels = set(test_h5f.keys())
+            val_labels = set(val_h5f.keys())
 
             # Compare the labels
-            if train_labels == test_labels:
-                print("Labels are consistent between the train and test HDF5 files.")
+            if train_labels == test_labels == val_labels:
+                print("Labels are consistent between the train, val and test HDF5 files.")
                 return True
             else:
                 print("Error: Labels do not match.")
-                print(f"Labels in train file but not in test file: {train_labels - test_labels}")
-                print(f"Labels in test file but not in train file: {test_labels - train_labels}")
+                print(f"Labels in train file but not in validation and test files: {train_labels - val_labels - test_labels}")
+                print(f"Labels in validation file but not in train and test files: {val_labels - train_labels - test_labels}")
+                print(f"Labels in test file but not in train and validation files: {test_labels - train_labels - val_labels}")
                 return False
 
     except Exception as e:
         print(f"Error opening or processing HDF5 files: {e}")
         return False
+
+def split_train_validation(train_dir, val_ratio=0.2, val_dir_name='val_dir'):
+    parent_dir = dirname(train_dir)
+    val_dir = join(parent_dir, val_dir_name)
+
+    all_files = []
+    for root, dirs, files in walk(train_dir):
+        for file in files:
+            if file.endswith('.wav') or file.endswith('.aiff') or file.endswith('.mp3'):
+                all_files.append(join(root, file))
+
+    num_files = len(all_files)
+    num_val_files = int(num_files * val_ratio)
+
+    val_files = random.sample(all_files, num_val_files)
+    
+    if not exists(val_dir):
+        makedirs(val_dir)
+
+    for file_path in val_files:
+        rel_path = relpath(file_path, start=train_dir)
+        val_file_path = join(val_dir, rel_path)
+        val_file_dir = dirname(val_file_path)
+
+        if not exists(val_file_dir):
+            makedirs(val_file_dir)
+
+        shutil.move(file_path, val_file_path)
+
+    print(f"Moved {num_val_files} files to validation set.")
