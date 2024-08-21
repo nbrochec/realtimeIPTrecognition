@@ -215,7 +215,7 @@ class one_residual(nn.Module):
 
 class two_residual(nn.Module):
     def __init__(self, output_nbr):
-        super(one_residual, self).__init__()
+        super(two_residual, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
         
