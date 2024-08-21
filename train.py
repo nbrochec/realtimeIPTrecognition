@@ -30,6 +30,7 @@ parser.add_argument('--augment', type=str, help='augmentations', default='pitchs
 parser.add_argument('--early_stopping', type=bool, help='early stopping', default=False)
 parser.add_argument('--reduceLR', type=bool, help='reduce LR on plateau', default=False)
 parser.add_argument('--lr', type=float, help='learning rate', default=0.001)
+parser.add_argument('--fmin', type=int, help='select min frequency for logmelspec analysis', default=150)
 
 """
 Command example:
