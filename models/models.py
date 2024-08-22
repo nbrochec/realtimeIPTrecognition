@@ -1,5 +1,5 @@
 #############################################################################
-# architectures.py 
+# models.py 
 # Nicolas Brochec
 # TOKYO UNIVERSITY OF THE ARTS
 # 東京藝術大学音楽音響創造科
@@ -17,79 +17,7 @@ import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
 import humanize
-
-class LogMelSpectrogramLayer(nn.Module):
-    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
-        super(LogMelSpectrogramLayer, self).__init__()
-        self.sample_rate = sample_rate
-        self.n_fft = n_fft
-        self.win_length = win_length if win_length is not None else n_fft
-        self.hop_length = hop_length
-        self.n_mels = n_mels
-        self.f_min = f_min
-        self.f_max = f_max if f_max is not None else sample_rate / 2
-        
-        self.mel_scale = T.MelSpectrogram(
-            sample_rate=self.sample_rate,
-            n_fft=self.n_fft,
-            win_length=self.win_length,
-            hop_length=self.hop_length,
-            n_mels=self.n_mels,
-            f_min=self.f_min,
-            f_max=self.f_max,
-            power=2.0
-        )
-
-        self.amplitude_to_db = T.AmplitudeToDB(stype='power', top_db=80.0)
-
-    def forward(self, x):
-        x = self.mel_scale(x)
-        x = self.amplitude_to_db(x)
-        x = F.normalize(x, dim=2)
-        x = F.normalize(x, dim=3)
-        return x
-
-class EnvelopeExtractor(nn.Module):
-    def __init__(self, sample_rate=24000, cutoff_freq=10, Q=0.707):
-        super(EnvelopeExtractor, self).__init__()
-        self.sr = sample_rate
-        self.cutoff = cutoff_freq
-        self.Q = Q
-
-    def forward(self, x):
-        x = torch.abs(x)
-        x = Faudio.highpass_biquad(x, sample_rate=self.sr, cutoff_freq=self.cutoff, Q=self.Q)
-        return x
-
-class custom2DCNN(nn.Module):
-    def __init__(self, input_channels, output_channels, kernel_size, padding):
-        super(custom2DCNN, self).__init__()
-        self.conv = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=kernel_size, stride=1, padding=padding)
-        self.batch = nn.BatchNorm2d(output_channels)
-        self.activ = nn.LeakyReLU()
-        self.drop = nn.Dropout2d(0.25)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.batch(x)
-        x = self.activ(x)
-        x = self.drop(x)
-        return x
-
-class custom1DCNN(nn.Module):
-    def __init__(self, input_channels, output_channels, kernel_size, padding, dilation):
-        super(custom1DCNN, self).__init__()
-        self.conv = nn.Conv1d(in_channels=input_channels, out_channels=output_channels,kernel_size=kernel_size, padding=padding, dilation=dilation)
-        self.batch = nn.BatchNorm1d(output_channels)
-        self.activ = nn.GELU()
-        self.avg = nn.AvgPool1d(4)
-    
-    def forward(self,x):
-        x = self.conv(x)
-        x = self.batch(x)
-        x = self.activ(x)
-        # x = self.drop(x)
-        return x
+from models.layers import LogMelSpectrogramLayer, custom2DCNN
 
 class v1(nn.Module):
     def __init__(self, output_nbr):
@@ -315,80 +243,3 @@ class transformer(nn.Module):
         x = self.fc(x)
         return x
 
-class LoadModel:
-    def __init__(self):
-        self.models = {
-            'v1': v1,
-            'v2': v2,
-            'one_residual': one_residual,
-            'two_residual': two_residual,
-            'transformer': transformer,
-        }
-    
-    def get_model(self, model_name, output_nbr):
-        if model_name in self.models:
-            return self.models[model_name](output_nbr)
-        else:
-            raise ValueError(f"Model {model_name} is not recognized.")
-
-
-class ModelSummary:
-    def __init__(self, model, num_labels, config):
-        self.model = model
-        self.num_labels = num_labels
-        self.config = config
-
-    def get_total_parameters(self):
-        return sum(p.numel() for p in self.model.parameters())
-
-    def print_summary(self):
-        total_params = self.get_total_parameters()
-        formatted_params = humanize.intcomma(total_params)
-
-        print('\n')
-        print('-----------------------------------------------')
-        print(f"Model Summary:")
-        print(f"Model's name: {self.config}")
-        print(f"Number of labels: {self.num_labels}")
-        print(f"Total number of parameters: {formatted_params}")
-        print('-----------------------------------------------')
-
-class ModelTester:
-    def __init__(self, model, input_shape=(1, 1, 7680), device='cpu'):
-        """
-        Initializes the ModelTester class.
-
-        Parameters
-        ----------
-        model : torch.nn.Module
-            The model to be tested.
-        input_shape : tuple
-            The shape of the input data (default is (1, 1, 7680)).
-        device : str
-            The device to run the model on ('cpu' or 'cuda').
-        """
-        self.model = model
-        self.input_shape = input_shape
-        self.device = device
-
-    def test(self):
-        """
-        Tests the model with a random input tensor.
-
-        Returns
-        -------
-        torch.Tensor
-            The output of the model for the random input tensor.
-        """
-        self.model.to(self.device)
-        self.model.eval()  # Set the model to evaluation mode
-
-        # Generate a random input tensor with the specified shape
-        random_input = torch.randn(self.input_shape).to(self.device)
-        
-        # Forward pass through the model
-        with torch.no_grad():
-            output = self.model(random_input)
-            # proba_distrib = F.softmax(output, dim=1)
-        
-        return output
