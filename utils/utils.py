@@ -152,10 +152,35 @@ class PreprocessAndSave:
         self.segment_length = segment_length
         self.silence_remover = SilenceRemover(silence_threshold, min_silence_len)
 
+    def check_for_audio_files(self):
+        """
+        Checks if there are audio files in the specified directories.
+
+        Raises
+        ------
+        RuntimeError
+            If no audio files are found in the specified directories.
+        """
+        audio_files_found = False
+        for root, dirs, files in os.walk(self.data_dir):
+            for file in files:
+                if file.lower().endswith(('.wav', '.aiff', '.aif', '.mp3')):
+                    audio_files_found = True
+                    break
+            if audio_files_found:
+                break
+        
+        if not audio_files_found:
+            raise RuntimeError(f"No audio files found in {self.data_dir}. Please check the directory and try again.")
+        
     def preprocess_and_save(self):
         """
         Processes audio files from the directory and saves them to an HDF5 file.
         """
+
+        self.check_for_audio_files()  # Check if there are audio files before processing
+        DirectoryManager.ensure_dir_exists(os.path.dirname(self.hdf5_file))
+
         with h5py.File(self.hdf5_file, 'w') as h5f:
             for root, dirs, files in os.walk(self.data_dir):
                 for file in files:
