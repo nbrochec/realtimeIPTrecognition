@@ -9,3 +9,7 @@
 
 ## Related Datasets
 • Nicolas Brochec and Will Howie. [GFDatabase: A Database of Flute Playing Techniques](https://doi.org/10.5281/zenodo.10932398) (version 1.0.1). Zenodo, 2024.
+
+## Acknowledgments
+
+This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository. This code is not explicitly licensed.
