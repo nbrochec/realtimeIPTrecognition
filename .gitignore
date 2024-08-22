@@ -1,6 +1,5 @@
 __pycache__/
 .DS_Store
-utils/pytorch_balanced_sampler/
 data/processed_data/test_data.h5
 data/processed_data/train_data.h5
 data/processed_data/val_data.h5
