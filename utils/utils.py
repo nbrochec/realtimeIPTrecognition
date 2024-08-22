@@ -79,8 +79,8 @@ class DirectoryManager:
         if not os.path.exists(directory):
             os.makedirs(directory)
             print(f'{directory} has been created.')
-        else:
-            print(f'{directory} already exists.')
+        # else:
+        #     print(f'{directory} already exists.')
 
 
 class HDF5Checker:
@@ -131,26 +131,38 @@ class HDF5Checker:
             return False
 
 class PreprocessAndSave:
-    def __init__(self, data_dir, hdf5_file, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
+    def __init__(self, base_dir, data_dir, destination, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
         Initializes the PreprocessAndSave class.
 
         Parameters
         ----------
+        base_dir : str
+            Base directory containing the data.
         data_dir : str
-            Directory containing audio files.
-        hdf5_file : str
-            Path to the HDF5 file where processed data will be saved.
+            Directory containing audio files relative to base_dir.
+        destination : str
+            Directory where processed files will be saved.
         target_sr : int
             Target sampling rate for resampling audio files.
         segment_length : int
             Length of each audio segment to be saved.
+        silence_threshold : float
+            Threshold below which audio is considered silent.
+        min_silence_len : float
+            Minimum length of silence to be removed.
         """
+        self.base_dir = base_dir
         self.data_dir = data_dir
-        self.hdf5_file = hdf5_file
+        self.destination = destination
         self.target_sr = target_sr
         self.segment_length = segment_length
-        self.silence_remover = SilenceRemover(silence_threshold, min_silence_len)
+        self.silence_threshold = silence_threshold
+        self.min_silence_len = min_silence_len
+
+        self.data_dir_path = join(self.base_dir, self.data_dir)
+        self.processed_data_dir = self.destination
+        self.hdf5_file = os.path.join(self.destination, f'{self.data_dir}_data.h5')
 
     def check_for_audio_files(self):
         """
@@ -162,7 +174,7 @@ class PreprocessAndSave:
             If no audio files are found in the specified directories.
         """
         audio_files_found = False
-        for root, dirs, files in os.walk(self.data_dir):
+        for root, dirs, files in os.walk(self.data_dir_path):
             for file in files:
                 if file.lower().endswith(('.wav', '.aiff', '.aif', '.mp3')):
                     audio_files_found = True
@@ -171,18 +183,45 @@ class PreprocessAndSave:
                 break
         
         if not audio_files_found:
-            raise RuntimeError(f"No audio files found in {self.data_dir}. Please check the directory and try again.")
+            raise RuntimeError(f"No audio files found in {self.data_dir_path}. Please check the directory and try again.")
+
+    def silence_remover(self, waveform, sample_rate):
+        """
+        Removes silence from an audio segment.
+
+        Parameters
+        ----------
+        waveform : torch.Tensor
+            Audio waveform tensor.
+        sample_rate : int
+            Audio sampling rate.
         
+        Returns
+        -------
+        torch.Tensor
+            Waveform with silence removed.
+        """
+        min_silence_samples = int(self.min_silence_len * sample_rate)
+        amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
+        non_silent_indices = torch.where(amplitude > self.silence_threshold)[0]
+
+        if len(non_silent_indices) == 0:
+            return waveform
+
+        start = max(0, non_silent_indices[0] - min_silence_samples)
+        end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
+        return waveform[:, start:end]
+
     def preprocess_and_save(self):
         """
         Processes audio files from the directory and saves them to an HDF5 file.
         """
 
         self.check_for_audio_files()  # Check if there are audio files before processing
-        DirectoryManager.ensure_dir_exists(os.path.dirname(self.hdf5_file))
+        DirectoryManager.ensure_dir_exists(self.processed_data_dir)
 
         with h5py.File(self.hdf5_file, 'w') as h5f:
-            for root, dirs, files in os.walk(self.data_dir):
+            for root, dirs, files in os.walk(self.data_dir_path):
                 for file in files:
                     if file.lower().endswith(('.wav', '.aiff', '.aif', '.mp3')):
                         label = os.path.basename(root)
@@ -195,7 +234,7 @@ class PreprocessAndSave:
                         if original_sr != self.target_sr:
                             waveform = Taudio.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
                         
-                        # Remove silence (implement or replace this as needed)
+                        # Remove silence
                         waveform = self.silence_remover(waveform, sample_rate=self.target_sr)
 
                         num_samples = waveform.size(1)
@@ -205,6 +244,8 @@ class PreprocessAndSave:
                             grp = h5f.create_group(f"{label}/{file}_{i * self.segment_length}")
                             grp.create_dataset('samples', data=segment.numpy())
                             grp.attrs['label'] = label
+
+        print(f"Processed data saved to {self.hdf5_file}.")
 
 class HDF5LabelChecker:
     @staticmethod
@@ -253,38 +294,40 @@ class HDF5LabelChecker:
 
 class DatasetSplitter:
     @staticmethod
-    def split_train_validation(train_dir, val_ratio=0.2, val_dir_name='val_dir'):
+    def split_train_validation(base_dir, train_name='train', val_name='val', val_ratio=0.2):
         """
         Splits the training dataset into training and validation sets.
 
         Parameters
         ----------
-        train_dir : str
-            Path to the training directory.
+        base_dir : str
+            Base directory containing the 'train' folder.
+        train_name : str
+            Name of the training folder.
+        val_name : str
+            Name of the validation folder to be created.
         val_ratio : float
             Ratio of the validation set to the total dataset.
-        val_dir_name : str
-            Name of the validation directory to be created.
 
         Returns
         -------
         None
         """
-        parent_dir = dirname(train_dir)
-        val_dir = join(parent_dir, val_dir_name)
+        train_dir = os.path.join(base_dir, train_name)
+        val_dir = os.path.join(base_dir, val_name)
 
-        # Check if the validation directory already exists and is not empty
+        # Check if the validation directory already exists and contains audio files
         if os.path.exists(val_dir) and any(Path(val_dir).rglob("*.wav")):
-            print(f"Validation directory '{val_dir}' already exists and is not empty.")
+            print(f"Validation directory '{val_dir}' already exists and contains audio files.")
             print("Skipping sample separation.")
             return
 
         # Collect all audio files from the training directory
         all_files = []
-        for root, dirs, files in os.walk(train_dir):
+        for root, _, files in os.walk(train_dir):
             for file in files:
                 if file.endswith(('.wav', '.aiff', '.mp3')):
-                    all_files.append(join(root, file))
+                    all_files.append(os.path.join(root, file))
 
         # Calculate the number of validation files
         num_files = len(all_files)
@@ -294,22 +337,21 @@ class DatasetSplitter:
         val_files = random.sample(all_files, num_val_files)
         
         # Create the validation directory if it does not exist
-        if not exists(val_dir):
+        if not os.path.exists(val_dir):
             os.makedirs(val_dir)
 
-        # Move selected files to the validation directory
+        # Move selected files to the validation directory, preserving directory structure
         for file_path in val_files:
-            rel_path = relpath(file_path, start=train_dir)
-            val_file_path = join(val_dir, rel_path)
-            val_file_dir = dirname(val_file_path)
+            rel_path = os.path.relpath(file_path, start=train_dir)
+            val_file_path = os.path.join(val_dir, rel_path)
+            val_file_dir = os.path.dirname(val_file_path)
 
-            if not exists(val_file_dir):
+            if not os.path.exists(val_file_dir):
                 os.makedirs(val_file_dir)
 
             shutil.move(file_path, val_file_path)
 
         print(f"Moved {num_val_files} files to validation set.")
-
 class HDF5Dataset(Dataset):
     def __init__(self, hdf5_file, device=None):
         """
