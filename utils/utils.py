@@ -7,7 +7,7 @@
 # GNU General Public License v3.0
 #############################################################################
 # Code description:
-# Utilities defition
+# Implement global utility functions
 #############################################################################
 
 from os.path import join, dirname, basename, abspath, normpath, isdir, exists, relpath
@@ -21,7 +21,7 @@ import torchaudio.transforms as Taudio
 import torch.nn.functional as Fnn
 
 from torch.utils.data import Dataset, DataLoader
-from pytorch_balanced_sampler.sampler import SamplerFactory
+from .pytorch_balanced_sampler.sampler import SamplerFactory
 
 class SilenceRemover:
     def __init__(self, silence_threshold=1e-4, min_silence_len=0.1):
