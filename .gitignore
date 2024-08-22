@@ -1,7 +1,6 @@
-train_dir/
-test_dir/
-save_dir/
-val_dir/
 __pycache__/
 .DS_Store
-pytorch_balanced_sampler/
+utils/pytorch_balanced_sampler/
+data/processed_data/test_data.h5
+data/processed_data/train_data.h5
+data/processed_data/val_data.h5
