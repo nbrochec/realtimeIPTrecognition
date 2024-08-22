@@ -7,25 +7,23 @@
 # GNU General Public License v3.0
 #############################################################################
 # Code description:
-# Train a model
+# Script to train the model
 #############################################################################
 
 import argparse, sys, math, os
-from architectures import LoadModel, ModelSummary, ModelTester
 import torch, torchaudio, h5py
 from glob import glob
 from os.path import join
 
-from utils import BalancedDataLoader, HDF5Dataset, DirectoryManager
-from augmentations import ApplyAugmentations
+from models import *
+from utils import *
 
 parser = argparse.ArgumentParser(description='train CNN model for RT-IPT-R')
-parser.add_argument('--dataset_dir', type=str, help='dataset directory where h5 files are saved', required=True)
+parser.add_argument('--dataset_dir', type=str, help='dataset directory where h5 files are saved', default='data/processed_data/')
 parser.add_argument('--epochs', type=int, help='number of train epochs', default=100)
 parser.add_argument('--config', type=str, help='version of the CNN', default='v2')
 parser.add_argument('--device', type=str, help='gpu device', default='cpu')
 parser.add_argument('--gpu', type=int, help='gpu device number', default=0)
-parser.add_argument('--log_dir', type=str, help='log directory', default='log_dir')
 parser.add_argument('--augment', type=str, help='augmentations', default='pitchshift')
 parser.add_argument('--early_stopping', type=bool, help='early stopping', default=False)
 parser.add_argument('--reduceLR', type=bool, help='reduce LR on plateau', default=False)
@@ -34,7 +32,7 @@ parser.add_argument('--fmin', type=int, help='select min frequency for logmelspe
 
 """
 Command example:
-python train.py --dataset_dir save_dir --config v1 --augment pitchshift --early_stopping True --reduceLR True 
+python train.py --config v1 --augment pitchshift --early_stopping True --reduceLR True 
 """
 
 args = parser.parse_args()
@@ -44,9 +42,6 @@ if not args.dataset_dir:
     print('Please indicate the path of the dataset directory.')
     parser.print_help()
     sys.exit(1)
-
-dir_manager = DirectoryManager()
-DirectoryManager.ensure_dir_exists(args.log_dir)
 
 train_hdf5_file_path = join(args.dataset_dir, "train_data.h5")
 data_loader_factory = BalancedDataLoader(train_hdf5_file_path)
