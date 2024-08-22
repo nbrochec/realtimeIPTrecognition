@@ -12,4 +12,4 @@
 
 ## Acknowledgments
 
-This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository.
+This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository, created by Karl Hornlund.
