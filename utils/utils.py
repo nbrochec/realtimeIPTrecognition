@@ -23,48 +23,6 @@ import torch.nn.functional as Fnn
 from torch.utils.data import Dataset, DataLoader
 from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
-class SilenceRemover:
-    def __init__(self, silence_threshold=1e-4, min_silence_len=0.1):
-        """
-        Initializes the SilenceRemover class with specified parameters.
-        
-        Parameters
-        ----------
-        silence_threshold : float
-            Threshold of the silence in RMS amplitude.
-        min_silence_len : float
-            Minimum length of the silence to be removed (percentage).
-        """
-        self.silence_threshold = silence_threshold
-        self.min_silence_len = min_silence_len
-    
-    def remove_silence(self, waveform, sample_rate):
-        """
-        Removes silence from an audio segment.
-
-        Parameters
-        ----------
-        waveform : torch.Tensor
-            Audio waveform tensor.
-        sample_rate : int
-            Audio sampling rate.
-        
-        Returns
-        -------
-        torch.Tensor
-            Waveform with silence removed.
-        """
-        min_silence_samples = int(self.min_silence_len * sample_rate)
-        amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
-        non_silent_indices = torch.where(amplitude > self.silence_threshold)[0]
-
-        if len(non_silent_indices) == 0:
-            return waveform
-
-        start = max(0, non_silent_indices[0] - min_silence_samples)
-        end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
-        return waveform[:, start:end]
-
 class DirectoryManager:
     @staticmethod
     def ensure_dir_exists(directory):
@@ -81,7 +39,6 @@ class DirectoryManager:
             print(f'{directory} has been created.')
         # else:
         #     print(f'{directory} already exists.')
-
 
 class HDF5Checker:
     @staticmethod
