@@ -130,6 +130,57 @@ class HDF5Checker:
             print(f"Error opening or processing HDF5 file: {e}")
             return False
 
+class PreprocessAndSave:
+    def __init__(self, data_dir, hdf5_file, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
+        """
+        Initializes the PreprocessAndSave class.
+
+        Parameters
+        ----------
+        data_dir : str
+            Directory containing audio files.
+        hdf5_file : str
+            Path to the HDF5 file where processed data will be saved.
+        target_sr : int
+            Target sampling rate for resampling audio files.
+        segment_length : int
+            Length of each audio segment to be saved.
+        """
+        self.data_dir = data_dir
+        self.hdf5_file = hdf5_file
+        self.target_sr = target_sr
+        self.segment_length = segment_length
+        self.silence_remover = SilenceRemover(silence_threshold, min_silence_len)
+
+    def preprocess_and_save(self):
+        """
+        Processes audio files from the directory and saves them to an HDF5 file.
+        """
+        with h5py.File(self.hdf5_file, 'w') as h5f:
+            for root, dirs, files in os.walk(self.data_dir):
+                for file in files:
+                    if file.lower().endswith(('.wav', '.aiff', '.aif', '.mp3')):
+                        label = os.path.basename(root)
+                        file_path = os.path.join(root, file)
+
+                        # Load audio file
+                        waveform, original_sr = torchaudio.load(file_path)
+
+                        # Resample if necessary
+                        if original_sr != self.target_sr:
+                            waveform = Taudio.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
+                        
+                        # Remove silence (implement or replace this as needed)
+                        waveform = self.silence_remover(waveform, sample_rate=self.target_sr)
+
+                        num_samples = waveform.size(1)
+                        
+                        for i, start in enumerate(range(0, num_samples - self.segment_length + 1, self.segment_length)):
+                            segment = waveform[:, start:start + self.segment_length]
+                            grp = h5f.create_group(f"{label}/{file}_{i * self.segment_length}")
+                            grp.create_dataset('samples', data=segment.numpy())
+                            grp.attrs['label'] = label
+
 class HDF5LabelChecker:
     @staticmethod
     def check_matching_labels(train_hdf5_file, val_hdf5_file, test_hdf5_file):
