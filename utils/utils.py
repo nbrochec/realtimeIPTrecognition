@@ -276,6 +276,9 @@ class ProcessDataset(Dataset):
         
         # Filter data to include only the specified set type (train, test, or val)
         self.data = self.data[self.data['set'] == self.set_type]
+        
+        # Create a mapping of labels to integer values
+        self.label_map = {label: idx for idx, label in enumerate(sorted(self.data['label'].unique()))}
 
     def __len__(self):
         """Return the number of files in the dataset."""
@@ -305,6 +308,7 @@ class ProcessDataset(Dataset):
         start = max(0, non_silent_indices[0] - min_silence_samples)
         end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
         return waveform[:, start:end]
+    
 
     def __getitem__(self, idx):
         """
@@ -324,6 +328,9 @@ class ProcessDataset(Dataset):
         file_path = self.data.iloc[idx]['file_path']
         label = self.data.iloc[idx]['label']
 
+        # Convert label to integer
+        label = self.label_map[label]
+
         # Load the audio file
         waveform, original_sr = torchaudio.load(file_path)
 
@@ -337,6 +344,8 @@ class ProcessDataset(Dataset):
 
         # Extract segments and associate them with the label
         segments = []
+        labels = []
+
         for i in range(0, num_samples, self.segment_length):
             if i + self.segment_length <= num_samples:
                 segment = waveform[:, i:i + self.segment_length]
@@ -345,70 +354,37 @@ class ProcessDataset(Dataset):
                 segment = torch.zeros((1, self.segment_length))
                 segment[:, :num_samples - i] = waveform[:, i:]
 
-            segments.append((segment, label))
+            segments.append(segment)
+            labels.append(label)
 
-        return segments
+        return segments, labels
+
+from torch.utils.data import DataLoader
 
 class BalancedDataLoader:
     """
     A class for creating a balanced DataLoader from a PyTorch dataset.
 
-    This class creates a DataLoader that ensures balanced batches for training,
-    using a fixed sampling strategy to include samples from each class in every batch.
-
     Parameters
     ----------
-    dataset : torch.utils.data.Dataset
-        The PyTorch dataset to be used.
-    batch_size : int
-        The batch size for the DataLoader.
-    device : torch.device, optional
-        Device on which to load the data (e.g., 'cuda' or 'cpu').
-
-    Attributes
-    ----------
-    dataset : torch.utils.data.Dataset
+    dataset : Dataset
         The PyTorch dataset.
-    num_classes : int
-        The number of unique classes in the dataset.
-    batch_sampler : Sampler
-        The sampler used to generate balanced batches.
-
-    Methods
-    -------
-    __init__(dataset, batch_size, device=None)
-        Initializes the BalancedDataLoader with the specified dataset.
-    get_dataloader()
-        Returns a DataLoader instance configured with the balanced batch sampler.
     """
 
-    def __init__(self, dataset, batch_size, device=None):
-        """
-        Initializes the BalancedDataLoader.
-
-        Parameters
-        ----------
-        dataset : torch.utils.data.Dataset
-            The PyTorch dataset.
-        batch_size : int
-            The batch size for the DataLoader.
-        device : torch.device, optional
-            Device on which to load the data (e.g., 'cuda' or 'cpu').
-        """
+    def __init__(self, dataset):
         self.dataset = dataset
-        self.device = device
-        self.batch_size = batch_size
-        
-        # Determine the number of classes from the dataset labels
-        self.num_classes = len(set(self.dataset.targets.tolist()))  # Assuming targets are labels
+        self.num_classes = self._get_num_classes()  # Determine number of unique classes
+        self.batch_size = self.num_classes  # Set batch size equal to number of unique classes
 
-        # Initialize lists to store indexes for each class
+        # Initialize lists to store indices for each class
         class_idxs = [[] for _ in range(self.num_classes)]
-        
+
         # Populate the class index lists
-        for i in range(self.num_classes):
-            indexes = torch.nonzero(self.dataset.targets == i).squeeze()
-            class_idxs[i] = indexes.tolist()
+        for idx in range(len(self.dataset)):
+            _, label = self.dataset[idx]
+            if isinstance(label, list):
+                label = label[0]  # Assuming each sample has a single label in a list
+            class_idxs[label].append(idx)
 
         # Calculate the number of batches
         total_samples = len(self.dataset)
@@ -419,9 +395,39 @@ class BalancedDataLoader:
             class_idxs=class_idxs,
             batch_size=self.batch_size,
             n_batches=n_batches,
-            alpha=1,
-            kind='fixed'
+            alpha=0.5,  # Adjust alpha as needed
+            kind='fixed'  # or 'random', depending on your requirement
         )
+
+    def _get_num_classes(self):
+        """
+        Determines the number of unique classes in the dataset.
+
+        Returns
+        -------
+        int
+            The number of unique classes.
+        """
+        labels = set()
+        for idx in range(len(self.dataset)):
+            _, label = self.dataset[idx]
+            if isinstance(label, list):
+                label = label[0]  # Assuming each sample has a single label in a list
+            labels.add(label)
+        return len(labels)
+    
+    def custom_collate_fn(self, batch):
+        segments = []
+        labels = []
+        
+        for segs, lbls in batch:
+            segments.extend(segs)
+            labels.extend(lbls)
+
+        segments_tensor = torch.stack(segments)
+        labels_tensor = torch.tensor(labels)
+
+        return segments_tensor, labels_tensor
 
     def get_dataloader(self):
         """
@@ -435,5 +441,5 @@ class BalancedDataLoader:
         return DataLoader(
             self.dataset,
             batch_sampler=self.batch_sampler,
+            collate_fn=self.custom_collate_fn,
         )
-   
