@@ -359,8 +359,6 @@ class ProcessDataset(Dataset):
 
         return segments, labels
 
-from torch.utils.data import DataLoader
-
 class BalancedDataLoader:
     """
     A class for creating a balanced DataLoader from a PyTorch dataset.
