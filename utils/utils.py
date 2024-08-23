@@ -244,73 +244,131 @@ class DatasetValidator:
         
         print("Label validation passed: All sets have the same labels.")
 
-class HDF5Dataset(Dataset):
-    def __init__(self, hdf5_file, device=None):
+class ProcessDataset(Dataset):
+    def __init__(self, set_type, csv_path, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
-        Initializes the HDF5Dataset.
+        Initialize the ProcessDataset class.
 
         Parameters
         ----------
-        hdf5_file : str
-            Path to the HDF5 file.
-        device : torch.device, optional
-            Device on which to load the data (e.g., 'cuda' or 'cpu').
+        set_type : str
+            The type of dataset to process ('train', 'test', or 'val').
+        csv_path : str
+            Path to the CSV file containing file paths, labels, and set information.
+        target_sr : int
+            Target sampling rate for audio files.
+        segment_length : int
+            The length of each audio segment to be extracted.
+        silence_threshold : float
+            Threshold below which sound is considered silence.
+        min_silence_len : float
+            Minimum length of silence to remove.
         """
-        self.device = device
-        self.data = []
-        self.labels = []
+        self.set_type = set_type
+        self.csv_path = csv_path
+        self.target_sr = target_sr
+        self.segment_length = segment_length
+        self.silence_threshold = silence_threshold
+        self.min_silence_len = min_silence_len
 
-        with h5py.File(hdf5_file, 'r') as h5f:
-            for label in h5f.keys():
-                group = h5f[label]
-                for key in group.keys():
-                    sample = group[key]['samples'][:]
-                    self.data.append(sample)
-                    self.labels.append(label)
-
-        self.data = np.array(self.data)
-        self.data = torch.tensor(self.data, dtype=torch.float32)
-
-        # Convert labels to integers
-        self.labels = np.array(self.labels)
-        _, label_to_int = np.unique(self.labels, return_inverse=True)
-        self.labels = torch.tensor(label_to_int, dtype=torch.long)
-
-        if self.device:
-            self.data = self.data.to(self.device)
-            self.labels = self.labels.to(self.device)
+        # Load CSV data
+        self.data = pd.read_csv(self.csv_path)
+        
+        # Filter data to include only the specified set type (train, test, or val)
+        self.data = self.data[self.data['set'] == self.set_type]
 
     def __len__(self):
-        return self.data.size(0)
+        """Return the number of files in the dataset."""
+        return len(self.data)
+
+    def remove_silence(self, waveform):
+        """
+        Remove silence from the audio waveform.
+
+        Parameters
+        ----------
+        waveform : torch.Tensor
+            The audio waveform tensor.
+
+        Returns
+        -------
+        torch.Tensor
+            The waveform with silence removed.
+        """
+        min_silence_samples = int(self.min_silence_len * self.target_sr)
+        amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
+        non_silent_indices = torch.where(amplitude > self.silence_threshold)[0]
+
+        if len(non_silent_indices) == 0:
+            return waveform
+
+        start = max(0, non_silent_indices[0] - min_silence_samples)
+        end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
+        return waveform[:, start:end]
 
     def __getitem__(self, idx):
-        return self.data[idx], self.labels[idx]
-    
-    def get_num_classes(self):
-        return len(torch.unique(self.labels))
+        """
+        Get the segments and corresponding label for a given index.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the file in the dataset.
+
+        Returns
+        -------
+        list of tuple
+            A list of (segment, label) tuples where each segment is a torch.Tensor.
+        """
+        # Get the file path and label for the given index
+        file_path = self.data.iloc[idx]['file_path']
+        label = self.data.iloc[idx]['label']
+
+        # Load the audio file
+        waveform, original_sr = torchaudio.load(file_path)
+
+        # Resample the audio if necessary
+        if original_sr != self.target_sr:
+            waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
+
+        # Remove silence from the waveform
+        waveform = self.remove_silence(waveform)
+        num_samples = waveform.size(1)
+
+        # Extract segments and associate them with the label
+        segments = []
+        for i in range(0, num_samples, self.segment_length):
+            if i + self.segment_length <= num_samples:
+                segment = waveform[:, i:i + self.segment_length]
+            else:
+                # Pad the last segment with zeros if it's not long enough
+                segment = torch.zeros((1, self.segment_length))
+                segment[:, :num_samples - i] = waveform[:, i:]
+
+            segments.append((segment, label))
+
+        return segments
 
 class BalancedDataLoader:
     """
-    A class for creating a balanced DataLoader from an HDF5 dataset.
+    A class for creating a balanced DataLoader from a PyTorch dataset.
 
-    This class loads a dataset from an HDF5 file and sets up a DataLoader that ensures
-    balanced batches for training. The balanced batches are created using a fixed sampling strategy
-    to include samples from each class in every batch.
-
-    pytorch_balanced_sampler have been implemented by Karl Hornlund
-    https://github.com/khornlund/pytorch-balanced-sampler
+    This class creates a DataLoader that ensures balanced batches for training,
+    using a fixed sampling strategy to include samples from each class in every batch.
 
     Parameters
     ----------
-    hdf5_file : str
-        Path to the HDF5 file containing the dataset.
+    dataset : torch.utils.data.Dataset
+        The PyTorch dataset to be used.
+    batch_size : int
+        The batch size for the DataLoader.
     device : torch.device, optional
         Device on which to load the data (e.g., 'cuda' or 'cpu').
 
     Attributes
     ----------
-    dataset : HDF5Dataset
-        The dataset loaded from the HDF5 file.
+    dataset : torch.utils.data.Dataset
+        The PyTorch dataset.
     num_classes : int
         The number of unique classes in the dataset.
     batch_sampler : Sampler
@@ -318,44 +376,48 @@ class BalancedDataLoader:
 
     Methods
     -------
-    __init__(hdf5_file)
-        Initializes the BalancedDataLoader with the specified HDF5 file.
+    __init__(dataset, batch_size, device=None)
+        Initializes the BalancedDataLoader with the specified dataset.
     get_dataloader()
         Returns a DataLoader instance configured with the balanced batch sampler.
     """
-    
-    def __init__(self, hdf5_file, device=None):
+
+    def __init__(self, dataset, batch_size, device=None):
         """
         Initializes the BalancedDataLoader.
 
         Parameters
         ----------
-        hdf5_file : str
-            Path to the HDF5 file.
+        dataset : torch.utils.data.Dataset
+            The PyTorch dataset.
+        batch_size : int
+            The batch size for the DataLoader.
         device : torch.device, optional
             Device on which to load the data (e.g., 'cuda' or 'cpu').
         """
-        self.dataset = HDF5Dataset(hdf5_file, device=device)
+        self.dataset = dataset
         self.device = device
-        self.num_classes = len(set(self.dataset.labels.tolist()))  # Number of classes from labels
-        batch_size = self.num_classes * 2 
+        self.batch_size = batch_size
+        
+        # Determine the number of classes from the dataset labels
+        self.num_classes = len(set(self.dataset.targets.tolist()))  # Assuming targets are labels
 
         # Initialize lists to store indexes for each class
         class_idxs = [[] for _ in range(self.num_classes)]
         
         # Populate the class index lists
         for i in range(self.num_classes):
-            indexes = torch.nonzero(self.dataset.labels == i).squeeze()
+            indexes = torch.nonzero(self.dataset.targets == i).squeeze()
             class_idxs[i] = indexes.tolist()
 
         # Calculate the number of batches
-        total_samples = self.dataset.data.size(0)
-        n_batches = total_samples // batch_size
+        total_samples = len(self.dataset)
+        n_batches = total_samples // self.batch_size
 
-        # Create a balanced batch sampler using the SamplerFactory
+        # Create a balanced batch sampler
         self.batch_sampler = SamplerFactory().get(
             class_idxs=class_idxs,
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             n_batches=n_batches,
             alpha=1,
             kind='fixed'
@@ -372,6 +434,6 @@ class BalancedDataLoader:
         """
         return DataLoader(
             self.dataset,
-            batch_sampler=self.batch_sampler
+            batch_sampler=self.batch_sampler,
         )
    
