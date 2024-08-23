@@ -369,10 +369,11 @@ class BalancedDataLoader:
         The PyTorch dataset.
     """
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, device):
         self.dataset = dataset
         self.num_classes = self._get_num_classes()  # Determine number of unique classes
         self.batch_size = self.num_classes  # Set batch size equal to number of unique classes
+        self.device = device
 
         # Initialize lists to store indices for each class
         class_idxs = [[] for _ in range(self.num_classes)]
@@ -422,8 +423,8 @@ class BalancedDataLoader:
             segments.extend(segs)
             labels.extend(lbls)
 
-        segments_tensor = torch.stack(segments)
-        labels_tensor = torch.tensor(labels)
+        segments_tensor = torch.stack(segments).to(self.device)
+        labels_tensor = torch.tensor(labels).to(self.device)
 
         return segments_tensor, labels_tensor
 
