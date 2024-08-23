@@ -3,6 +3,6 @@ from utils.augmentation import ApplyAugmentations
 from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
 __all__=[
-    'DirectoryManager', 'HDF5Dataset', 'DatasetSplitter', 'BalancedDataLoader', 'PreprocessAndSave', 'DatasetValidator','ProcessDataset',
+    'DirectoryManager', 'DatasetSplitter', 'BalancedDataLoader', 'PreprocessAndSave', 'DatasetValidator','ProcessDataset',
     'ApplyAugmentations', 'SamplerFactory'
 ]
