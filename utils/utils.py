@@ -23,6 +23,9 @@ import torch.nn.functional as Fnn
 from torch.utils.data import Dataset, DataLoader
 from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
+import pandas as pd
+import csv
+
 class DirectoryManager:
     @staticmethod
     def ensure_dir_exists(directory):
@@ -39,53 +42,6 @@ class DirectoryManager:
             print(f'{directory} has been created.')
         # else:
         #     print(f'{directory} already exists.')
-
-class HDF5Checker:
-    @staticmethod
-    def check_sanity(hdf5_file):
-        """
-        Checks the sanity of the HDF5 file.
-        
-        Parameters
-        ----------
-        hdf5_file : str
-            Path to the HDF5 file.
-        
-        Returns
-        -------
-        bool
-            True if the file passed all checks, False otherwise.
-        """
-        h5_file_name = os.path.basename(hdf5_file)
-        
-        try:
-            with h5py.File(hdf5_file, 'r') as h5f:
-                labels = list(h5f.keys())
-                num_classes = len(labels)
-
-                if num_classes == 0:
-                    print("Error: No classes found in the HDF5 file.")
-                    return False
-                elif num_classes == 1:
-                    print("Error: Only one class found in the HDF5 file. Should be more than one.")
-                    return False
-
-                for label in labels:
-                    class_group = h5f[label]
-                    for file_key in class_group.keys():
-                        dataset = class_group[file_key]['samples']
-                        for i in range(dataset.shape[0]):
-                            if dataset[i].shape != (7680,):
-                                print(f"Error: Segment {i} in dataset '{file_key}' in class '{label}' does not have the expected shape (7680,).")
-                                print(f"Actual shape: {dataset[i].shape}")
-                                return False
-
-                print(f"{h5_file_name} file passed all checks.")
-                return True
-
-        except Exception as e:
-            print(f"Error opening or processing HDF5 file: {e}")
-            return False
 
 class PreprocessAndSave:
     def __init__(self, base_dir, data_dir, destination, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
@@ -204,111 +160,90 @@ class PreprocessAndSave:
 
         print(f"Processed data saved to {self.hdf5_file}.")
 
-class HDF5LabelChecker:
-    @staticmethod
-    def check_matching_labels(train_hdf5_file, val_hdf5_file, test_hdf5_file):
-        """
-        Checks if the labels are consistent across train, validation, and test HDF5 files.
-
-        Parameters
-        ----------
-        train_hdf5_file : str
-            Path to the training HDF5 file.
-        val_hdf5_file : str
-            Path to the validation HDF5 file.
-        test_hdf5_file : str
-            Path to the test HDF5 file.
-
-        Returns
-        -------
-        bool
-            True if labels are consistent across all files, False otherwise.
-        """
-        try:
-            with h5py.File(train_hdf5_file, 'r') as train_h5f, \
-                 h5py.File(val_hdf5_file, 'r') as val_h5f, \
-                 h5py.File(test_hdf5_file, 'r') as test_h5f:
-                
-                # Get the unique labels from all HDF5 files
-                train_labels = set(train_h5f.keys())
-                val_labels = set(val_h5f.keys())
-                test_labels = set(test_h5f.keys())
-
-                # Compare the labels
-                if train_labels == val_labels == test_labels:
-                    print("Labels are consistent between the train, val, and test HDF5 files.")
-                    return True
-                else:
-                    print("Error: Labels do not match.")
-                    print(f"Labels in train file but not in validation and test files: {train_labels - val_labels - test_labels}")
-                    print(f"Labels in validation file but not in train and test files: {val_labels - train_labels - test_labels}")
-                    print(f"Labels in test file but not in train and validation files: {test_labels - train_labels - val_labels}")
-                    return False
-
-        except Exception as e:
-            print(f"Error opening or processing HDF5 files: {e}")
-            return False
-
 class DatasetSplitter:
     @staticmethod
-    def split_train_validation(base_dir, train_name='train', val_name='val', val_ratio=0.2):
+    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_ratio=0.2, csv_filename='dataset_split.csv'):
         """
-        Splits the training dataset into training and validation sets.
+        Splits the dataset into training, validation, and test sets, and saves the information in a CSV file.
 
         Parameters
         ----------
         base_dir : str
-            Base directory containing the 'train' folder.
-        train_name : str
-            Name of the training folder.
-        val_name : str
-            Name of the validation folder to be created.
+            The base directory containing the data.
+        train_dir : str
+            The name of the training directory.
+        test_dir : str
+            The name of the test directory.
         val_ratio : float
-            Ratio of the validation set to the total dataset.
-
-        Returns
-        -------
-        None
+            The ratio of the validation set to the total training dataset.
+        csv_filename : str
+            The name of the output CSV file.
         """
-        train_dir = os.path.join(base_dir, train_name)
-        val_dir = os.path.join(base_dir, val_name)
 
-        # Check if the validation directory already exists and contains audio files
-        if os.path.exists(val_dir) and any(Path(val_dir).rglob("*.wav")):
-            print(f"Validation directory '{val_dir}' already exists and contains audio files.")
-            print("Skipping sample separation.")
-            return
+        train_path = os.path.join(base_dir, train_dir)
+        test_path = os.path.join(base_dir, test_dir)
+        csv_path = os.path.join(destination, csv_filename)
 
-        # Collect all audio files from the training directory
-        all_files = []
-        for root, _, files in os.walk(train_dir):
-            for file in files:
-                if file.endswith(('.wav', '.aiff', '.mp3')):
-                    all_files.append(os.path.join(root, file))
+        with open(csv_path, mode='w', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(['file_path', 'label', 'set'])
 
-        # Calculate the number of validation files
-        num_files = len(all_files)
-        num_val_files = int(num_files * val_ratio)
+            # Process train directory
+            for root, dirs, files in os.walk(train_path):
+                label = os.path.basename(root)
+                all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
-        # Select a random sample of files for validation
-        val_files = random.sample(all_files, num_val_files)
+                # Split into train and validation sets
+                num_files = len(all_files)
+                num_val = int(num_files * val_ratio)
+                val_files = random.sample(all_files, num_val)
+                train_files = list(set(all_files) - set(val_files))
+
+                for file in train_files:
+                    writer.writerow([file, label, 'train'])
+
+                for file in val_files:
+                    writer.writerow([file, label, 'val'])
+
+            # Process test directory
+            for root, dirs, files in os.walk(test_path):
+                label = os.path.basename(root)
+                test_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+
+                for file in test_files:
+                    writer.writerow([file, label, 'test'])
+
+        print(f"CSV file '{csv_filename}' created successfully in {base_dir}.")
+
+class DatasetValidator:
+    @staticmethod
+    def validate_labels(csv_file):
+        """
+        Validates that the train, test, and val sets have the same unique labels.
+
+        Parameters
+        ----------
+        csv_file : str
+            Path to the CSV file containing dataset information.
+
+        Raises
+        ------
+        ValueError
+            If the labels in the train, test, and val sets do not match in number or name.
+        """
+        data = pd.read_csv(csv_file)
+
+        # Get unique labels for each set
+        train_labels = set(data[data['set'] == 'train']['label'].unique())
+        test_labels = set(data[data['set'] == 'test']['label'].unique())
+        val_labels = set(data[data['set'] == 'val']['label'].unique())
+
+        # Check if all sets have the same labels
+        if not (train_labels == test_labels == val_labels):
+            raise ValueError("Mismatch in labels between train, test, and val sets.")
         
-        # Create the validation directory if it does not exist
-        if not os.path.exists(val_dir):
-            os.makedirs(val_dir)
+        print("Label validation passed: All sets have the same labels.")
 
-        # Move selected files to the validation directory, preserving directory structure
-        for file_path in val_files:
-            rel_path = os.path.relpath(file_path, start=train_dir)
-            val_file_path = os.path.join(val_dir, rel_path)
-            val_file_dir = os.path.dirname(val_file_path)
-
-            if not os.path.exists(val_file_dir):
-                os.makedirs(val_file_dir)
-
-            shutil.move(file_path, val_file_path)
-
-        print(f"Moved {num_val_files} files to validation set.")
 class HDF5Dataset(Dataset):
     def __init__(self, hdf5_file, device=None):
         """
