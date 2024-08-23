@@ -1,8 +1,4 @@
 __pycache__/
 .DS_Store
-data/processed_data/test_data.h5
-data/processed_data/train_data.h5
-data/processed_data/val_data.h5
 data/raw_data/test/close/
 data/raw_data/train/1m/
-data/raw_data/val/1m/
