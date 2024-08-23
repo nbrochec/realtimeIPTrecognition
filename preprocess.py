@@ -26,10 +26,7 @@ args = parser.parse_args()
 csv_dir = 'data/dataset/'
 base_dir = 'data/raw_data/'
 
-segment_length = 7680
-
 if __name__ == '__main__':
     print('Preparing the validation set')
     DatasetSplitter.split_train_validation(base_dir=base_dir, destination=csv_dir, train_dir='train', test_dir='test', val_ratio=0.2, csv_filename='dataset_split.csv')
-
     DatasetValidator.validate_labels(os.path.join(csv_dir, 'dataset_split.csv'))
