@@ -18,12 +18,15 @@ from os.path import join
 from models import *
 from utils import *
 
+from torch.utils.data import Dataset, DataLoader
+
 parser = argparse.ArgumentParser(description='train CNN model for RT-IPT-R')
-parser.add_argument('--dataset_dir', type=str, help='dataset directory where h5 files are saved', default='data/processed_data/')
+parser.add_argument('--csv_file', type=str, help='dataset directory where h5 files are saved', default='dataset_split.csv')
 parser.add_argument('--epochs', type=int, help='number of train epochs', default=100)
 parser.add_argument('--config', type=str, help='version of the CNN', default='v2')
 parser.add_argument('--device', type=str, help='gpu device', default='cpu')
 parser.add_argument('--gpu', type=int, help='gpu device number', default=0)
+parser.add_argument('--sr', type=int, help='sampling rate', default=24000)
 parser.add_argument('--augment', type=str, help='augmentations', default='pitchshift')
 parser.add_argument('--early_stopping', type=bool, help='early stopping', default=False)
 parser.add_argument('--reduceLR', type=bool, help='reduce LR on plateau', default=False)
@@ -36,44 +39,28 @@ python train.py --config v1 --augment pitchshift --early_stopping True --reduceL
 """
 
 args = parser.parse_args()
+device = args.device
 
-if not args.dataset_dir:
-    print('Error: dataset directory is required to launch training.')
-    print('Please indicate the path of the dataset directory.')
-    parser.print_help()
-    sys.exit(1)
+cwd = os.getcwd()+'/data/dataset/'
+csv_file_path = os.path.join(cwd, args.csv_file)
+segment_length = 7680
 
-train_hdf5_file_path = join(args.dataset_dir, "train_data.h5")
-data_loader_factory = BalancedDataLoader(train_hdf5_file_path)
+if __name__ == '__main__':
+    train_dataset = ProcessDataset('train', csv_file_path, args.sr, segment_length)
 
-balanced_loader = data_loader_factory.get_dataloader()
-for batch_data, batch_labels in balanced_loader:
-    print(f"Batch data shape: {batch_data.shape}")
-    print(f"Batch labels shape: {batch_labels.shape}")
-    print("Train data samples have been loaded.")
-    break
+    train_loader = BalancedDataLoader(train_dataset).get_dataloader()
 
-test_hdf5_file_path = join(args.dataset_dir, "test_data.h5")
-test_loader = HDF5Dataset(test_hdf5_file_path)
-print("Test data samples have been loaded.")
+# model = LoadModel().get_model(args.config, num_labels).to(args.device)
+# summary = ModelSummary(model, num_labels, args.config)
+# summary.print_summary()
 
-val_hdf5_file_path = join(args.dataset_dir, "val_data.h5")
-val_loader = HDF5Dataset(val_hdf5_file_path)
-print("validation data samples have been loaded.")
-
-num_labels = test_loader.get_num_classes()
-
-model = LoadModel().get_model(args.config, num_labels).to(args.device)
-summary = ModelSummary(model, num_labels, args.config)
-summary.print_summary()
-
-tester = ModelTester(model, input_shape=(1, 1, 7680), device=args.device)
-output = tester.test()
-if output.size(1) == num_labels:
-    pass
-else:
-    print("Error: output dimension do not correspond to the number of classes")
-    sys.exit(1)
+# tester = ModelTester(model, input_shape=(1, 1, 7680), device=args.device)
+# output = tester.test()
+# if output.size(1) == num_labels:
+#     pass
+# else:
+#     print("Error: output dimension do not correspond to the number of classes")
+#     sys.exit(1)
 
 # Training loop (to be completed with validation data)
 # augmentations = args.augment.split()
