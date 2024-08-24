@@ -14,9 +14,14 @@ import argparse
 import os
 import sys
 import pandas as pd
+import tqdm as tqdm
 import torch
 import torchaudio
+
 from torch.utils.data import DataLoader
+from torch.optim import Adam
+import torch.nn as nn
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from models import *
 from utils import *
@@ -98,13 +103,49 @@ def prepare_model(args, device):
         print("Error: Output dimension does not match the number of classes.")
         sys.exit(1)
 
+    model = ModelInit(model).initialize()
+    
     return model
+
+def train_epoch(model, loader, optimizer, loss_fn, device):
+    model.train()
+    running_loss = 0.0
+    for data, targets in tqdm(loader, desc="Training", leave=False):
+        data, targets = data.to(device), targets.to(device)
+        optimizer.zero_grad()
+        outputs = model(data)
+        loss = loss_fn(outputs, targets)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item() * data.size(0)
+    
+    return running_loss / len(loader.dataset)
+
+def validate_epoch(model, loader, loss_fn, device):
+    model.eval()
+    running_loss = 0.0
+    with torch.no_grad():
+        for data, targets in tqdm(loader, desc="Validation", leave=False):
+            data, targets = data.to(device), targets.to(device)
+            outputs = model(data)
+            loss = loss_fn(outputs, targets)
+            running_loss += loss.item() * data.size(0)
+    
+    return running_loss / len(loader.dataset)
 
 if __name__ == '__main__':
     args = parse_arguments()
     device = get_device()
     train_loader, test_loader, val_loader = prepare_data(args, device)
     model = prepare_model(args, device)
+    
+    cross_entropy = nn.CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr=args.lr)
+    if args.reduceLR == True:
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
+
+    
+
     
 
 # for batch_data, batch_labels in balanced_loader:
