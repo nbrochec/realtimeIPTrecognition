@@ -14,13 +14,13 @@ from os.path import join, dirname, basename, abspath, normpath, isdir, exists, r
 from os import listdir, makedirs, walk
 from glob import glob
 from pathlib import Path
-import os
+import os, sys
 import numpy as np
 import torch, torchaudio, h5py, random, shutil
 import torchaudio.transforms as Taudio
 import torch.nn.functional as Fnn
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader
 from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
 import pandas as pd
@@ -257,18 +257,16 @@ class DatasetValidator:
         """
         data = pd.read_csv(csv_file)
 
-        # Get unique labels for each set
         train_labels = set(data[data['set'] == 'train']['label'].unique())
         test_labels = set(data[data['set'] == 'test']['label'].unique())
         val_labels = set(data[data['set'] == 'val']['label'].unique())
 
-        # Check if all sets have the same labels
         if not (train_labels == test_labels == val_labels):
             raise ValueError("Mismatch in labels between train, test, and val sets.")
         
         print("Label validation passed: All sets have the same labels.")
 
-class ProcessDataset(Dataset):
+class ProcessDataset:
     def __init__(self, set_type, csv_path, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
         Initialize the ProcessDataset class.
@@ -295,18 +293,16 @@ class ProcessDataset(Dataset):
         self.silence_threshold = silence_threshold
         self.min_silence_len = min_silence_len
 
-        # Load CSV data
         self.data = pd.read_csv(self.csv_path)
         
-        # Filter data to include only the specified set type (train, test, or val)
         self.data = self.data[self.data['set'] == self.set_type]
         
-        # Create a mapping of labels to integer values
         self.label_map = {label: idx for idx, label in enumerate(sorted(self.data['label'].unique()))}
 
-    def __len__(self):
-        """Return the number of files in the dataset."""
-        return len(self.data)
+        self.X = []
+        self.y = []
+
+        self.process_all_files()
 
     def remove_silence(self, waveform):
         """
@@ -333,55 +329,46 @@ class ProcessDataset(Dataset):
         end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
         return waveform[:, start:end]
     
-
-    def __getitem__(self, idx):
+    def process_all_files(self):
         """
-        Get the segments and corresponding label for a given index.
+        Process all audio files and store them in X and y.
+        """
+        for _, row in self.data.iterrows():
+            file_path = row['file_path']
+            label = row['label']
+            label = self.label_map[label]
 
-        Parameters
-        ----------
-        idx : int
-            Index of the file in the dataset.
+            waveform, original_sr = torchaudio.load(file_path)
+
+            if original_sr != self.target_sr:
+                waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
+
+            waveform = self.remove_silence(waveform)
+            num_samples = waveform.size(1)
+
+            for i in range(0, num_samples, self.segment_length):
+                if i + self.segment_length <= num_samples:
+                    segment = waveform[:, i:i + self.segment_length]
+                else:
+                    segment = torch.zeros((waveform.size(0), self.segment_length))
+                    segment[:, :num_samples - i] = waveform[:, i:]
+
+                self.X.append(segment)
+                self.y.append(label)
+
+        self.X = torch.stack(self.X)
+        self.y = torch.tensor(self.y)
+
+    def get_data(self):
+        """
+        Get the processed data as a TensorDataset.
 
         Returns
         -------
-        list of tuple
-            A list of (segment, label) tuples where each segment is a torch.Tensor.
+        TensorDataset
+            A TensorDataset containing X and y tensors.
         """
-        # Get the file path and label for the given index
-        file_path = self.data.iloc[idx]['file_path']
-        label = self.data.iloc[idx]['label']
-
-        # Convert label to integer
-        label = self.label_map[label]
-
-        # Load the audio file
-        waveform, original_sr = torchaudio.load(file_path)
-
-        # Resample the audio if necessary
-        if original_sr != self.target_sr:
-            waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
-
-        # Remove silence from the waveform
-        waveform = self.remove_silence(waveform)
-        num_samples = waveform.size(1)
-
-        # Extract segments and associate them with the label
-        segments = []
-        labels = []
-
-        for i in range(0, num_samples, self.segment_length):
-            if i + self.segment_length <= num_samples:
-                segment = waveform[:, i:i + self.segment_length]
-            else:
-                # Pad the last segment with zeros if it's not long enough
-                segment = torch.zeros((1, self.segment_length))
-                segment[:, :num_samples - i] = waveform[:, i:]
-
-            segments.append(segment)
-            labels.append(label)
-
-        return segments, labels
+        return TensorDataset(self.X, self.y)
 
 class BalancedDataLoader:
     """
@@ -395,31 +382,28 @@ class BalancedDataLoader:
 
     def __init__(self, dataset, device):
         self.dataset = dataset
-        self.num_classes = self._get_num_classes()  # Determine number of unique classes
-        self.batch_size = self.num_classes  # Set batch size equal to number of unique classes
+        self.num_classes = self._get_num_classes()
+        self.batch_size = self.num_classes
         self.device = device
 
-        # Initialize lists to store indices for each class
+        all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
+        all_targets = torch.cat(all_targets)
+
         class_idxs = [[] for _ in range(self.num_classes)]
 
-        # Populate the class index lists
-        for idx in range(len(self.dataset)):
-            _, label = self.dataset[idx]
-            if isinstance(label, list):
-                label = label[0]  # Assuming each sample has a single label in a list
-            class_idxs[label].append(idx)
+        for i in range(self.num_classes):
+            indexes = torch.nonzero(all_targets == i).squeeze()
+            class_idxs[i] = indexes.tolist()
 
-        # Calculate the number of batches
         total_samples = len(self.dataset)
         n_batches = total_samples // self.batch_size
 
-        # Create a balanced batch sampler
         self.batch_sampler = SamplerFactory().get(
             class_idxs=class_idxs,
             batch_size=self.batch_size,
             n_batches=n_batches,
-            alpha=0.5,  # Adjust alpha as needed
-            kind='fixed'  # or 'random', depending on your requirement
+            alpha=1,
+            kind='fixed'
         )
 
     def _get_num_classes(self):
@@ -431,13 +415,10 @@ class BalancedDataLoader:
         int
             The number of unique classes.
         """
-        labels = set()
-        for idx in range(len(self.dataset)):
-            _, label = self.dataset[idx]
-            if isinstance(label, list):
-                label = label[0]  # Assuming each sample has a single label in a list
-            labels.add(label)
-        return len(labels)
+        all_labels = [label.item() for label in self.dataset.tensors[1]]
+        unique_classes = set(all_labels)
+        num_unique_classes = len(unique_classes)
+        return num_unique_classes
     
     def custom_collate_fn(self, batch):
         segments = []
@@ -464,5 +445,4 @@ class BalancedDataLoader:
         return DataLoader(
             self.dataset,
             batch_sampler=self.batch_sampler,
-            collate_fn=self.custom_collate_fn,
         )
