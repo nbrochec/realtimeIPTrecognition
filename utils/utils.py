@@ -162,7 +162,7 @@ class PreprocessAndSave:
 
 class DatasetSplitter:
     @staticmethod
-    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_ratio=0.2, csv_filename='dataset_split.csv'):
+    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_ratio=0.2, val_split='train', csv_filename='dataset_split.csv'):
         """
         Splits the dataset into training, validation, and test sets, and saves the information in a CSV file.
 
@@ -176,6 +176,8 @@ class DatasetSplitter:
             The name of the test directory.
         val_ratio : float
             The ratio of the validation set to the total training dataset.
+        val_split : str
+            On which dataset the validation split will be made.
         csv_filename : str
             The name of the output CSV file.
         """
@@ -183,6 +185,9 @@ class DatasetSplitter:
         train_path = os.path.join(base_dir, train_dir)
         test_path = os.path.join(base_dir, test_dir)
         csv_path = os.path.join(destination, csv_filename)
+
+        if val_split != 'train' and val_split != 'test':
+            raise ValueError("val_split must be either 'train' or 'test'.")
 
         with open(csv_path, mode='w', newline='') as csv_file:
             writer = csv.writer(csv_file)
@@ -193,25 +198,44 @@ class DatasetSplitter:
                 label = os.path.basename(root)
                 all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
-                # Split into train and validation sets
-                num_files = len(all_files)
-                num_val = int(num_files * val_ratio)
-                val_files = random.sample(all_files, num_val)
-                train_files = list(set(all_files) - set(val_files))
+                if val_split == 'train':
+                    # Split into train and validation sets
+                    num_files = len(all_files)
+                    num_val = int(num_files * val_ratio)
+                    val_files = random.sample(all_files, num_val)
+                    train_files = list(set(all_files) - set(val_files))
 
-                for file in train_files:
-                    writer.writerow([file, label, 'train'])
+                    for file in train_files:
+                        writer.writerow([file, label, 'train'])
 
-                for file in val_files:
-                    writer.writerow([file, label, 'val'])
+                    for file in val_files:
+                        writer.writerow([file, label, 'val'])
+                else:
+                    train_files = list(set(all_files))
+                    for file in train_files:
+                        writer.writerow([file, label, 'train'])
 
             # Process test directory
             for root, dirs, files in os.walk(test_path):
                 label = os.path.basename(root)
-                test_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+                all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
-                for file in test_files:
-                    writer.writerow([file, label, 'test'])
+                if val_split == 'test':
+                    # Split into train and validation sets
+                    num_files = len(all_files)
+                    num_val = int(num_files * val_ratio)
+                    val_files = random.sample(all_files, num_val)
+                    test_files = list(set(all_files) - set(val_files))
+
+                    for file in test_files:
+                        writer.writerow([file, label, 'test'])
+
+                    for file in val_files:
+                        writer.writerow([file, label, 'val'])
+                else:
+                    test_files = list(set(all_files))
+                    for file in test_files:
+                        writer.writerow([file, label, 'test'])
 
         print(f"CSV file '{csv_filename}' created successfully in {base_dir}.")
 
