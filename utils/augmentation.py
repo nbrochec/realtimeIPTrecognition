@@ -11,6 +11,7 @@
 #############################################################################
 
 import torch
+import torch.nn.functional as F
 from torch_audiomentations import PitchShift, AddColoredNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
 
 '''
@@ -51,92 +52,118 @@ class ApplyAugmentations:
         """
         if self.device:
             data = data.to(self.device)
-        # Prepare to accumulate the augmented samples
+
+        original_size = data.size(-1)
         augmented_data_list = []
 
-        # Apply each augmentation and store results in a list
         for augmentation in self.augmentations:
-            # print(f"Applying augmentation: {augmentation}")
             if augmentation == 'pitchshift':
-                augmented_data_list.append(self.pitch_shift(data))
+                aug_data = self.pitch_shift(data)
             elif augmentation == 'timeshift':
-                augmented_data_list.append(self.shift(data))
+                aug_data = self.shift(data)
             elif augmentation == 'addnoise':
-                augmented_data_list.append(self.add_noise(data))
+                aug_data = self.add_noise(data)
             elif augmentation == 'polarityinversion':
-                augmented_data_list.append(self.polarity_inversion(data))
+                aug_data = self.polarity_inversion(data)
             elif augmentation == 'gain':
-                augmented_data_list.append(self.gain(data))
+                aug_data = self.gain(data)
             elif augmentation == 'hpf':
-                augmented_data_list.append(self.highpassfilter(data))
+                aug_data = self.highpassfilter(data)
             elif augmentation == 'lpf':
-                augmented_data_list.append(self.lowpassfilter(data))
+                aug_data = self.lowpassfilter(data)
             elif augmentation == 'all':
-                augmented_data_list.append(self.pitch_shift(data))
-                augmented_data_list.append(self.shift(data))
-                augmented_data_list.append(self.add_noise(data))
-                augmented_data_list.append(self.polarity_inversion(data))
-                augmented_data_list.append(self.gain(data))
-                augmented_data_list.append(self.highpassfilter(data))
-                augmented_data_list.append(self.lowpassfilter(data))
+                aug_data = [
+                    self.pitch_shift(data),
+                    self.shift(data),
+                    self.add_noise(data),
+                    self.polarity_inversion(data),
+                    self.gain(data),
+                    self.highpassfilter(data),
+                    self.lowpassfilter(data)
+                ]
+                augmented_data_list.extend(aug_data)
+                continue 
 
-        augmented_data = torch.cat(augmented_data_list, dim=-1)
-        # print(f'{augmented_data.shape}')
+            # Ensure the augmented data size matches the original size
+            aug_data = self.pad_or_trim(aug_data, original_size)
+            augmented_data_list.append(aug_data)
 
+        # Concatenate all augmented data
+        augmented_data = torch.cat(augmented_data_list, dim=0)
+        
         return augmented_data
+
+    def pad_or_trim(self, data, original_size):
+        """
+        Pads or trims the data to match the original size.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            The augmented data to be padded or trimmed.
+        original_size : int
+            The original size of the data.
+
+        Returns
+        -------
+        torch.Tensor
+            The padded or trimmed data.
+        """
+        current_size = data.size(-1)
+        
+        if current_size > original_size:
+            data = data[..., :original_size]
+        elif current_size < original_size:
+            padding = (0, original_size - current_size)
+            data = F.pad(data, pad=padding, mode='constant', value=0)
+        
+        return data
 
     def pitch_shift(self, data):
         """
         Applies pitch shift augmentation to the data.
         """
         transform = PitchShift(min_transpose_semitones=-12.0, max_transpose_semitones=12.0, p=1, sample_rate=self.sr)
-        data = transform(data)
-        return data
+        return transform(data)
 
     def shift(self, data):
         """
         Applies time shift augmentation to the data.
         """
-        transform=Shift(rollover=True, p=1)
-        data = transform(data)
-        return data
+        transform = Shift(rollover=True, p=1)
+        return transform(data)
 
     def add_noise(self, data):
         """
         Adds noise to the data.
         """
-        transform=AddColoredNoise(f_decay=0, p=1)
-        data = transform(data)
-        return data
+        transform = AddColoredNoise(p=1)
+        return transform(data, sample_rate=self.sr)
     
-    def polarity_inversion(data):
+    def polarity_inversion(self, data):
         """
         Applies a polarity inversion to the data.
         """
-        transform=PolarityInversion(p=1)
-        data = transform(data)
-        return data
+        transform = PolarityInversion(p=1)
+        return transform(data)
     
     def gain(self, data):
         """
         Multiply the audio by a random amplitude factor to reduce or increase the volume.
         """
-        transform=Gain(p=1)
-        data = transform(data)
-        return data
+        transform = Gain(p=1)
+        return transform(data)
     
     def highpassfilter(self, data):
         """
         Apply high-pass filtering to the input audio.
         """
-        transform=HighPassFilter(p=1)
-        data = transform(data)
-        return data
+        transform = HighPassFilter(p=1)
+        return transform(data, sample_rate=self.sr)
     
     def lowpassfilter(self, data):
         """
         Apply low-pass filtering to the input audio.
         """
-        transform=LowPassFilter(p=1)
-        data = transform(data)
-        return data
+        transform = LowPassFilter(p=1)
+        return transform(data, sample_rate=self.sr)
