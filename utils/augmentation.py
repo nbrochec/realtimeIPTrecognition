@@ -56,7 +56,6 @@ class ApplyAugmentations:
 
         # Apply each augmentation and store results in a list
         for augmentation in self.augmentations:
-            print(f"Applying augmentation: {augmentation}")
             if augmentation == 'pitchshift':
                 augmented_data_list.append(self.pitch_shift(data))
             elif augmentation == 'timeshift':
