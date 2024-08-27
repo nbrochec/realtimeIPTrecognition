@@ -42,12 +42,13 @@ def parse_arguments():
     parser.add_argument('--gpu', type=int, default=0, help='GPU device number.')
     parser.add_argument('--device', type=str, default='cpu', help='Device.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate of audio files.')
-    parser.add_argument('--augment', type=str, default='all', help='Augmentation methods to apply.')
+    parser.add_argument('--augment', type=str, default='pitchshift', help='Augmentation methods to apply.')
     parser.add_argument('--early_stopping', type=bool, default=True, help='Use early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate on plateau.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--fmin', type=int, default=150, help='Minimum frequency for logmelspec analysis.')
     parser.add_argument('--name', type=str, default='untitled', help='Name of the run.', required=True)
+    parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     return parser.parse_args()
 
 def get_device(device_name, gpu):
@@ -198,7 +199,12 @@ if __name__ == '__main__':
     if args.early_stopping == False:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
-        print(f'Checkpoints has been in the {current_run} directory.')
+        print(f'Checkpoints has been saved in the {current_run} directory.')
     else:
         torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
-        print(f'Checkpoints has been in the {current_run} directory.')
+        print(f'Checkpoints has been saved in the {current_run} directory.')
+
+    if args.export_ts:
+        scripted_model = torch.jit.script(model)
+        scripted_model.save(os.path.join(current_run, f'{args.name}_{timestamp}.ts'))
+        print(f'TorchScript file has been exported to the {current_run} directory.')
