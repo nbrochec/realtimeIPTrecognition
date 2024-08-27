@@ -148,3 +148,124 @@ class ModelInit:
                     torch.nn.init.zeros_(layer.bias)
 
         return self.model
+    
+
+class ModelTrainer:
+    def __init__(self, model, loss_fn, device):
+        """
+        Initialize the ModelTrainer.
+
+        Parameters
+        ----------
+        model : torch.nn.Module
+            The model to be trained, validated, and tested.
+        loss_fn : callable
+            The loss function used for training and evaluation.
+        device : torch.device
+            The device to which the model and data will be moved.
+        """
+        self.model = model
+        self.loss_fn = loss_fn
+        self.device = device
+
+    def train_epoch(self, loader, optimizer, augmentations, aug_number):
+        """
+        Perform one training epoch.
+
+        Parameters
+        ----------
+        loader : torch.utils.data.DataLoader
+            The DataLoader for the training data.
+        optimizer : torch.optim.Optimizer
+            The optimizer used for training.
+        augmentations : object
+            An object responsible for data augmentations.
+        aug_number : int
+            The number of augmentations applied.
+
+        Returns
+        -------
+        float
+            The average loss for the epoch.
+        """
+        self.model.train()
+        running_loss = 0.0
+
+        for data, targets in tqdm(loader, desc="Training", leave=False):
+            data, targets = data.to(self.device), targets.to(self.device)
+            optimizer.zero_grad()
+
+            # Apply augmentations
+            augmented_data = augmentations.apply(data)
+            new_data = torch.cat((data, augmented_data), dim=0)
+            all_targets = torch.flatten(targets.repeat(aug_number + 1, 1))
+
+            outputs = self.model(new_data)
+            loss = self.loss_fn(outputs, all_targets)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item() * data.size(0)
+        
+        return running_loss / len(loader.dataset)
+
+    def validate_epoch(self, loader):
+        """
+        Perform one validation epoch.
+
+        Parameters
+        ----------
+        loader : torch.utils.data.DataLoader
+            The DataLoader for the validation data.
+
+        Returns
+        -------
+        float
+            The average loss for the epoch.
+        """
+        self.model.eval()
+        running_loss = 0.0
+        with torch.no_grad():
+            for data, targets in tqdm(loader, desc="Validation", leave=False):
+                data, targets = data.to(self.device), targets.to(self.device)
+                outputs = self.model(data)
+                loss = self.loss_fn(outputs, targets)
+                running_loss += loss.item() * data.size(0)
+        
+        return running_loss / len(loader.dataset)
+
+    def test_model(self, loader):
+        """
+        Test the model and compute metrics.
+
+        Parameters
+        ----------
+        loader : torch.utils.data.DataLoader
+            The DataLoader for the test data.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the average loss and accuracy.
+        """
+        self.model.eval()
+        running_loss = 0.0
+        correct_predictions = 0
+        total_samples = 0
+
+        with torch.no_grad():
+            for data, targets in tqdm(loader, desc="Test", leave=False):
+                data, targets = data.to(self.device), targets.to(self.device)
+                outputs = self.model(data)
+                loss = self.loss_fn(outputs, targets)
+                batch_size = data.size(0)
+                running_loss += loss.item() * batch_size
+
+                _, predicted = torch.max(outputs, 1)
+
+                correct_predictions += (predicted == targets).sum().item()
+                total_samples += batch_size
+
+        accuracy = correct_predictions / total_samples
+        average_loss = running_loss / total_samples
+
+        return average_loss, accuracy
