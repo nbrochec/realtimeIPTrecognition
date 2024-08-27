@@ -1,6 +1,6 @@
 # Real-Time Instrumental Playing Techniques Recognition
 
-** Not yet ready for the distribution **
+![Status: Not Ready](https://img.shields.io/badge/status-not%20ready-red)
 
 ## Related Research Works
 • Nicolas Brochec, Tsubasa Tanaka, Will Howie. [Microphone-based Data Augmentation for Automatic Recognition of Instrumental Playing Techniques](https://hal.science/hal-04642673). International Computer Music Conference (ICMC 2024), Jul 2024, Seoul, South Korea.
