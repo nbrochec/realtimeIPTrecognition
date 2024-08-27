@@ -51,12 +51,12 @@ class ApplyAugmentations:
         """
         if self.device:
             data = data.to(self.device)
-
         # Prepare to accumulate the augmented samples
         augmented_data_list = []
 
         # Apply each augmentation and store results in a list
         for augmentation in self.augmentations:
+            print(f"Applying augmentation: {augmentation}")
             if augmentation == 'pitchshift':
                 augmented_data_list.append(self.pitch_shift(data))
             elif augmentation == 'timeshift':
@@ -67,9 +67,9 @@ class ApplyAugmentations:
                 augmented_data_list.append(self.polarity_inversion(data))
             elif augmentation == 'gain':
                 augmented_data_list.append(self.gain(data))
-            elif augmentation == 'highpassfilter':
+            elif augmentation == 'hpf':
                 augmented_data_list.append(self.highpassfilter(data))
-            elif augmentation == 'lowpassfilter':
+            elif augmentation == 'lpf':
                 augmented_data_list.append(self.lowpassfilter(data))
             elif augmentation == 'all':
                 augmented_data_list.append(self.pitch_shift(data))
@@ -80,8 +80,8 @@ class ApplyAugmentations:
                 augmented_data_list.append(self.highpassfilter(data))
                 augmented_data_list.append(self.lowpassfilter(data))
 
-        # Stack all augmented samples
-        augmented_data = torch.cat(augmented_data_list, dim=0)
+        augmented_data = torch.cat(augmented_data_list, dim=-1)
+        # print(f'{augmented_data.shape}')
 
         return augmented_data
 
@@ -89,27 +89,15 @@ class ApplyAugmentations:
         """
         Applies pitch shift augmentation to the data.
         """
-        transform=[
-                PitchShift(
-                    min_semitones=-24,
-                    max_semitones=24,
-                    p=1
-                )
-            ]
-        data = transform(data, sample_rate=self.sr)
+        transform = PitchShift(min_transpose_semitones=-12.0, max_transpose_semitones=12.0, p=1, sample_rate=self.sr)
+        data = transform(data)
         return data
 
     def shift(self, data):
         """
         Applies time shift augmentation to the data.
         """
-        transform=[
-            Shift(
-                rollover=True,
-                shift_unit='samples',
-                p=1
-            )
-        ]
+        transform=Shift(rollover=True, p=1)
         data = transform(data)
         return data
 
@@ -117,12 +105,7 @@ class ApplyAugmentations:
         """
         Adds noise to the data.
         """
-        transform=[
-            AddColoredNoise(
-                f_decay=0,
-                p=1
-            )
-        ]
+        transform=AddColoredNoise(f_decay=0, p=1)
         data = transform(data)
         return data
     
@@ -130,46 +113,30 @@ class ApplyAugmentations:
         """
         Applies a polarity inversion to the data.
         """
-        transform=[
-            PolarityInversion(
-                p=1
-            )
-        ]
+        transform=PolarityInversion(p=1)
         data = transform(data)
         return data
     
-    def gain(data):
+    def gain(self, data):
         """
         Multiply the audio by a random amplitude factor to reduce or increase the volume.
         """
-        transform=[
-            Gain(
-                p=1
-            )
-        ]
+        transform=Gain(p=1)
         data = transform(data)
         return data
     
-    def highpassfilter(data):
+    def highpassfilter(self, data):
         """
         Apply high-pass filtering to the input audio.
         """
-        transform=[
-            HighPassFilter(
-                p=1
-            )
-        ]
+        transform=HighPassFilter(p=1)
         data = transform(data)
         return data
     
-    def lowpassfilter(data):
+    def lowpassfilter(self, data):
         """
         Apply low-pass filtering to the input audio.
         """
-        transform=[
-            LowPassFilter(
-                p=1
-            )
-        ]
+        transform=LowPassFilter(p=1)
         data = transform(data)
         return data
