@@ -18,6 +18,9 @@ from tqdm import tqdm
 import torch
 import torchaudio
 import numpy as np
+import random
+import string
+import datetime
 
 from torch.utils.data import DataLoader
 from torch.optim import Adam
@@ -40,11 +43,11 @@ def parse_arguments():
     parser.add_argument('--device', type=str, default='cpu', help='Device.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate of audio files.')
     parser.add_argument('--augment', type=str, default='pitchshift', help='Augmentation methods to apply.')
-    parser.add_argument('--early_stopping', type=bool, default=False, help='Use early stopping.')
+    parser.add_argument('--early_stopping', type=bool, default=True, help='Use early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate on plateau.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--fmin', type=int, default=150, help='Minimum frequency for logmelspec analysis.')
-    parser.add_argument('--save_dir', type=str, default='checkpoints', help='Directory in which checkpoints are saved.')
+    parser.add_argument('--name', type=str, default='untitled', help='Name of the run.', required=True)
     return parser.parse_args()
 
 def get_device(device_name, gpu):
@@ -74,11 +77,25 @@ def collate_fn(batch, device):
     segments = [s.to(device) for s in segments]
     labels = [l.to(device) for l in labels]
     return segments, labels
+    
 
-def get_save_dir(dir):
+def get_run_dir(run_name):
+    """Create runs directory where checkpoints are saved"""
     cwd = os.getcwd()
-    save_dir = os.path.join(cwd, dir)
-    return save_dir
+    runs = os.path.join(cwd, 'runs')
+
+    if not os.path.exists(runs):
+        os.makedirs(runs, exist_ok=True)
+
+    os.makedirs(os.path.join(runs, run_name), exist_ok=True)
+
+    current_run = os.path.join(runs, run_name)
+    checkpoints = os.path.join(current_run, 'checkpoints')
+
+    if not os.path.exists(checkpoints):
+        os.makedirs(checkpoints, exist_ok=True)
+
+    return current_run, checkpoints
 
 def prepare_data(args, device):
     """Prepare data loaders."""
@@ -93,8 +110,8 @@ def prepare_data(args, device):
 
     # Create data loaders
     train_loader = BalancedDataLoader(train_dataset.get_data(), device).get_dataloader()
-    test_loader = DataLoader(test_dataset.get_data(), batch_size=64, collate_fn=lambda x: collate_fn(x, device))
-    val_loader = DataLoader(val_dataset.get_data(), batch_size=64, collate_fn=lambda x: collate_fn(x, device))
+    test_loader = DataLoader(test_dataset.get_data(), batch_size=64) # collate_fn=lambda x: collate_fn(x, device)
+    val_loader = DataLoader(val_dataset.get_data(), batch_size=64) # collate_fn=lambda x: collate_fn(x, device)
 
     print('Data successfully loaded into DataLoaders.')
 
@@ -126,63 +143,36 @@ def prepare_model(args, device):
     
     return model
 
-def train_epoch(model, loader, optimizer, loss_fn, augmentations, aug_number, device):
-    model.train()
-    running_loss = 0.0
-
-    for data, targets in tqdm(loader, desc="Training", leave=False):
-        optimizer.zero_grad()
-
-        # Apply augmentations
-        augmented_data = augmentations.apply(data)
-        new_data = torch.cat((data, augmented_data), dim=0)
-        all_targets = torch.flatten(targets.repeat(aug_nbr+1, 1))
-
-        outputs = model(new_data)
-        loss = loss_fn(outputs, all_targets)
-        loss.backward()
-        optimizer.step()
-        running_loss += loss.item() * data.size(0)
-    
-    return running_loss / len(loader.dataset)
-
-def validate_epoch(model, loader, loss_fn, device):
-    model.eval()
-    running_loss = 0.0
-    with torch.no_grad():
-        for data, targets in tqdm(loader, desc="Validation", leave=False):
-            data, targets = data.to(device), targets.to(device)
-            outputs = model(data)
-            loss = loss_fn(outputs, targets)
-            running_loss += loss.item() * data.size(0)
-    
-    return running_loss / len(loader.dataset)
-
 if __name__ == '__main__':
     args = parse_arguments()
     device = get_device(args.device, args.gpu)
     train_loader, test_loader, val_loader = prepare_data(args, device)
     model = prepare_model(args, device)
-    save_dir = get_save_dir(args.save_dir)
+    current_run, ckpt = get_run_dir(args.name)
 
-    cross_entropy = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr)
     if args.reduceLR == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
 
     augmentations = ApplyAugmentations(args.augment.split(), args.sr, device)
-    aug_nbr = len(args.augment.split())
+    if args.augment.split() != 'all':
+        aug_nbr = len(args.augment.split())
+    else:
+        aug_nbr = 7
 
     max_val_loss = np.inf
     early_stopping_threshold = 10
     counter = 0
     num_epoch = 0
-    save_dir = get_save_dir(args.save_dir)
+
+    trainer = ModelTrainer(model, loss_fn, device)
+
     for epoch in range(args.epochs):
         print(f'Epoch {epoch+1}/{args.epochs}')
-        train_loss = train_epoch(model, train_loader, optimizer, cross_entropy, augmentations, aug_nbr, device)
+        train_loss = trainer.train_epoch(train_loader, optimizer, augmentations, aug_nbr)
         print(f'Training Loss: {train_loss:.4f}')
-        val_loss = validate_epoch(model, val_loader, cross_entropy, device)
+        val_loss = trainer.validate_epoch(val_loader)
         print(f'Validation Loss: {val_loss:.4f}')
 
         if args.reduceLR == True:
@@ -192,8 +182,9 @@ if __name__ == '__main__':
             if val_loss < max_val_loss:
                 max_val_loss = val_loss
                 counter = 0
-                torch.save(model.state_dict(), f'{save_dir}/best_model_{epoch}.pth')
                 num_epoch = epoch
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                torch.save(model.state_dict(), f'{ckpt}/{args.name}_ckpt_{epoch}_{timestamp}.pth')
             else:
                 counter += 1
                 if counter >= early_stopping_threshold:
@@ -201,6 +192,16 @@ if __name__ == '__main__':
                     break
 
     if args.early_stopping:
-        model.load_state_dict(torch.load(f'{save_dir}/best_model_{num_epoch}.pth'))
+        model.load_state_dict(torch.load(f'{ckpt}/{args.name}_ckpt_{num_epoch}_{timestamp}.pth'))
 
-    test_loss = validate_epoch(model, test_loader, cross_entropy, device)
+    test_loss, acc = trainer.test_model(test_loader)
+    print(f'Test Loss: {test_loss:.4f}')
+    print(f'Test Accuracy: {acc:.4f}')
+
+    if args.early_stopping == False:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
+        print(f'Checkpoints has been in the {current_run} directory.')
+    else:
+        torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
+        print(f'Checkpoints has been in the {current_run} directory.')
