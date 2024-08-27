@@ -152,7 +152,6 @@ class ModelInit:
 
         return self.model
     
-
 class ModelTrainer:
     def __init__(self, model, loss_fn, device):
         """
