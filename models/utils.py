@@ -16,6 +16,8 @@ import humanize
 from models import v1, v2, one_residual, two_residual, transformer
 import torch.nn.init as init
 
+from tqdm import tqdm
+
 class LoadModel:
     def __init__(self):
         self.models = {
@@ -71,6 +73,7 @@ class ModelSummary:
         print(f"Number of labels: {self.num_labels}")
         print(f"Total number of parameters: {formatted_params}")
         print('-----------------------------------------------')
+        print('\n')
 
 class ModelTester:
     def __init__(self, model, input_shape=(1, 1, 7680), device='cpu'):
