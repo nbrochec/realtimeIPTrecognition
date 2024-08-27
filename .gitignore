@@ -3,3 +3,4 @@ __pycache__/
 data/raw_data/test/close/
 data/raw_data/train/1m/
 runs/
+memo.txt
