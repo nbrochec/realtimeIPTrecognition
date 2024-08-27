@@ -42,7 +42,7 @@ def parse_arguments():
     parser.add_argument('--gpu', type=int, default=0, help='GPU device number.')
     parser.add_argument('--device', type=str, default='cpu', help='Device.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate of audio files.')
-    parser.add_argument('--augment', type=str, default='pitchshift', help='Augmentation methods to apply.')
+    parser.add_argument('--augment', type=str, default='all', help='Augmentation methods to apply.')
     parser.add_argument('--early_stopping', type=bool, default=True, help='Use early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate on plateau.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
@@ -78,7 +78,6 @@ def collate_fn(batch, device):
     labels = [l.to(device) for l in labels]
     return segments, labels
     
-
 def get_run_dir(run_name):
     """Create runs directory where checkpoints are saved"""
     cwd = os.getcwd()
@@ -140,7 +139,6 @@ def prepare_model(args, device):
         sys.exit(1)
 
     model = ModelInit(model).initialize()
-    
     return model
 
 if __name__ == '__main__':
@@ -156,9 +154,8 @@ if __name__ == '__main__':
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
 
     augmentations = ApplyAugmentations(args.augment.split(), args.sr, device)
-    if args.augment.split() != 'all':
-        aug_nbr = len(args.augment.split())
-    else:
+    aug_nbr = len(args.augment.split())
+    if args.augment.split() == ['all']:
         aug_nbr = 7
 
     max_val_loss = np.inf
