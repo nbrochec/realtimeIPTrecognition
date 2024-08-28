@@ -192,9 +192,12 @@ if __name__ == '__main__':
     if args.early_stopping:
         model.load_state_dict(torch.load(f'{ckpt}/{args.name}_ckpt_{num_epoch}_{timestamp}.pth'))
 
-    test_loss, acc = trainer.test_model(test_loader)
+    acc, pre, rec, f1, test_loss = trainer.test_model(test_loader)
     print(f'Test Loss: {test_loss:.4f}')
     print(f'Test Accuracy: {acc:.4f}')
+    print(f'Test Precision: {pre:.4f}')
+    print(f'Test Recall: {rec:.4f}')
+    print(f'Test Macro F1 Score: {f1:.4f}')
 
     if args.early_stopping == False:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
