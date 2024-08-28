@@ -18,6 +18,8 @@ import torch.nn.init as init
 
 from tqdm import tqdm
 
+from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score
+
 class LoadModel:
     def __init__(self):
         self.models = {
@@ -251,8 +253,18 @@ class ModelTrainer:
         """
         self.model.eval()
         running_loss = 0.0
-        correct_predictions = 0
         total_samples = 0
+
+        all_targets = []
+        for data, targets in loader:
+            all_targets.append(targets.cpu())
+        all_targets = torch.cat(all_targets)
+        class_nbr = len(torch.unique(all_targets))
+
+        accuracy_metric = MulticlassAccuracy(num_classes=class_nbr).to(self.device)
+        precision_metric = MulticlassPrecision(num_classes=class_nbr).to(self.device)
+        recall_metric = MulticlassRecall(num_classes=class_nbr).to(self.device)
+        f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro')
 
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Test", leave=False):
@@ -260,14 +272,21 @@ class ModelTrainer:
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 batch_size = data.size(0)
-                running_loss += loss.item() * batch_size
-
                 _, predicted = torch.max(outputs, 1)
 
-                correct_predictions += (predicted == targets).sum().item()
+                accuracy_metric.update(preds=predicted, target=targets)
+                precision_metric.update(preds=predicted, target=targets)
+                recall_metric.update(preds=predicted, target=targets)
+                f1_metric.update(preds=predicted, target=targets)
+
+                running_loss += loss.item() * batch_size
                 total_samples += batch_size
 
-        accuracy = correct_predictions / total_samples
-        average_loss = running_loss / total_samples
+        accuracy = accuracy_metric.compute().item()
+        precision = precision_metric.compute().item()
+        recall = recall_metric.compute().item()
+        f1 = f1_metric.compute().item()
 
-        return average_loss, accuracy
+        running_loss = running_loss / total_samples
+
+        return accuracy, precision, recall, f1, running_loss
