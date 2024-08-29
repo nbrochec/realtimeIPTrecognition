@@ -102,6 +102,7 @@ def prepare_data(args, device):
     # Define file paths and dataset parameters
     cwd = os.path.join(os.getcwd(), 'data', 'dataset')
     csv_file_path = os.path.join(cwd, args.csv_file)
+    num_classes = get_num_labels_from_csv(csv_file_path)
 
     # Load datasets
     train_dataset = ProcessDataset('train', csv_file_path, args.sr, SEGMENT_LENGTH)
@@ -115,27 +116,20 @@ def prepare_data(args, device):
 
     print('Data successfully loaded into DataLoaders.')
 
-    return train_loader, test_loader, val_loader
+    return train_loader, test_loader, val_loader, num_classes
 
-def prepare_model(args, device):
+def prepare_model(args, num_classes, device):
     """Prepare the model."""
-    # Define file paths
-    cwd = os.path.join(os.getcwd(), 'data', 'dataset')
-    csv_file_path = os.path.join(cwd, args.csv_file)
-
-    # Get number of labels
-    num_labels = get_num_labels_from_csv(csv_file_path)
-
     # Load model
-    model = LoadModel().get_model(args.config, num_labels).to(device)
-    summary = ModelSummary(model, num_labels, args.config)
+    model = LoadModel().get_model(args.config, num_classes).to(device)
+    summary = ModelSummary(model, num_classes, args.config)
     summary.print_summary()
 
     # Test model
     tester = ModelTester(model, input_shape=(1, 1, SEGMENT_LENGTH), device=device)
     output = tester.test()
 
-    if output.size(1) != num_labels:
+    if output.size(1) != num_classes:
         print("Error: Output dimension does not match the number of classes.")
         sys.exit(1)
 
@@ -145,8 +139,8 @@ def prepare_model(args, device):
 if __name__ == '__main__':
     args = parse_arguments()
     device = get_device(args.device, args.gpu)
-    train_loader, test_loader, val_loader = prepare_data(args, device)
-    model = prepare_model(args, device)
+    train_loader, test_loader, val_loader, num_classes = prepare_data(args, device)
+    model = prepare_model(args, num_classes, device)
     current_run, ckpt = get_run_dir(args.name)
 
     loss_fn = nn.CrossEntropyLoss()
@@ -193,11 +187,6 @@ if __name__ == '__main__':
         model.load_state_dict(torch.load(f'{ckpt}/{args.name}_ckpt_{num_epoch}_{timestamp}.pth'))
 
     acc, pre, rec, f1, test_loss = trainer.test_model(test_loader)
-    print(f'Test Loss: {test_loss:.4f}')
-    print(f'Test Accuracy: {acc:.4f}')
-    print(f'Test Precision: {pre:.4f}')
-    print(f'Test Recall: {rec:.4f}')
-    print(f'Test Macro F1 Score: {f1:.4f}')
 
     if args.early_stopping == False:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')

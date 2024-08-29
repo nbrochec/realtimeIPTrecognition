@@ -289,4 +289,15 @@ class ModelTrainer:
 
         running_loss = running_loss / total_samples
 
+        print(f'Test Loss: {running_loss:.4f}')
+        print(f'Test Accuracy: {accuracy:.4f}')
+        print(f'Test Precision: {precision:.4f}')
+        print(f'Test Recall: {recall:.4f}')
+        print(f'Test Macro F1 Score: {f1:.4f}')
+
         return accuracy, precision, recall, f1, running_loss
+    
+# class PrepareModel:
+#     def __init__(self, args, num_classes, SEGMENT_LENGTH, device):
+
+#     model = 
