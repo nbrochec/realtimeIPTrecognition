@@ -74,19 +74,14 @@ class ApplyAugmentations:
                 augmented_data_list.extend(aug_data)
                 continue 
 
-            # Ensure the augmented data size matches the original size
             aug_data = self.pad_or_trim(aug_data, original_size)
             augmented_data_list.append(aug_data)
 
-        # Concatenate all augmented data
         augmented_data = torch.cat(augmented_data_list, dim=0)
 
         return augmented_data
 
     def pad_or_trim(self, data, original_size):
-        """
-        Pads or trims the data to match the original size.
-        """
         current_size = data.size(-1)
         
         if current_size > original_size:
@@ -98,51 +93,30 @@ class ApplyAugmentations:
         return data
 
     def pitch_shift(self, data):
-        """
-        Applies pitch shift augmentation to the data.
-        """
         transform = PitchShift(min_transpose_semitones=-12.0, max_transpose_semitones=12.0, p=1, sample_rate=self.sr)
         return transform(data)
 
     def shift(self, data):
-        """
-        Applies time shift augmentation to the data.
-        """
         transform = Shift(rollover=True, p=1)
         return transform(data)
 
     def add_noise(self, data):
-        """
-        Adds noise to the data.
-        """
         transform = AddColoredNoise(p=1)
         return transform(data, sample_rate=self.sr)
     
     def polarity_inversion(self, data):
-        """
-        Applies a polarity inversion to the data.
-        """
         transform = PolarityInversion(p=1)
         return transform(data)
     
     def gain(self, data):
-        """
-        Multiply the audio by a random amplitude factor to reduce or increase the volume.
-        """
         transform = Gain(p=1)
         return transform(data)
     
     def highpassfilter(self, data):
-        """
-        Apply high-pass filtering to the input audio.
-        """
         transform = HighPassFilter(p=1)
         return transform(data, sample_rate=self.sr)
     
     def lowpassfilter(self, data):
-        """
-        Apply low-pass filtering to the input audio.
-        """
         transform = LowPassFilter(p=1)
         return transform(data, sample_rate=self.sr)
     
@@ -150,5 +124,4 @@ class ApplyAugmentations:
         aug_nbr = len(self.augmentations)
         if self.augmentations == ['all']:
             aug_nbr = 7
-
         return aug_nbr
