@@ -263,7 +263,7 @@ class DatasetValidator:
         
         print("Label validation passed: All sets have the same labels.")
 
-    def get_num_labels_from_csv(csv_file):
+    def get_num_classes_from_csv(csv_file):
         data = pd.read_csv(csv_file)
         return len(data['label'].unique())
 

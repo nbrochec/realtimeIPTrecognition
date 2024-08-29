@@ -89,6 +89,7 @@ def get_csv_file_path(args):
     """Get CSV file path"""
     cwd = os.path.join(os.getcwd(), 'data', 'dataset')
     csv_file_path = os.path.join(cwd, args.csv_file)
+
     return csv_file_path
 
 if __name__ == '__main__':
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     device = get_device(args.device, args.gpu)
 
     csv_file_path = get_csv_file_path(args)
-    num_classes = DatasetValidator.get_num_labels_from_csv(csv_file_path)
+    num_classes = DatasetValidator.get_num_classes_from_csv(csv_file_path)
 
     dataPreparator = PrepareData(args, csv_file_path, SEGMENT_LENGTH, device)
     train_loader, test_loader, val_loader, num_classes = dataPreparator.prepare()
