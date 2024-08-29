@@ -39,16 +39,6 @@ class ApplyAugmentations:
     def apply(self, data):
         """
         Applies the selected augmentations to the given data.
-
-        Parameters
-        ----------
-        data : torch.Tensor
-            The data to which augmentations will be applied.
-
-        Returns
-        -------
-        torch.Tensor
-            The augmented data.
         """
         if self.device:
             data = data.to(self.device)
@@ -96,18 +86,6 @@ class ApplyAugmentations:
     def pad_or_trim(self, data, original_size):
         """
         Pads or trims the data to match the original size.
-
-        Parameters
-        ----------
-        data : torch.Tensor
-            The augmented data to be padded or trimmed.
-        original_size : int
-            The original size of the data.
-
-        Returns
-        -------
-        torch.Tensor
-            The padded or trimmed data.
         """
         current_size = data.size(-1)
         
