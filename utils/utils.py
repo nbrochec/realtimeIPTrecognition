@@ -456,7 +456,7 @@ class PrepareData:
         self.device = device
 
     def prepare(self):
-        num_classes = DatasetValidator.get_num_labels_from_csv(self.csv)
+        num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
         train_dataset = ProcessDataset('train', self.csv, self.args.sr, self.seg_len)
         test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.seg_len)
