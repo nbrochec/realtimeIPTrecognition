@@ -150,7 +150,7 @@ class DatasetValidator:
 
 
 class ProcessDataset:
-    def __init__(self, set_type, csv_path, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
+    def __init__(self, set_type, csv_path, target_sr, roll_off, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
         Initialize the ProcessDataset class.
 
@@ -175,6 +175,7 @@ class ProcessDataset:
         self.segment_length = segment_length
         self.silence_threshold = silence_threshold
         self.min_silence_len = min_silence_len
+        self.roll_off = roll_off # implement rollof 
 
         self.data = pd.read_csv(self.csv_path)
         
@@ -219,15 +220,26 @@ class ProcessDataset:
             waveform = self.remove_silence(waveform)
             num_samples = waveform.size(1)
 
-            for i in range(0, num_samples, self.segment_length):
-                if i + self.segment_length <= num_samples:
-                    segment = waveform[:, i:i + self.segment_length]
-                else:
-                    segment = torch.zeros((waveform.size(0), self.segment_length))
-                    segment[:, :num_samples - i] = waveform[:, i:]
+            if self.roll_off == True and self.set_type == 'train':
+                for i in range(0, num_samples, self.segment_length//2):
+                    if i + self.segment_length <= num_samples:
+                        segment = waveform[:, i:i + self.segment_length]
+                    else:
+                        segment = torch.zeros((waveform.size(0), self.segment_length))
+                        segment[:, :num_samples - i] = waveform[:, i:]
 
-                self.X.append(segment)
-                self.y.append(label)
+                    self.X.append(segment)
+                    self.y.append(label)
+            else:
+                for i in range(0, num_samples, self.segment_length):
+                    if i + self.segment_length <= num_samples:
+                        segment = waveform[:, i:i + self.segment_length]
+                    else:
+                        segment = torch.zeros((waveform.size(0), self.segment_length))
+                        segment[:, :num_samples - i] = waveform[:, i:]
+
+                    self.X.append(segment)
+                    self.y.append(label)
 
         self.X = torch.stack(self.X)
         self.y = torch.tensor(self.y)
@@ -310,9 +322,9 @@ class PrepareData:
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
-        train_dataset = ProcessDataset('train', self.csv, self.args.sr, self.seg_len)
-        test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.seg_len)
-        val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.seg_len)
+        train_dataset = ProcessDataset('train', self.csv, self.args.sr, self.args.roll_off, self.seg_len)
+        test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.args.roll_off, self.seg_len)
+        val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.args.roll_off, self.seg_len)
 
         train_loader = BalancedDataLoader(train_dataset.get_data(), self.device).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
