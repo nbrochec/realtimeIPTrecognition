@@ -97,7 +97,6 @@ if __name__ == '__main__':
     device = get_device(args.device, args.gpu)
 
     csv_file_path = get_csv_file_path(args)
-    num_classes = DatasetValidator.get_num_classes_from_csv(csv_file_path)
 
     dataPreparator = PrepareData(args, csv_file_path, SEGMENT_LENGTH, device)
     train_loader, test_loader, val_loader, num_classes = dataPreparator.prepare()
