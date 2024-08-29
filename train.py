@@ -66,18 +66,6 @@ def get_device(device_name, gpu):
         print(f'This script uses {device} as the torch device.')
 
     return device
-
-def get_num_labels_from_csv(csv_file_path):
-    """Extract the number of unique labels from the CSV file."""
-    df = pd.read_csv(csv_file_path)
-    return len(df['label'].unique())
-
-def collate_fn(batch, device):
-    """Load segments and labels on the torch device"""
-    segments, labels = zip(*batch)
-    segments = [s.to(device) for s in segments]
-    labels = [l.to(device) for l in labels]
-    return segments, labels
     
 def get_run_dir(run_name):
     """Create runs directory where checkpoints are saved"""
@@ -102,7 +90,7 @@ def prepare_data(args, device):
     # Define file paths and dataset parameters
     cwd = os.path.join(os.getcwd(), 'data', 'dataset')
     csv_file_path = os.path.join(cwd, args.csv_file)
-    num_classes = get_num_labels_from_csv(csv_file_path)
+    num_classes = DatasetValidator.get_num_labels_from_csv(csv_file_path)
 
     # Load datasets
     train_dataset = ProcessDataset('train', csv_file_path, args.sr, SEGMENT_LENGTH)
