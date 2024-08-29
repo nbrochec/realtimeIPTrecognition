@@ -68,7 +68,7 @@ def get_device(device_name, gpu):
     return device
     
 def get_run_dir(run_name):
-    """Create runs directory where checkpoints are saved"""
+    """Create runs directory where checkpoints will be saved"""
     cwd = os.getcwd()
     runs = os.path.join(cwd, 'runs')
 
@@ -85,50 +85,25 @@ def get_run_dir(run_name):
 
     return current_run, checkpoints
 
-def prepare_data(args, device):
-    """Prepare data loaders."""
-    # Define file paths and dataset parameters
+def get_csv_file_path(args):
+    """Get CSV file path"""
     cwd = os.path.join(os.getcwd(), 'data', 'dataset')
     csv_file_path = os.path.join(cwd, args.csv_file)
-    num_classes = DatasetValidator.get_num_labels_from_csv(csv_file_path)
-
-    # Load datasets
-    train_dataset = ProcessDataset('train', csv_file_path, args.sr, SEGMENT_LENGTH)
-    test_dataset = ProcessDataset('test', csv_file_path, args.sr, SEGMENT_LENGTH)
-    val_dataset = ProcessDataset('val', csv_file_path, args.sr, SEGMENT_LENGTH)
-
-    # Create data loaders
-    train_loader = BalancedDataLoader(train_dataset.get_data(), device).get_dataloader()
-    test_loader = DataLoader(test_dataset.get_data(), batch_size=64) # collate_fn=lambda x: collate_fn(x, device)
-    val_loader = DataLoader(val_dataset.get_data(), batch_size=64) # collate_fn=lambda x: collate_fn(x, device)
-
-    print('Data successfully loaded into DataLoaders.')
-
-    return train_loader, test_loader, val_loader, num_classes
-
-def prepare_model(args, num_classes, device):
-    """Prepare the model."""
-    # Load model
-    model = LoadModel().get_model(args.config, num_classes).to(device)
-    summary = ModelSummary(model, num_classes, args.config)
-    summary.print_summary()
-
-    # Test model
-    tester = ModelTester(model, input_shape=(1, 1, SEGMENT_LENGTH), device=device)
-    output = tester.test()
-
-    if output.size(1) != num_classes:
-        print("Error: Output dimension does not match the number of classes.")
-        sys.exit(1)
-
-    model = ModelInit(model).initialize()
-    return model
+    return csv_file_path
 
 if __name__ == '__main__':
     args = parse_arguments()
     device = get_device(args.device, args.gpu)
-    train_loader, test_loader, val_loader, num_classes = prepare_data(args, device)
-    model = prepare_model(args, num_classes, device)
+
+    csv_file_path = get_csv_file_path(args)
+    num_classes = DatasetValidator.get_num_labels_from_csv(csv_file_path)
+
+    dataPreparator = PrepareData(args, csv_file_path, SEGMENT_LENGTH, device)
+    train_loader, test_loader, val_loader, num_classes = dataPreparator.prepare()
+
+    modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH, device)
+    model = modelPreparator.prepare()
+
     current_run, ckpt = get_run_dir(args.name)
 
     loss_fn = nn.CrossEntropyLoss()
@@ -137,9 +112,7 @@ if __name__ == '__main__':
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
 
     augmentations = ApplyAugmentations(args.augment.split(), args.sr, device)
-    aug_nbr = len(args.augment.split())
-    if args.augment.split() == ['all']:
-        aug_nbr = 7
+    aug_nbr = augmentations.get_aug_nbr()
 
     max_val_loss = np.inf
     early_stopping_threshold = 10
