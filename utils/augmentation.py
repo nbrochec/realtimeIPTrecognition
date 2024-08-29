@@ -17,7 +17,7 @@ from torch_audiomentations import PitchShift, AddColoredNoise, Shift, PolarityIn
 '''
 Principally using torch_audiomentations because:
 1. Augmentations are applied inside the training loop.
-2. torch_audiomentations provide cuda support enabling GPU computation.
+2. torch_audiomentations enables GPU computation to generate augmentated data.
 '''
 
 class ApplyAugmentations:
@@ -90,7 +90,7 @@ class ApplyAugmentations:
 
         # Concatenate all augmented data
         augmented_data = torch.cat(augmented_data_list, dim=0)
-        
+
         return augmented_data
 
     def pad_or_trim(self, data, original_size):
@@ -167,3 +167,10 @@ class ApplyAugmentations:
         """
         transform = LowPassFilter(p=1)
         return transform(data, sample_rate=self.sr)
+    
+    def get_aug_nbr(self):
+        aug_nbr = len(self.augmentations)
+        if self.augmentations == ['all']:
+            aug_nbr = 7
+
+        return aug_nbr
