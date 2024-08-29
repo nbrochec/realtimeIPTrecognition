@@ -12,6 +12,7 @@
 
 import torch
 import humanize
+import sys
 
 from models import v1, v2, one_residual, two_residual, transformer
 import torch.nn.init as init
@@ -105,15 +106,12 @@ class ModelTester:
             The output of the model for the random input tensor.
         """
         self.model.to(self.device)
-        self.model.eval()  # Set the model to evaluation mode
+        self.model.eval()
 
-        # Generate a random input tensor with the specified shape
         random_input = torch.randn(self.input_shape).to(self.device)
         
-        # Forward pass through the model
         with torch.no_grad():
             output = self.model(random_input)
-            # proba_distrib = F.softmax(output, dim=1)
         
         return output
     
@@ -129,22 +127,16 @@ class ModelInit:
         """
         self.model = model
 
-    def initialize(self, init_method=None):
+    def initialize(self):
         """
         Apply weight initialization to the model layers.
-
-        Parameters
-        ----------
-        init_method : callable, optional
-            A custom initialization function. If None, Xavier-Glorot initialization is used.
 
         Returns
         -------
         torch.nn.Module
             The model with initialized weights.
         """
-        if init_method is None:
-            init_method = torch.nn.init.xavier_normal_
+        init_method = torch.nn.init.xavier_normal_
 
         for layer in self.model.modules():
             if isinstance(layer, (torch.nn.Conv2d, torch.nn.Linear)):
@@ -297,7 +289,26 @@ class ModelTrainer:
 
         return accuracy, precision, recall, f1, running_loss
     
-# class PrepareModel:
-#     def __init__(self, args, num_classes, SEGMENT_LENGTH, device):
+class PrepareModel:
+    def __init__(self, args, num_classes, seg_len, device):
+        self.args = args
+        self.num_classes = num_classes
+        self.seg_len = seg_len
+        self.device = device
 
-#     model = 
+    def prepare(self):
+        model = LoadModel().get_model(self.args.config, self.num_classes).to(self.device)
+
+        tester = ModelTester(model, input_shape=(1, 1, self.seg_len), device=self.device)
+        output = tester.test()
+        if output.size(1) != self.num_classes:
+            print("Error: Output dimension does not match the number of classes.")
+            sys.exit(1)
+    
+        summary = ModelSummary(model, self.num_classes, self.args.config)
+        summary.print_summary()
+
+        model = ModelInit(model).initialize()
+        return model
+
+        
