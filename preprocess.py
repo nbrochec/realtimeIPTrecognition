@@ -28,5 +28,9 @@ base_dir = 'data/raw_data/'
 
 if __name__ == '__main__':
     print('Preparing the validation set')
+    if args.val_ratio == 'train':
+        print(f'Validation dataset will be created from the training dataset based on a {args.val_ratio} ratio.')
+    elif args.val_ratio == 'test':
+        print(f'Validation dataset will be created from the test dataset based on a {args.val_ratio} ratio.')
     DatasetSplitter.split_train_validation(base_dir=base_dir, destination=csv_dir, train_dir=args.train_dir, test_dir=args.test_dir, val_ratio=args.val_ratio, val_split=args.val_split, csv_filename='dataset_split.csv')
     DatasetValidator.validate_labels(os.path.join(csv_dir, 'dataset_split.csv'))
