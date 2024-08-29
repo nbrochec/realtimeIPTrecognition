@@ -34,11 +34,6 @@ class DirectoryManager:
     def ensure_dir_exists(directory):
         """
         Ensures that the directory exists. If not, creates it.
-        
-        Parameters
-        ----------
-        directory : str
-            Directory path.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -81,11 +76,6 @@ class PreprocessAndSave:
     def check_for_audio_files(self):
         """
         Checks if there are audio files in the specified directories.
-
-        Raises
-        ------
-        RuntimeError
-            If no audio files are found in the specified directories.
         """
         audio_files_found = False
         for root, dirs, files in os.walk(self.data_dir_path):
@@ -102,18 +92,6 @@ class PreprocessAndSave:
     def silence_remover(self, waveform, sample_rate):
         """
         Removes silence from an audio segment.
-
-        Parameters
-        ----------
-        waveform : torch.Tensor
-            Audio waveform tensor.
-        sample_rate : int
-            Audio sampling rate.
-        
-        Returns
-        -------
-        torch.Tensor
-            Waveform with silence removed.
         """
         min_silence_samples = int(self.min_silence_len * sample_rate)
         amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
@@ -130,8 +108,7 @@ class PreprocessAndSave:
         """
         Processes audio files from the directory and saves them to an HDF5 file.
         """
-
-        self.check_for_audio_files()  # Check if there are audio files before processing
+        self.check_for_audio_files()
         DirectoryManager.ensure_dir_exists(self.processed_data_dir)
 
         with h5py.File(self.hdf5_file, 'w') as h5f:
@@ -178,7 +155,6 @@ class DatasetSplitter:
         csv_filename : str
             The name of the output CSV file.
         """
-
         train_path = os.path.join(base_dir, train_dir)
         test_path = os.path.join(base_dir, test_dir)
         csv_path = os.path.join(destination, csv_filename)
@@ -309,16 +285,6 @@ class ProcessDataset:
     def remove_silence(self, waveform):
         """
         Remove silence from the audio waveform.
-
-        Parameters
-        ----------
-        waveform : torch.Tensor
-            The audio waveform tensor.
-
-        Returns
-        -------
-        torch.Tensor
-            The waveform with silence removed.
         """
         min_silence_samples = int(self.min_silence_len * self.target_sr)
         amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
@@ -362,14 +328,6 @@ class ProcessDataset:
         self.y = torch.tensor(self.y)
 
     def get_data(self):
-        """
-        Get the processed data as a TensorDataset.
-
-        Returns
-        -------
-        TensorDataset
-            A TensorDataset containing X and y tensors.
-        """
         return TensorDataset(self.X, self.y)
 
 class BalancedDataLoader:
@@ -410,11 +368,6 @@ class BalancedDataLoader:
     def _get_num_classes(self):
         """
         Determines the number of unique classes in the dataset.
-
-        Returns
-        -------
-        int
-            The number of unique classes.
         """
         all_labels = [label.item() for label in self.dataset.tensors[1]]
         unique_classes = set(all_labels)
@@ -437,11 +390,6 @@ class BalancedDataLoader:
     def get_dataloader(self):
         """
         Returns a DataLoader with the balanced batch sampler.
-
-        Returns
-        -------
-        DataLoader
-            A DataLoader instance configured with the balanced batch sampler.
         """
         return DataLoader(
             self.dataset,
