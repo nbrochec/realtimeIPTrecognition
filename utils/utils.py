@@ -43,8 +43,6 @@ class DirectoryManager:
         if not os.path.exists(directory):
             os.makedirs(directory)
             print(f'{directory} has been created.')
-        # else:
-        #     print(f'{directory} already exists.')
 
 class PreprocessAndSave:
     def __init__(self, base_dir, data_dir, destination, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
@@ -143,16 +141,12 @@ class PreprocessAndSave:
                         label = os.path.basename(root)
                         file_path = os.path.join(root, file)
 
-                        # Load audio file
                         waveform, original_sr = torchaudio.load(file_path)
 
-                        # Resample if necessary
                         if original_sr != self.target_sr:
                             waveform = Taudio.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
                         
-                        # Remove silence
                         waveform = self.silence_remover(waveform, sample_rate=self.target_sr)
-
                         num_samples = waveform.size(1)
                         
                         for i, start in enumerate(range(0, num_samples - self.segment_length + 1, self.segment_length)):
@@ -224,7 +218,7 @@ class DatasetSplitter:
                 all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
                 if val_split == 'test':
-                    # Split into train and validation sets
+                    # Split into test and validation sets
                     num_files = len(all_files)
                     num_val = int(num_files * val_ratio)
                     val_files = random.sample(all_files, num_val)
