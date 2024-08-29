@@ -27,6 +27,8 @@ import pandas as pd
 import csv
 from tqdm import tqdm
 
+import datetime
+
 class DirectoryManager:
     @staticmethod
     def ensure_dir_exists(directory):
@@ -267,6 +269,11 @@ class DatasetValidator:
         
         print("Label validation passed: All sets have the same labels.")
 
+    def get_num_labels_from_csv(csv_file):
+        data = pd.read_csv(csv_file)
+        return len(data['label'].unique())
+
+
 class ProcessDataset:
     def __init__(self, set_type, csv_path, target_sr, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
@@ -380,7 +387,6 @@ class BalancedDataLoader:
     dataset : Dataset
         The PyTorch dataset.
     """
-
     def __init__(self, dataset, device):
         self.dataset = dataset
         self.num_classes = self._get_num_classes()
