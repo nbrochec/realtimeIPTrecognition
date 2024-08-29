@@ -56,13 +56,6 @@ class ModelSummary:
         self.config = config
 
     def get_total_parameters(self):
-        """
-        Sum the number of parameters of the model.
-
-        Returns
-        -------
-        int 
-        """
         return sum(p.numel() for p in self.model.parameters())
 
     def print_summary(self):
@@ -99,11 +92,6 @@ class ModelTester:
     def test(self):
         """
         Tests the model with a random input tensor.
-
-        Returns
-        -------
-        torch.Tensor
-            The output of the model for the random input tensor.
         """
         self.model.to(self.device)
         self.model.eval()
@@ -130,11 +118,6 @@ class ModelInit:
     def initialize(self):
         """
         Apply weight initialization to the model layers.
-
-        Returns
-        -------
-        torch.nn.Module
-            The model with initialized weights.
         """
         init_method = torch.nn.init.xavier_normal_
 
@@ -167,22 +150,6 @@ class ModelTrainer:
     def train_epoch(self, loader, optimizer, augmentations, aug_number):
         """
         Perform one training epoch.
-
-        Parameters
-        ----------
-        loader : torch.utils.data.DataLoader
-            The DataLoader for the training data.
-        optimizer : torch.optim.Optimizer
-            The optimizer used for training.
-        augmentations : object
-            An object responsible for data augmentations.
-        aug_number : int
-            The number of augmentations applied.
-
-        Returns
-        -------
-        float
-            The average loss for the epoch.
         """
         self.model.train()
         running_loss = 0.0
@@ -207,16 +174,6 @@ class ModelTrainer:
     def validate_epoch(self, loader):
         """
         Perform one validation epoch.
-
-        Parameters
-        ----------
-        loader : torch.utils.data.DataLoader
-            The DataLoader for the validation data.
-
-        Returns
-        -------
-        float
-            The average loss for the epoch.
         """
         self.model.eval()
         running_loss = 0.0
@@ -232,16 +189,6 @@ class ModelTrainer:
     def test_model(self, loader):
         """
         Test the model and compute metrics.
-
-        Parameters
-        ----------
-        loader : torch.utils.data.DataLoader
-            The DataLoader for the test data.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the average loss and accuracy.
         """
         self.model.eval()
         running_loss = 0.0
