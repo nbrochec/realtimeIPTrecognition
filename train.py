@@ -49,6 +49,7 @@ def parse_arguments():
     parser.add_argument('--fmin', type=int, default=150, help='Minimum frequency for logmelspec analysis.')
     parser.add_argument('--name', type=str, default='untitled', help='Name of the run.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
+    parser.add_argument('--roll_off', type=bool, default=False, help='Use sample roll off when preparing the datasets.')
     return parser.parse_args()
 
 def get_device(device_name, gpu):
