@@ -447,3 +447,24 @@ class BalancedDataLoader:
             self.dataset,
             batch_sampler=self.batch_sampler,
         )
+
+class PrepareData:
+    def __init__(self, args, csv_file_path, seg_len, device):
+        self.args = args
+        self.csv = csv_file_path
+        self.seg_len = seg_len
+        self.device = device
+
+    def prepare(self):
+        num_classes = DatasetValidator.get_num_labels_from_csv(self.csv)
+        train_dataset = ProcessDataset('train', self.csv, self.args.sr, self.seg_len)
+        test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.seg_len)
+        val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.seg_len)
+
+        train_loader = BalancedDataLoader(train_dataset.get_data(), self.device).get_dataloader()
+        test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
+        val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
+
+        print('Data successfully loaded into DataLoaders.')
+
+        return train_loader, test_loader, val_loader, num_classes
