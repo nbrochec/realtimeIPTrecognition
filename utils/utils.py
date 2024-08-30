@@ -10,8 +10,6 @@
 # Implement global utility functions
 #############################################################################
 
-from os.path import join, dirname, basename, abspath, normpath, isdir, exists, relpath
-from os import listdir, makedirs, walk
 from glob import glob
 from pathlib import Path
 import os, sys
@@ -41,7 +39,7 @@ class DirectoryManager:
 
 class DatasetSplitter:
     @staticmethod
-    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_ratio=0.2, val_split='train', csv_filename='dataset_split.csv'):
+    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_ratio=0.2, val_split='train', name='title'):
         """
         Splits the dataset into training, validation, and test sets, and saves the information in a CSV file.
 
@@ -62,6 +60,8 @@ class DatasetSplitter:
         """
         train_path = os.path.join(base_dir, train_dir)
         test_path = os.path.join(base_dir, test_dir)
+        csv_filename = f'{name}_dataset_split.csv'
+
         csv_path = os.path.join(destination, csv_filename)
 
         if val_split != 'train' and val_split != 'test':
@@ -258,7 +258,7 @@ class BalancedDataLoader:
     """
     def __init__(self, dataset, device):
         self.dataset = dataset
-        self.num_classes = self._get_num_classes()
+        self.num_classes = self.get_num_classes()
         self.batch_size = self.num_classes
         self.device = device
 
@@ -282,7 +282,7 @@ class BalancedDataLoader:
             kind='fixed'
         )
 
-    def _get_num_classes(self):
+    def get_num_classes(self):
         """
         Determines the number of unique classes in the dataset.
         """
@@ -314,6 +314,9 @@ class BalancedDataLoader:
         )
 
 class PrepareData:
+    """
+    Prepare datasets.
+    """
     def __init__(self, args, csv_file_path, seg_len, device):
         self.args = args
         self.csv = csv_file_path
