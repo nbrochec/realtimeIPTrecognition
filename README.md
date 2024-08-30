@@ -104,7 +104,7 @@ project_name_dataset_split.csv
 ```
 
 ### Training
-There are many different configurations for training your model. The only required argument is the name of your project.
+There are many different configurations for training your model. The only required argument is `--name`.
 ```
 python train.py --name project_name
 ```
