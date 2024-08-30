@@ -42,7 +42,7 @@ def parse_arguments():
     parser.add_argument('--device', type=str, default='cpu', help='Device.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate of audio files.')
     parser.add_argument('--augment', type=str, default='pitchshift', help='Augmentation methods to apply.')
-    parser.add_argument('--early_stopping', type=bool, default=True, help='Use early stopping.')
+    parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate on plateau.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--fmin', type=int, default=150, help='Minimum frequency for logmelspec analysis.')
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     aug_nbr = augmentations.get_aug_nbr()
 
     max_val_loss = np.inf
-    early_stopping_threshold = 10
+    early_stopping_threshold = args.early_stopping
     counter = 0
     num_epoch = 0
 
@@ -129,10 +129,10 @@ if __name__ == '__main__':
         val_loss = trainer.validate_epoch(val_loader)
         print(f'Validation Loss: {val_loss:.4f}')
 
-        if args.reduceLR == True:
+        if args.reduceLR:
             scheduler.step()
         
-        if args.early_stopping == True:
+        if args.early_stopping:
             if val_loss < max_val_loss:
                 max_val_loss = val_loss
                 counter = 0
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     acc, pre, rec, f1, test_loss = trainer.test_model(test_loader)
 
-    if args.early_stopping == False:
+    if args.early_stopping is None:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
         print(f'Checkpoints has been saved in the {current_run} directory.')
