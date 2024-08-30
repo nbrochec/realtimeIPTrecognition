@@ -45,7 +45,7 @@ def parse_arguments():
     parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate on plateau.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
-    parser.add_argument('--fmin', type=int, default=150, help='Minimum frequency for logmelspec analysis.')
+    parser.add_argument('--fmin', type=int, default=None, help='Minimum frequency for logmelspec analysis.')
     parser.add_argument('--name', type=str, help='Name of the run.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
