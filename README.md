@@ -3,16 +3,16 @@
 ![Status: Not Ready](https://img.shields.io/badge/status-not%20ready-red)
 
 ## Installation
-
+Clone this repository.
 ```
 git clone https://github.com/nbrochec/realtimeIPTrecognition/
 ```
-
+Create a conda environment with Python 3.11.7
 ```
 conda create --name IPT python=3.11.7
 conda activate IPT
 ```
-
+Install dependencies.
 ```
 pip install -r requirements.txt
 ```
@@ -51,17 +51,29 @@ pip install -r requirements.txt
 
 You can drag and drop the folder containing your training audio files into the `/data/dataset/raw_sample/train` folder, and your test audio files into the `/data/dataset/raw_sample/test` folder.
 
-Test and train folders must share the same names for IPT classes. Such as shown below:
+For IPT classes, test and train folders must share the same name. The class label is retrieved from the name of your IPT class folders.
 ```
 └── 📁test
     └── 📁myTestDataset
         └── 📁IPTclass_1
+            └── audiofile1.wav
+            └── audiofile2.wav
+            └── ...
         └── 📁IPTclass_2
+            └── audiofile1.wav
+            └── audiofile2.wav
+            └── ...
         └── ...
 └── 📁train
     └── 📁myTrainingDataset
         └── 📁IPTclass_1
+            └── audiofile1.wav
+            └── audiofile2.wav
+            └── ...
         └── 📁IPTclass_2
+            └── audiofile1.wav
+            └── audiofile2.wav
+            └── ...
         └── ...
 ```
 
@@ -92,10 +104,11 @@ project_name_dataset_split.csv
 ```
 
 ### Training
-There are many different configurations for training your model. The only required argument is the name of your project such as shown below:
+There are many different configurations for training your model. The only required argument is the name of your project.
 ```
 python train.py --name project_name
 ```
+You can use the following arguments if you want to test different configurations.
 
 | Argument            | Description                                                         | Possible Values                |
 |---------------------|---------------------------------------------------------------------|--------------------------------|
