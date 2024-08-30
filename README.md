@@ -152,10 +152,11 @@ If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 ## Related Datasets
 • Nicolas Brochec and Will Howie. [GFDatabase: A Database of Flute Playing Techniques](https://doi.org/10.5281/zenodo.10932398) (version 1.0.1). Zenodo, 2024.
 
-## Acknowledgments
+## Contributors 
+:fire: Macro Fiorini (IRCAM - STMS, CNRS, Sorbonne Université) [ORCIDS](https://orcid.org/0009-0004-0523-2481)
 
+## Acknowledgments
 This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository created by Karl Hornlund.
 
 ## Funding
-
 This work has been supported by the ERC Reach (Raising Co-creativity in Cyber-Human Musicianship) directed by Gérard Assayag.
