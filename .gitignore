@@ -2,5 +2,6 @@ __pycache__/
 .DS_Store
 data/raw_data/test/close/
 data/raw_data/train/1m/
+data/dataset/
 runs/
 memo.txt
