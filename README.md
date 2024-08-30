@@ -130,7 +130,7 @@ You can use the following arguments if you want to test different configurations
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`                | `False`         |
 
 Training your model will create a `runs` folder with the name of your project.
-After training, the script automatically saves the best model checkpoints in the `/runs/project_name/` folder.
+After training, the script automatically saves the model checkpoints in the `/runs/project_name/` folder.
 If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 
 ```
