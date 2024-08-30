@@ -93,10 +93,16 @@ You can use multiple training datasets. They must share the same names for IPT c
 ```
 
 ### Preprocess your datasets
-To preprocess your datasets, use the following command:
+To preprocess your datasets, use the following command. he only required argument is `--name`.
 ```
 python preprocess.py --name project_name
 ```
+
+Other arguments:
+| Argument            | Description                                                         | Possible Values                | Default Value   |
+|---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
+| `--val_split`          | Specify on which dataset the validation set will be generated.       | `train` or `test` | `train`            |
+| `--val_ratio`          | Amount of validation samples.                                        | Float value < 1  | `0.2`           |
 
 A CSV file will be saved in the `/data/dataset/` folder with the following syntax:
 ```
