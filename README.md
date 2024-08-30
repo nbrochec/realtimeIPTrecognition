@@ -134,7 +134,7 @@ If you use early stopping, checkpoints of the last best model will be saved in t
 After the training, the script will automatically save the best model checkpoints in the `/runs/project_name/` folder.
 If you use export_ts, the `.ts` file will also be saved in this folder.
 
-### Running the mode in real-time
+### Running the model in real-time
 
 [...]
 
