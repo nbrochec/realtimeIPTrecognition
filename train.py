@@ -68,7 +68,7 @@ def get_device(device_name, gpu):
     return device
     
 def get_run_dir(run_name):
-    """Create runs directory where checkpoints will be saved"""
+    """Create runs and the current run directories."""
     cwd = os.getcwd()
     runs = os.path.join(cwd, 'runs')
 
@@ -78,12 +78,8 @@ def get_run_dir(run_name):
     os.makedirs(os.path.join(runs, run_name), exist_ok=True)
 
     current_run = os.path.join(runs, run_name)
-    checkpoints = os.path.join(current_run, 'checkpoints')
 
-    if not os.path.exists(checkpoints):
-        os.makedirs(checkpoints, exist_ok=True)
-
-    return current_run, checkpoints
+    return current_run
 
 def get_csv_file_path(args):
     """Get CSV file path"""
@@ -105,7 +101,7 @@ if __name__ == '__main__':
     modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH, device)
     model = modelPreparator.prepare()
 
-    current_run, ckpt = get_run_dir(args.name)
+    current_run = get_run_dir(args.name)
 
     loss_fn = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr)
