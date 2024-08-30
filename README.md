@@ -109,20 +109,19 @@ There are many different configurations for training your model. The only requir
 python train.py --name project_name
 ```
 You can use the following arguments if you want to test different configurations.
-
-| Argument            | Description                                                         | Possible Values                |
-|---------------------|---------------------------------------------------------------------|--------------------------------|
-| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `one-residual`, `two-residual`, `transformer`|
-| `--device`          | Device to use for training.                                        | `cpu`, `cuda`, `mps`           |
-| `--gpu`             | GPU selection to use.                                              | `0`, `1`, ...                  |
-| `--sr`              | Sampling rate to downsample the audio files.                        | 16000, 22050, 24000, |
-| `--segment_overlap` | Overlap between audio segments.                                    | `True` or `False`        |
-| `--fmin`            | Minimum frequency for Mel filters.                                 | Numerical value (Hz)           |
-| `--lr`              | Learning rate for the optimizer.                                   | 0.001, 0.01, etc.              |
-| `--epochs`          | Number of training epochs.                                         | Integer value                  |
-| `--early_stopping`  | Number of epochs without improvement before early stopping.         | Integer value or `None`        |
-| `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                |
-| `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`                |
+| Argument            | Description                                                         | Possible Values                | Default Value   |
+|---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
+| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `one-residual`, `two-residual`, `transformer` | `v2`            |
+| `--device`          | Device to use for training.                                        | `cpu`, `cuda`, `mps`           | `cpu`           |
+| `--gpu`             | GPU selection to use.                                              | `0`, `1`, ...                  | `0`             |
+| `--sr`              | Sampling rate to downsample the audio files.                        | 16000, 22050, 24000           | `24000`         |
+| `--segment_overlap` | Overlap between audio segments.                                    | `True`, `False`                | `False`         |
+| `--fmin`            | Minimum frequency for Mel filters.                                 | Numerical value (Hz)           | `None`          |
+| `--lr`              | Learning rate for the optimizer.                                   | 0.001, 0.01, etc.              | `0.001`         |
+| `--epochs`          | Number of training epochs.                                         | Integer value                  | `100`            |
+| `--early_stopping`  | Number of epochs without improvement before early stopping.         | Integer value or `None`        | `None`          |
+| `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
+| `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`                | `False`         |
 
 Training your model will create a `runs` folder and a subfolder with the name of your project.
 If you use early stopping, checkpoints of the last best model will be saved in the `/runs/project_name/checkpoints/` folder.
