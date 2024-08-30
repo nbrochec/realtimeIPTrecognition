@@ -159,4 +159,4 @@ If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository created by Karl Hornlund.
 
 ## Funding
-This work has been supported by the ERC Reach (Raising Co-creativity in Cyber-Human Musicianship) directed by Gérard Assayag.
+This work has been supported by the [ERC Reach](https://reach.ircam.fr/) (Raising Co-creativity in Cyber-Human Musicianship), hosted at [IRCAM](https://www.ircam.fr/recherche/equipes-recherche/repmus/), directed by Gérard Assayag.
