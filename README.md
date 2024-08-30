@@ -49,7 +49,7 @@ pip install -r requirements.txt
 ## Usage
 ### Dataset preparation
 
-You can drag and drop the folder containing your training audio files into the `/data/dataset/raw_sample/train` folder, and your test audio files into the `/data/dataset/raw_sample/test` folder.
+You can drag and drop the folder containing your training audio files into the `/data/dataset/raw_sample/train/` folder and your test audio files into the `/data/dataset/raw_sample/test/` folder.
 
 For IPT classes, test and train folders must share the same name. The class label is retrieved from the name of your IPT class folders.
 ```
@@ -124,7 +124,7 @@ You can use the following arguments if you want to test different configurations
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`                | `False`         |
 
 Training your model will create a `runs` folder with the name of your project.
-After the training, the script will automatically save the best model checkpoints in the `/runs/project_name/` folder.
+After training, the script automatically saves the best model checkpoints in the `/runs/project_name/` folder.
 If you use early stopping, checkpoints of the last best model will be saved in the `/runs/project_name/checkpoints/` folder.
 
 ```
