@@ -16,7 +16,6 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
-import humanize
 from models.layers import LogMelSpectrogramLayer, custom2DCNN
 
 class v1(nn.Module):
