@@ -123,15 +123,16 @@ You can use the following arguments if you want to test different configurations
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`                | `False`         |
 
-Training your model will create a `runs` folder and a subfolder with the name of your project.
+Training your model will create a `runs` folder with the name of your project.
+After the training, the script will automatically save the best model checkpoints in the `/runs/project_name/` folder.
 If you use early stopping, checkpoints of the last best model will be saved in the `/runs/project_name/checkpoints/` folder.
+
 ```
 └── 📁runs
     └── 📁project_name
         └── 📁checkpoints
 ```
 
-After the training, the script will automatically save the best model checkpoints in the `/runs/project_name/` folder.
 If you use export_ts, the `.ts` file will also be saved in this folder.
 
 ### Running the model in real-time
