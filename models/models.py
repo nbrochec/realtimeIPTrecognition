@@ -42,7 +42,9 @@ class v1(nn.Module):
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(160, output_nbr),
+            nn.Linear(160, 80),
+            nn.Linear(80, 40),
+            nn.Linear(40, output_nbr)
         )
 
     def forward(self, x):
