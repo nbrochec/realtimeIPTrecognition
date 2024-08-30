@@ -120,6 +120,8 @@ if __name__ == '__main__':
     counter = 0
     num_epoch = 0
 
+    best_state = None
+
     trainer = ModelTrainer(model, loss_fn, device)
 
     for epoch in range(args.epochs):
@@ -137,26 +139,21 @@ if __name__ == '__main__':
                 max_val_loss = val_loss
                 counter = 0
                 num_epoch = epoch
-                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                torch.save(model.state_dict(), f'{ckpt}/{args.name}_ckpt_{epoch}_{timestamp}.pth')
+                best_state = model.state_dict()
             else:
                 counter += 1
                 if counter >= early_stopping_threshold:
                     print('Early stopping triggered.')
                     break
 
-    if args.early_stopping:
-        model.load_state_dict(torch.load(f'{ckpt}/{args.name}_ckpt_{num_epoch}_{timestamp}.pth'))
+    if args.early_stopping is not None:
+        model.load_state_dict(best_state)
 
     acc, pre, rec, f1, test_loss = trainer.test_model(test_loader)
 
-    if args.early_stopping is None:
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
-        print(f'Checkpoints has been saved in the {current_run} directory.')
-    else:
-        torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
-        print(f'Checkpoints has been saved in the {current_run} directory.')
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
+    print(f'Checkpoints has been saved in the {current_run} directory.')
 
     if args.export_ts:
         scripted_model = torch.jit.script(model)
