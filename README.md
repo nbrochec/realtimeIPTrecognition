@@ -131,15 +131,12 @@ You can use the following arguments if you want to test different configurations
 
 Training your model will create a `runs` folder with the name of your project.
 After training, the script automatically saves the best model checkpoints in the `/runs/project_name/` folder.
-If you use early stopping, checkpoints of the last best model will be saved in the `/runs/project_name/checkpoints/` folder.
+If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 
 ```
 └── 📁runs
     └── 📁project_name
-        └── 📁checkpoints
 ```
-
-If you use export_ts, the `.ts` file will also be saved in this folder.
 
 ### Running the model in real-time
 
