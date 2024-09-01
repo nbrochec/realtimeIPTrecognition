@@ -129,6 +129,7 @@ You can use the following arguments if you want to test different configurations
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
+| `--save_logs`       | Save logs to disk.                                               | `True`, `False`               | `True`         |
 
 Training your model will create a `runs` folder with the name of your project.
 After training, the script automatically saves the model checkpoints in the `/runs/project_name/` folder.
