@@ -45,6 +45,7 @@ pip install -r requirements.txt
     └── __init__.py
     └── augmentation.py
     └── utils.py
+└── check_io.py
 └── LICENCE
 └── preprocess.py
 └── README.md
