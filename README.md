@@ -100,7 +100,7 @@ You can use multiple training datasets. They must share the same names for IPT c
 ```
 
 ### Preprocess your datasets
-To preprocess your datasets, use the following command. he only required argument is `--name`.
+To preprocess your datasets, use the following command. The only required argument is `--name`.
 ```
 python preprocess.py --name project_name
 ```
@@ -118,6 +118,7 @@ project_name_dataset_split.csv
 
 ### Training
 There are many different configurations for training your model. The only required argument is `--name`.
+To train your model use the following command.
 ```
 python train.py --name project_name
 ```
