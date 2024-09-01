@@ -2,6 +2,11 @@
 
 ![Status: Not Ready](https://img.shields.io/badge/status-not%20ready-red)
 
+This project focuses on real-time recognition of instrumental playing techniques using advanced machine learning models. It enables the automatic identification of various playing techniques in real time from an audio stream input. This repository includes tools for preparing datasets, training models, evaluating their performance, and real-time inference.
+
+**Lead Developer:** [Nicolas Brochec](https://orcid.org/0009-0000-5922-2079), Tokyo University of the Arts, ERC Reach.
+**Contributor:** [Marco Fiorini](https://orcid.org/0009-0004-0523-2481), IRCAM-STMS, CNRS, Sorbonne Université, ERC Reach.
+
 ## Installation
 Clone this repository.
 ```
@@ -175,9 +180,6 @@ Input Device ID  2  -  BlackHole 16ch
 
 ### Datasets
 • Nicolas Brochec and Will Howie. [GFDatabase: A Database of Flute Playing Techniques](https://doi.org/10.5281/zenodo.10932398) (version 1.0.1). Zenodo, 2024.
-
-## Contributors 
-:fire: Macro Fiorini (IRCAM - STMS, CNRS, Sorbonne Université) [ORCIDS](https://orcid.org/0009-0004-0523-2481)
 
 ## Acknowledgments
 This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository created by Karl Hornlund.
