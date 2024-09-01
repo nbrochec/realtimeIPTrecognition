@@ -13,13 +13,14 @@
 import torch
 import humanize
 import sys
+import pandas as pd
 
 from models import v1, v2, one_residual, two_residual, transformer
 import torch.nn.init as init
 
 from tqdm import tqdm
 
-from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score
+from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score, MulticlassConfusionMatrix
 
 class LoadModel:
     def __init__(self):
@@ -203,7 +204,8 @@ class ModelTrainer:
         accuracy_metric = MulticlassAccuracy(num_classes=class_nbr).to(self.device)
         precision_metric = MulticlassPrecision(num_classes=class_nbr).to(self.device)
         recall_metric = MulticlassRecall(num_classes=class_nbr).to(self.device)
-        f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro')
+        f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
+        cm_metric = MulticlassConfusionMatrix(num_classes=class_nbr).to(self.device)
 
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Test", leave=False):
@@ -217,14 +219,16 @@ class ModelTrainer:
                 precision_metric.update(preds=predicted, target=targets)
                 recall_metric.update(preds=predicted, target=targets)
                 f1_metric.update(preds=predicted, target=targets)
+                cm_metric.update(preds=predicted, target=targets)
 
                 running_loss += loss.item() * batch_size
                 total_samples += batch_size
 
-        accuracy = accuracy_metric.compute().item()
-        precision = precision_metric.compute().item()
-        recall = recall_metric.compute().item()
-        f1 = f1_metric.compute().item()
+        accuracy = torch.round(accuracy_metric.compute(), decimals=4)
+        precision = torch.round(precision_metric.compute(), decimals=4)
+        recall = torch.round(recall_metric.compute(), decimals=4)
+        f1 = torch.round(f1_metric.compute(), decimals=4)
+        cm = cm_metric.compute()
 
         running_loss = running_loss / total_samples
 
@@ -234,7 +238,8 @@ class ModelTrainer:
         print(f'Test Recall: {recall:.4f}')
         print(f'Test Macro F1 Score: {f1:.4f}')
 
-        return accuracy, precision, recall, f1, running_loss
+        stacked_metrics = torch.stack([accuracy, precision, recall, f1, torch.tensor(running_loss)], dim=0)
+        return stacked_metrics, cm
     
 class PrepareModel:
     def __init__(self, args, num_classes, seg_len, device):
