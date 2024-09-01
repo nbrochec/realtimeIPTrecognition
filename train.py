@@ -49,6 +49,7 @@ def parse_arguments():
     parser.add_argument('--name', type=str, help='Name of the run.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
+    parser.add_argument('--save_logs', type=bool, default=True, help='Save logs or not.')
     return parser.parse_args()
 
 def get_device(device_name, gpu):
@@ -145,13 +146,18 @@ if __name__ == '__main__':
     if args.early_stopping is not None:
         model.load_state_dict(best_state)
 
-    acc, pre, rec, f1, test_loss = trainer.test_model(test_loader)
+    stkd_mtrs, cm = trainer.test_model(test_loader)
 
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{timestamp}.pth')
-    print(f'Checkpoints has been saved in the {current_run} directory.')
+    date = datetime.datetime.now().strftime('%Y%m%d')
+    time = datetime.datetime.now().strftime('%H%M%S')
+    torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{date}_{time}.pth')
+    print(f'Checkpoints has been saved in the {os.path.relpath(current_run)} directory.')
 
     if args.export_ts:
         scripted_model = torch.jit.script(model)
-        scripted_model.save(os.path.join(current_run, f'{args.name}_{timestamp}.ts'))
-        print(f'TorchScript file has been exported to the {current_run} directory.')
+        scripted_model.save(f'{current_run}/{args.name}_ckpt_{date}_{time}.pth')
+        print(f'TorchScript file has been exported to the {os.path.relpath(current_run)} directory.')
+    
+    if args.save_logs:
+        SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, date, time, csv_file_path)
+        print(f'Results have been save to logs directory.')
