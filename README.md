@@ -5,6 +5,7 @@
 This project focuses on real-time recognition of instrumental playing techniques using advanced machine learning models. It enables the automatic identification of various playing techniques in real time from an audio stream input. This repository includes tools for preparing datasets, training models, evaluating their performance, and real-time inference.
 
 **Lead Developer:** [Nicolas Brochec](https://orcid.org/0009-0000-5922-2079), Tokyo University of the Arts, ERC Reach.
+
 **Contributor:** [Marco Fiorini](https://orcid.org/0009-0004-0523-2481), IRCAM-STMS, CNRS, Sorbonne Université, ERC Reach.
 
 ## Installation
