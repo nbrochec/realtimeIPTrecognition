@@ -125,6 +125,7 @@ You can use the following arguments if you want to test different configurations
 | `--fmin`            | Minimum frequency for Mel filters.                                 | 0 < Float value (Hz) or `None` | `None`          |
 | `--lr`              | Learning rate for the optimizer.                                   | 0 < Float value                | `0.001`         |
 | `--epochs`          | Number of training epochs.                                         | 0 < Integer value              | `100`           |
+| `--augment`         | Comma separated list.                                              | `pitchshift`, `timeshift`, `addnoise`, `polarityinversion`, `gain`, `hpf`, `lpf` or `all`| `pitchshift` |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
