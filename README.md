@@ -140,6 +140,13 @@ If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
     └── 📁project_name
 ```
 
+`--save_logs True` will create a folder of the name of your project into the `logs` folder.
+This folder will include a `results.csv` file containing the model's metrics as well as a CSV file for the confusion matrix.
+```
+└── 📁logs
+    └── 📁project_name
+```
+
 ### Running the model in real-time
 
 [...]
