@@ -149,6 +149,20 @@ This folder will include a `results.csv` file containing the model's metrics as 
 
 ### Running the model in real-time
 
+To run your model in real time, you need first to check available audio input devices of your computer with the script `check_io.py`
+
+```
+python check_io.py
+```
+
+This will display a list of the devices and their respective ID.
+
+```
+Input Device ID  0  -  MacBook Pro Microphone
+Input Device ID  1  -  BlackHole 2c
+Input Device ID  2  -  BlackHole 16ch
+```
+
 [...]
 
 ## Related works
