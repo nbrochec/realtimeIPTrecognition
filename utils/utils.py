@@ -72,7 +72,7 @@ class DatasetSplitter:
             writer.writerow(['file_path', 'label', 'set'])
 
             # Process train directory
-            for root, dirs, files in os.walk(train_path):
+            for root, dirs, files in tqdm(os.walk(train_path), desc='Process training audio files.'):
                 label = os.path.basename(root)
                 all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
@@ -94,7 +94,7 @@ class DatasetSplitter:
                         writer.writerow([file, label, 'train'])
 
             # Process test directory
-            for root, dirs, files in os.walk(test_path):
+            for root, dirs, files in tqdm(os.walk(test_path), desc='Process test audio files.'):
                 label = os.path.basename(root)
                 all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
@@ -332,7 +332,59 @@ class PrepareData:
         train_loader = BalancedDataLoader(train_dataset.get_data(), self.device).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
         val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
-
+        
         print('Data successfully loaded into DataLoaders.')
 
         return train_loader, test_loader, val_loader, num_classes
+
+class SaveResultsToDisk:
+    @staticmethod
+    def get_class_names(csv_file_path):
+        data = pd.read_csv(csv_file_path)
+        data = data[data['set'] == 'train']
+        label_map = {label: idx for idx, label in enumerate(sorted(data['label'].unique()))}
+
+        return label_map
+
+    @staticmethod
+    def save_to_disk(args, stacked_metrics, cm, date, time, csv_file_path):
+        """
+        Save the results to disk as a CSV file.
+        """
+
+        label_map = SaveResultsToDisk.get_class_names(csv_file_path)
+        labels = sorted(label_map.keys())
+
+        log_dir = os.path.join(os.getcwd(), 'logs', args.name)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir) 
+
+        csv_path = os.path.join(log_dir, f'results.csv')
+
+        accuracy, precision, recall, f1, loss = stacked_metrics.tolist()
+
+        write_header = not os.path.exists(csv_path)
+
+        with open(csv_path, mode='a', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+
+            if write_header:
+                writer.writerow([
+                    'Date', 'Time', 'Model Name', 'Sample Rate', 'Segment Overlap',
+                    'Fmin', 'Learning Rate', 'Epochs', 'Augmentations', 'Early Stopping',
+                    'Reduce LR on Plateau', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Loss'
+                ])
+
+            writer.writerow([
+                date, time, args.name, args.sr, args.segment_overlap,
+                args.fmin, args.lr, args.epochs, args.augment,
+                args.early_stopping, args.reduceLR, accuracy, precision,
+                recall, f1, loss
+            ])
+
+        cm_path = os.path.join(log_dir, f'{date}_{time}_cm.csv')
+        cm_np = cm.cpu().numpy()
+        df_cm = pd.DataFrame(cm_np, index=labels, columns=labels)
+        df_cm.to_csv(cm_path)
+
+        print(f'Results saved to {csv_path}')
