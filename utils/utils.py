@@ -406,4 +406,3 @@ class SaveYAML:
         if not os.path.exists(yaml_file):   
             with open(yaml_file, 'w') as file:
                 yaml.dump(current_config, file, default_flow_style=False)
-
