@@ -9,9 +9,10 @@ This project focuses on real-time recognition of instrumental playing techniques
 **Contributor:** [Marco Fiorini](https://orcid.org/0009-0004-0523-2481), IRCAM-STMS, CNRS, Sorbonne Université, ERC Reach.
 
 ## Installation
-Clone this repository.
+Clone this repository and navigate to the folder.
 ```
 git clone https://github.com/nbrochec/realtimeIPTrecognition/
+cd realtimeIPTrecognition
 ```
 Create a conda environment with Python 3.11.7
 ```
