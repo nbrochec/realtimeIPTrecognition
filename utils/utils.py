@@ -24,6 +24,7 @@ from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 import pandas as pd
 import csv
 from tqdm import tqdm
+import yaml
 
 import datetime
 
@@ -388,3 +389,21 @@ class SaveResultsToDisk:
         df_cm.to_csv(cm_path)
 
         print(f'Results saved to {csv_path}')
+
+class SaveYAML:
+    @staticmethod
+    def save_to_disk(args, num_classes):
+        name = args.name
+        cwd = os.getcwd()
+        path_to_run = os.path.join(cwd, 'runs', name)
+
+        current_config = {'Name':args.name, 'Model': args.config , 'Sampling Rate':args.sr,'Segment Overlap':args.segment_overlap,
+                      'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Augmentations':args.augment,
+                      'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduceLR, 'Number of Classes':num_classes}
+
+        yaml_file = os.path.join(path_to_run, f'{name}.yaml')
+
+        if not os.path.exists(yaml_file):   
+            with open(yaml_file, 'w') as file:
+                yaml.dump(current_config, file, default_flow_style=False)
+
