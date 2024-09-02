@@ -37,16 +37,16 @@ def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description='This script launches the training process.')
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs.')
-    parser.add_argument('--config', type=str, default='v2', help='CNN configuration version.')
+    parser.add_argument('--config', type=str, default='v2', help='Model version.')
     parser.add_argument('--gpu', type=int, default=0, help='GPU device number.')
-    parser.add_argument('--device', type=str, default='cpu', help='Device.')
+    parser.add_argument('--device', type=str, default='cpu', help='GPU device.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate of audio files.')
     parser.add_argument('--augment', type=str, default='pitchshift', help='Augmentation methods to apply.')
     parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate on plateau.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--fmin', type=int, default=None, help='Minimum frequency for logmelspec analysis.')
-    parser.add_argument('--name', type=str, help='Name of the run.', required=True)
+    parser.add_argument('--name', type=str, help='Name of the project.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
     parser.add_argument('--save_logs', type=bool, default=True, help='Save logs or not.')
@@ -92,6 +92,7 @@ def get_csv_file_path(args):
 
 if __name__ == '__main__':
     args = parse_arguments()
+
     device = get_device(args.device, args.gpu)
 
     csv_file_path = get_csv_file_path(args)
@@ -101,6 +102,8 @@ if __name__ == '__main__':
 
     modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH, device)
     model = modelPreparator.prepare()
+
+    SaveYAML.save_to_disk(args, num_classes)
 
     current_run = get_run_dir(args.name)
 
@@ -155,7 +158,7 @@ if __name__ == '__main__':
 
     if args.export_ts:
         scripted_model = torch.jit.script(model)
-        scripted_model.save(f'{current_run}/{args.name}_ckpt_{date}_{time}.pth')
+        scripted_model.save(f'{current_run}/{args.name}_ckpt_{date}_{time}.ts')
         print(f'TorchScript file has been exported to the {os.path.relpath(current_run)} directory.')
     
     if args.save_logs:
