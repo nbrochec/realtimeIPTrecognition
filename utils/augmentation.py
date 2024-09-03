@@ -21,7 +21,7 @@ Principally using torch_audiomentations because:
 '''
 
 class ApplyAugmentations:
-    def __init__(self, augmentations, sample_rate, device=None):
+    def __init__(self, augmentations, sample_rate):
         """
         Initializes the augmentation class with the list of augmentations to apply.
 
@@ -29,20 +29,14 @@ class ApplyAugmentations:
         ----------
         augmentations : list
             List of names of augmentations to apply.
-        device : torch.device, optional
-            Device to which the data should be moved (default is None).
         """
         self.augmentations = augmentations
         self.sr = sample_rate
-        self.device = device
 
     def apply(self, data):
         """
         Applies the selected augmentations to the given data.
         """
-        if self.device:
-            data = data.to(self.device)
-
         original_size = data.size(-1)
         augmented_data_list = []
 
