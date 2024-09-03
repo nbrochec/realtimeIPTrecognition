@@ -1,8 +1,8 @@
 # Real-Time Instrumental Playing Techniques Recognition
 
-![Status: Not Ready](https://img.shields.io/badge/status-not%20ready-red)
+![Status: Ready](https://img.shields.io/badge/status-ready-green)
 
-This project focuses on real-time recognition of instrumental playing techniques using advanced machine learning models. It enables the automatic identification of various playing techniques in real time from an audio stream input. This repository includes tools for preparing datasets, training models, evaluating their performance, and real-time inference.
+This project focuses on real-time recognition of instrumental playing techniques using advanced machine learning models. It enables the automatic identification of various playing techniques in real time from a solo instrument audio stream input. This repository includes tools for preparing datasets, training models, evaluating their performance, and real-time inference.
 
 **Lead Developer:** [Nicolas Brochec](https://orcid.org/0009-0000-5922-2079), Tokyo University of the Arts, ERC Reach.
 
@@ -186,8 +186,8 @@ Other arguments:
 | `--buffer_size`     | Specify audio buffer size.                                       | Integer                        | `256`           |
 | `--moving_average`  | Window size for smoothing predictions with a moving average.        | Integer                        | `5`             |
 
-Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` adress.
-Use an UDP receiver to retrieve the predictions.
+Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` address.
+Use a UDP receiver to retrieve the predictions.
 
 ## Related works
 If you use this code in your research, please cite the following papers.
