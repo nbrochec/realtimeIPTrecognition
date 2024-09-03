@@ -37,8 +37,8 @@ def parse_arguments():
     parser.add_argument('--device', type=str, default='cpu', help='GPU device.')
     parser.add_argument('--gpu', type=int, default=0, help='GPU device number.')
     parser.add_argument('--name', type=str, required=True, help='Name of the project.')
-    parser.add_argument('--buffer_size', type=int, default=256, help='Audio buffer size.')
-    parser.add_argument('--moving_average', type=int, default=10, help='')
+    parser.add_argument('--buffer_size', type=int, default=256, help='Specify audio buffer size.')
+    parser.add_argument('--moving_average', type=int, default=5, help='Window size for smoothing predictions with a moving average.')
     return parser.parse_args()
 
 args = parse_arguments()
