@@ -2,7 +2,7 @@
 
 ![Status: Ready](https://img.shields.io/badge/status-ready-green)
 
-This project focuses on real-time recognition of instrumental playing techniques using advanced machine learning models. It enables the automatic identification of various playing techniques in real time from a solo instrument audio stream input. This repository includes tools for preparing datasets, training models, evaluating their performance, and real-time inference.
+This project focuses on real-time recognition of instrumental playing techniques using advanced machine learning models. It enables the automatic identification of various playing techniques in real time from a solo instrument's audio stream input. This repository includes tools for preparing datasets, training models, evaluating their performance, and real-time inference.
 
 **Lead Developer:** [Nicolas Brochec](https://orcid.org/0009-0000-5922-2079), Tokyo University of the Arts, ERC Reach.
 
