@@ -30,9 +30,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from models import *
 from utils import *
 
-# Constants
-SEGMENT_LENGTH = 7680
-
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description='This script launches the training process.')
@@ -51,35 +48,15 @@ def parse_arguments():
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
     parser.add_argument('--save_logs', type=bool, default=True, help='Save logs or not.')
     return parser.parse_args()
-
-def get_device(device_name, gpu):
-    """Automatically select the device."""
-    if device_name != 'cpu' and gpu == 0:
-        device = torch.device('cuda:0')
-        print(f'This script uses {device} as the torch device.')
-    elif device_name != 'cpu' and gpu != 0:
-        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-        device = torch.device(f'{device_name}:{gpu}')
-        print(f'This script uses {device} as the torch device.')
-    else:
-        device = torch.device('cpu')
-        print(f'This script uses {device} as the torch device.')
-
-    return device
     
 def get_run_dir(run_name):
     """Create runs and the current run directories."""
     cwd = os.getcwd()
     runs = os.path.join(cwd, 'runs')
-
     if not os.path.exists(runs):
         os.makedirs(runs, exist_ok=True)
-
     os.makedirs(os.path.join(runs, run_name), exist_ok=True)
-
     current_run = os.path.join(runs, run_name)
-
     return current_run
 
 def get_csv_file_path(args):
@@ -87,20 +64,18 @@ def get_csv_file_path(args):
     name = f'{args.name}_dataset_split.csv'
     cwd = os.path.join(os.getcwd(), 'data', 'dataset')
     csv_file_path = os.path.join(cwd, name)
-
     return csv_file_path
 
 if __name__ == '__main__':
     args = parse_arguments()
-
-    device = get_device(args.device, args.gpu)
+    GetDevice.get_device(args)
 
     csv_file_path = get_csv_file_path(args)
 
-    dataPreparator = PrepareData(args, csv_file_path, SEGMENT_LENGTH, device)
+    dataPreparator = PrepareData(args, csv_file_path, SEGMENT_LENGTH)
     train_loader, test_loader, val_loader, num_classes = dataPreparator.prepare()
 
-    modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH, device)
+    modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH)
     model = modelPreparator.prepare()
 
     SaveYAML.save_to_disk(args, num_classes)
@@ -112,7 +87,7 @@ if __name__ == '__main__':
     if args.reduceLR == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
 
-    augmentations = ApplyAugmentations(args.augment.split(), args.sr, device)
+    augmentations = ApplyAugmentations(args.augment.split(), args.sr)
     aug_nbr = augmentations.get_aug_nbr()
 
     max_val_loss = np.inf
@@ -122,7 +97,7 @@ if __name__ == '__main__':
 
     best_state = None
 
-    trainer = ModelTrainer(model, loss_fn, device)
+    trainer = ModelTrainer(model, loss_fn)
 
     for epoch in range(args.epochs):
         print(f'Epoch {epoch+1}/{args.epochs}')
