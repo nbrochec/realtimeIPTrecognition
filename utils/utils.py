@@ -257,11 +257,10 @@ class BalancedDataLoader:
     dataset : Dataset
         The PyTorch dataset.
     """
-    def __init__(self, dataset, device):
+    def __init__(self, dataset):
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
         self.batch_size = self.num_classes
-        self.device = device
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
@@ -300,8 +299,8 @@ class BalancedDataLoader:
             segments.extend(segs)
             labels.extend(lbls)
 
-        segments_tensor = torch.stack(segments).to(self.device)
-        labels_tensor = torch.tensor(labels).to(self.device)
+        segments_tensor = torch.stack(segments)
+        labels_tensor = torch.tensor(labels)
 
         return segments_tensor, labels_tensor
 
@@ -318,11 +317,10 @@ class PrepareData:
     """
     Prepare datasets.
     """
-    def __init__(self, args, csv_file_path, seg_len, device):
+    def __init__(self, args, csv_file_path, seg_len):
         self.args = args
         self.csv = csv_file_path
         self.seg_len = seg_len
-        self.device = device
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
@@ -330,7 +328,7 @@ class PrepareData:
         test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
 
-        train_loader = BalancedDataLoader(train_dataset.get_data(), self.device).get_dataloader()
+        train_loader = BalancedDataLoader(train_dataset.get_data).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
         val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
         
@@ -406,3 +404,23 @@ class SaveYAML:
         if not os.path.exists(yaml_file):   
             with open(yaml_file, 'w') as file:
                 yaml.dump(current_config, file, default_flow_style=False)
+
+class GetDevice:
+    @staticmethod
+    def get_device(args):
+        """Automatically select the device."""
+        device_name = args.device
+        gpu = args.gpu
+        
+        if device_name != 'cpu':
+            if gpu == 0:
+                torch.set_default_device('cuda:0')
+                print(f'This script uses {device_name}:0 as the torch device.')
+            else:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+                torch.set_default_device(f'{device_name}:{gpu}')
+                print(f'This script uses {device_name}:{gpu} as the torch device.')
+        else:
+            torch.set_default_device('cpu')
+            print(f'This script uses CPU as the torch device.')
