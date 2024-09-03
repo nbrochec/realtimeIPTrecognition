@@ -45,12 +45,15 @@ pip install -r requirements.txt
 └── 📁utils
     └── __init__.py
     └── augmentation.py
+    └── constants.py
+    └── rt.py
     └── utils.py
 └── check_io.py
 └── LICENCE
 └── preprocess.py
 └── README.md
 └── requirements.txt
+└── realtime.py
 └── train.py
 ```
 
@@ -106,11 +109,13 @@ To preprocess your datasets, use the following command. The only required argume
 python preprocess.py --name project_name
 ```
 
-Other arguments:
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
-| `--val_split`          | Specify which dataset the validation set will be generated.       | `train`, `test` | `train`            |
-| `--val_ratio`          | Amount of validation samples.                                        | 0 <= Float value < 1  | `0.2`           |
+| `--name`             | Name of the project.                                               | String                         | `None`          |
+| `--train`             | Specify train directory.                                           | String                         | `train`          |
+| `--test`             | Specify test directory.                                             | String                         | `test`          |
+| `--val_split`          | Specify which dataset the validation set will be generated.      | `train`, `test`                   | `train`      |
+| `--val_ratio`          | Amount of validation samples.                                     | 0 <= Float value < 1             | `0.2`           |
 
 A CSV file will be saved in the `/data/dataset/` folder with the following syntax:
 ```
@@ -125,14 +130,15 @@ python train.py --name project_name
 ```
 You can use the following arguments if you want to test different configurations.
 | Argument            | Description                                                         | Possible Values                | Default Value   |
-|---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
+|---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|  
+| `--name`             | Name of the project.                                              | String                         | `None`          |
 | `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `one-residual`, `two-residual`, `transformer` | `v2`            |
 | `--device`          | Specify the hardware on which computation should be performed.     | `cpu`, `cuda`, `mps`           | `cpu`           |
-| `--gpu`             | Specify which GPU to use.                                          | `0`, `1`, ...                  | `0`             |
+| `--gpu`             | Specify which GPU to use.                                          | Integer                          | `0`             |
 | `--sr`              | Sampling rate for downsampling the audio files.                    | `16000`, `22050`, `24000`, ... (Hz)| `24000`         |
 | `--segment_overlap` | Overlap between audio segments.                                    | `True`, `False`                | `False`         |
 | `--fmin`            | Minimum frequency for Mel filters.                                 | 0 < Float value (Hz) or `None` | `None`          |
-| `--lr`              | Learning rate.                                  | 0 < Float value                | `0.001`         |
+| `--lr`              | Learning rate.                                                      | 0 < Float value                | `0.001`         |
 | `--epochs`          | Number of training epochs.                                         | 0 < Integer value              | `100`           |
 | `--augment`         | Specify which augmentations to use.                                            | `pitchshift`, `timeshift`, `addnoise`, `polarityinversion`, `gain`, `hpf`, `lpf` or `all`| `pitchshift` |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
@@ -168,7 +174,7 @@ This will display a list of the devices and their respective ID.
 
 ```
 Input Device ID  0  -  MacBook Pro Microphone
-Input Device ID  1  -  BlackHole 2c
+Input Device ID  1  -  BlackHole 2ch
 Input Device ID  2  -  BlackHole 16ch
 ```
 
@@ -178,12 +184,12 @@ The script will automatically take the most recent model of your project.
 python realtime.py --name your_project --input 0 --channel 1 
 ```
 
-Other arguments:
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
+| `--name`             | Name of the project.                                               | String                         | `None`          |
 | `--device`          | Specify the hardware on which computation should be performed.      | `cpu`, `cuda`, `mps`           | `cpu`           |
-| `--gpu`             | Specify which GPU to use.                                           | `0`, `1`, ...                  | `0`             |
-| `--buffer_size`     | Specify audio buffer size.                                       | Integer                        | `256`           |
+| `--gpu`             | Specify which GPU to use.                                           | Integer                        | `0`             |
+| `--buffer_size`     | Specify audio buffer size.                                          | Integer                        | `256`           |
 | `--moving_average`  | Window size for smoothing predictions with a moving average.        | Integer                        | `5`             |
 
 Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` address.
