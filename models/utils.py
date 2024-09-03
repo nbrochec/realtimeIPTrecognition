@@ -73,7 +73,7 @@ class ModelSummary:
         print('\n')
 
 class ModelTester:
-    def __init__(self, model, input_shape=(1, 1, 7680), device='cpu'):
+    def __init__(self, model, input_shape=(1, 1, 7680)):
         """
         Initializes the ModelTester class.
 
@@ -83,21 +83,17 @@ class ModelTester:
             The model to be tested.
         input_shape : tuple
             The shape of the input data (default is (1, 1, 7680)).
-        device : str
-            The device to run the model on ('cpu' or 'cuda').
         """
         self.model = model
         self.input_shape = input_shape
-        self.device = device
 
     def test(self):
         """
         Tests the model with a random input tensor.
         """
-        self.model.to(self.device)
         self.model.eval()
 
-        random_input = torch.randn(self.input_shape).to(self.device)
+        random_input = torch.randn(self.input_shape)
         
         with torch.no_grad():
             output = self.model(random_input)
@@ -131,7 +127,7 @@ class ModelInit:
         return self.model
     
 class ModelTrainer:
-    def __init__(self, model, loss_fn, device):
+    def __init__(self, model, loss_fn):
         """
         Initialize the ModelTrainer.
 
@@ -141,12 +137,9 @@ class ModelTrainer:
             The model to be trained, validated, and tested.
         loss_fn : callable
             The loss function used for training and evaluation.
-        device : torch.device
-            The device to which the model and data will be moved.
         """
         self.model = model
         self.loss_fn = loss_fn
-        self.device = device
 
     def train_epoch(self, loader, optimizer, augmentations, aug_number):
         """
@@ -156,7 +149,7 @@ class ModelTrainer:
         running_loss = 0.0
 
         for data, targets in tqdm(loader, desc="Training", leave=False):
-            data, targets = data.to(self.device), targets.to(self.device)
+            data, targets = data, targets
             optimizer.zero_grad()
 
             # Apply augmentations
@@ -180,7 +173,7 @@ class ModelTrainer:
         running_loss = 0.0
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Validation", leave=False):
-                data, targets = data.to(self.device), targets.to(self.device)
+                data, targets = data, targets
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 running_loss += loss.item() * data.size(0)
@@ -201,15 +194,15 @@ class ModelTrainer:
         all_targets = torch.cat(all_targets)
         class_nbr = len(torch.unique(all_targets))
 
-        accuracy_metric = MulticlassAccuracy(num_classes=class_nbr).to(self.device)
-        precision_metric = MulticlassPrecision(num_classes=class_nbr).to(self.device)
-        recall_metric = MulticlassRecall(num_classes=class_nbr).to(self.device)
-        f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
-        cm_metric = MulticlassConfusionMatrix(num_classes=class_nbr).to(self.device)
+        accuracy_metric = MulticlassAccuracy(num_classes=class_nbr)
+        precision_metric = MulticlassPrecision(num_classes=class_nbr)
+        recall_metric = MulticlassRecall(num_classes=class_nbr)
+        f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro')
+        cm_metric = MulticlassConfusionMatrix(num_classes=class_nbr)
 
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Test", leave=False):
-                data, targets = data.to(self.device), targets.to(self.device)
+                data, targets = data, targets
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 batch_size = data.size(0)
@@ -242,16 +235,15 @@ class ModelTrainer:
         return stacked_metrics, cm
     
 class PrepareModel:
-    def __init__(self, args, num_classes, seg_len, device):
+    def __init__(self, args, num_classes, seg_len):
         self.args = args
         self.num_classes = num_classes
         self.seg_len = seg_len
-        self.device = device
 
     def prepare(self):
-        model = LoadModel().get_model(self.args.config, self.num_classes).to(self.device)
+        model = LoadModel().get_model(self.args.config, self.num_classes)
 
-        tester = ModelTester(model, input_shape=(1, 1, self.seg_len), device=self.device)
+        tester = ModelTester(model, input_shape=(1, 1, self.seg_len))
         output = tester.test()
         if output.size(1) != self.num_classes:
             print("Error: Output dimension does not match the number of classes.")
