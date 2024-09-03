@@ -67,7 +67,8 @@ SMOOTH_WINDOW = 10
 
 pred_buffer = PredictionBuffer(NUM_CLASSES, SMOOTH_WINDOW)
 sender = SendOSCMessage()
-cumulativeAudio = torch.zeros(SEGMENT_LENGTH)
+cumulativeAudio = torch.zeros((1, 1, SEGMENT_LENGTH))
+
 
 def callback(in_data, frame_count, time_info, flag):
     global cumulativeAudio
@@ -75,15 +76,15 @@ def callback(in_data, frame_count, time_info, flag):
     audioSample = torch.frombuffer(in_data, dtype=torch.float32)
     audioSample = Resample.resample(audioSample, SR_ORIGINAL, SR_TARGET)
 
-    concat = torch.concatenate((cumulativeAudio, audioSample), axis=0)
+    concat = torch.concatenate((cumulativeAudio, audioSample.unsqueeze(0).unsqueeze(0)), axis=2)
 
-    if concat.shape[0] >= SEGMENT_LENGTH:
-        concat = concat[-SEGMENT_LENGTH:]
+    if concat.shape[2] >= SEGMENT_LENGTH:
+        concat = concat[:,:,-SEGMENT_LENGTH:]
         audioON = torch.sum(torch.abs(audioSample))
+
         if audioON > 0:
             print('Now running!')
-
-            out_prob = MakeInference(model, concat)
+            out_prob = MakeInference.make_inference(model, concat)
             pred_buffer.update_buffer(out_prob)
             smooth_average = torch.mean(pred_buffer.get_buffer(), dim=0)
             pred = torch.argmax(smooth_average).item()
@@ -93,7 +94,7 @@ def callback(in_data, frame_count, time_info, flag):
             print('Waiting for audio...')
             time.sleep(0.5)
 
-    cumulativeAudio = concat[-SEGMENT_LENGTH:]
+    cumulativeAudio = concat[:,:,-SEGMENT_LENGTH:]
 
     return None, pyaudio.paContinue
 
@@ -103,7 +104,7 @@ audioStream = audioFlux.open(format=pyaudio.paFloat32,
                  rate=SR_ORIGINAL,
                  output=False,
                  input=True,
-                 input_device_index=1, # Change le numéro de périphérique audio ici (il faut lancer pyaudio-check.py pour trouver le bon numéro)
+                 input_device_index=args.input, # Change le numéro de périphérique audio ici (il faut lancer pyaudio-check.py pour trouver le bon numéro)
                  stream_callback=callback,
                  frames_per_buffer=args.buffer_size)
 
