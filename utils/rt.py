@@ -26,12 +26,13 @@ class SendOSCMessage:
         self.ip = "127.0.0.1" #localhost
         self.port = 5005
         self.client = udp_client.SimpleUDPClient(self.ip, self.port)
-        self.classMSG = osc_message_builder.OscMessageBuilder(address= '/class')
 
     def send_message(self, pred):
-        self.classMSG.add_arg(pred, arg_type='i')
-        self.classMSG = self.classMSG.build()
-        self.client.send(self.classMSG)
+        classMSG = osc_message_builder.OscMessageBuilder(address= '/class')
+        classMSG.add_arg(pred, arg_type='i')
+        classMSG = classMSG.build()
+
+        self.client.send(classMSG)
 
 class PredictionBuffer:
     def __init__(self, num_classes, window_size):
