@@ -140,7 +140,7 @@ You can use the following arguments if you want to test different configurations
 | `--fmin`            | Minimum frequency for Mel filters.                                 | 0 < Float value (Hz) or `None` | `None`          |
 | `--lr`              | Learning rate.                                                      | 0 < Float value                | `0.001`         |
 | `--epochs`          | Number of training epochs.                                         | 0 < Integer value              | `100`           |
-| `--augment`         | Specify which augmentations to use.                                            | `pitchshift`, `timeshift`, `addnoise`, `polarityinversion`, `gain`, `hpf`, `lpf` or `all`| `pitchshift` |
+| `--augment`         | Specify which augmentations to use.                                 | `pitchshift`, `timeshift`, `addnoise`, `polarityinversion`, `gain`, `hpf`, `lpf` or `all`| `pitchshift` |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
@@ -178,22 +178,24 @@ Input Device ID  1  -  BlackHole 2ch
 Input Device ID  2  -  BlackHole 16ch
 ```
 
-Once you have found your device ID, use the command `python realtime.py` to start using your model in real time. Arguments `--name`, `--input` and `--channel`are required.
-The script will automatically take the most recent model of your project.
+Once you have found your device ID, use the command `python realtime.py` to run your model in real time. The arguments `--name`, `--input`, and `--channel` are required.
+The script will automatically run the most recent model of your project.
 ```
 python realtime.py --name your_project --input 0 --channel 1 
 ```
 
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
-| `--name`             | Name of the project.                                               | String                         | `None`          |
+| `--name`            | Name of the project.                                                | String                         | `None`          |
+| `--input`           | Specify the audio device ID.                                        | String                         | `None`          |
+| `--channel`         | Specify the channel of the audio device.                            | String                         | `None`          |
 | `--device`          | Specify the hardware on which computation should be performed.      | `cpu`, `cuda`, `mps`           | `cpu`           |
 | `--gpu`             | Specify which GPU to use.                                           | Integer                        | `0`             |
 | `--buffer_size`     | Specify audio buffer size.                                          | Integer                        | `256`           |
 | `--moving_average`  | Window size for smoothing predictions with a moving average.        | Integer                        | `5`             |
 
 Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` address.
-Use a UDP receiver to retrieve the predictions.
+Use a UDP receiver to retrieve the predictions as integers.
 
 ## Related works
 If you use this code in your research, please cite the following papers.
