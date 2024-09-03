@@ -190,12 +190,38 @@ Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` ad
 Use an UDP receiver to retrieve the predictions.
 
 ## Related works
-### Papers
-• Nicolas Brochec, Tsubasa Tanaka, Will Howie. [Microphone-based Data Augmentation for Automatic Recognition of Instrumental Playing Techniques](https://hal.science/hal-04642673). International Computer Music Conference (ICMC 2024), Jul 2024, Seoul, South Korea.
+If you use this code in research please the following papers.
 
+```
+@inproceedings{brochec:hal-04642673,
+  TITLE = {{Microphone-based Data Augmentation for Automatic Recognition of Instrumental Playing Techniques}},
+  AUTHOR = {Brochec, Nicolas and Tanaka, Tsubasa and Howie, Will},
+  URL = {https://hal.science/hal-04642673},
+  BOOKTITLE = {{International Computer Music Conference (ICMC 2024)}},
+  ADDRESS = {Seoul, South Korea},
+  YEAR = {2024},
+  MONTH = Jul,
+  PDF = {https://hal.science/hal-04642673/file/Brochec_Microphone_based_Data_Augmentation_for_Automatic_Recognition_of_Instrument_Playing_Techniques_.pdf},
+  HAL_ID = {hal-04642673},
+  HAL_VERSION = {v1},
+}
+
+@inproceedings{fiorini:hal-04635907,
+  TITLE = {{Guiding Co-Creative Musical Agents through Real-Time Flute Instrumental Playing Technique Recognition}},
+  AUTHOR = {Fiorini, Marco and Brochec, Nicolas},
+  URL = {https://hal.science/hal-04635907},
+  BOOKTITLE = {{Sound and Music Computing Conference (SMC 2024)}},
+  ADDRESS = {Porto, Portugal},
+  YEAR = {2024},
+  MONTH = Jul,
+  KEYWORDS = {AI ; Co-creativity ; Instrumental playing techniques ; Multi-agent system ; Somax2},
+  PDF = {https://hal.science/hal-04635907/file/SMC2024_GUIDING_CO_CREATIVE_MUSICAL_AGENTS_THROUGH_REAL_TIME_FLUTE_INSTRUMENTAL_PLAYING_TECHNIQUE_RECOGNITION_CAMERA_READY.pdf},
+  HAL_ID = {hal-04635907},
+  HAL_VERSION = {v1},
+}
+```
+### Other related paper
 • Nicolas Brochec and Tsubasa Tanaka. [Toward Real-Time Recognition of Instrumental Playing Techniques for Mixed Music: A Preliminary Analysis](https://hal.science/hal-04263718). International Computer Music Conference (ICMC 2023), Oct 2023, Shenzhen, China.
-
-• Marco Fiorini and Nicolas Brochec. [Guiding Co-Creative Musical Agents through Real-Time Flute Instrumental Playing Technique Recognition](https://hal.science/hal-04635907). Sound and Music Computing Conference (SMC 2024), Jul 2024, Porto, Portugal.
 
 ### Datasets
 • Nicolas Brochec and Will Howie. [GFDatabase: A Database of Flute Playing Techniques](https://doi.org/10.5281/zenodo.10932398) (version 1.0.1). Zenodo, 2024.
