@@ -190,7 +190,7 @@ Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` ad
 Use an UDP receiver to retrieve the predictions.
 
 ## Related works
-If you use this code in research please the following papers.
+If you use this code in your research, please cite the following papers.
 
 ```
 @inproceedings{brochec:hal-04642673,
