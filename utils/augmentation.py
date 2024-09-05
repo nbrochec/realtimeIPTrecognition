@@ -11,7 +11,6 @@
 #############################################################################
 
 import torch
-import torch.nn.functional as F
 from torch_audiomentations import PitchShift, AddColoredNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
 
 '''
