@@ -10,23 +10,15 @@
 # Implement global utility functions
 #############################################################################
 
-from glob import glob
-from pathlib import Path
-import os, sys
-import numpy as np
-import torch, torchaudio, h5py, random, shutil
-import torchaudio.transforms as Taudio
-import torch.nn.functional as Fnn
-
-from torch.utils.data import TensorDataset, DataLoader
-from externals.pytorch_balanced_sampler.sampler import SamplerFactory
+import os, csv, yaml
+import torch, torchaudio, random
 
 import pandas as pd
-import csv
-from tqdm import tqdm
-import yaml
 
-import datetime
+from glob import glob
+from tqdm import tqdm
+from torch.utils.data import TensorDataset, DataLoader
+from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
 class DirectoryManager:
     @staticmethod
