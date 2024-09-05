@@ -13,7 +13,6 @@
 import torch
 import torchaudio
 from pythonosc import udp_client, osc_message_builder
-from pythonosc.dispatcher import Dispatcher
 import torch.nn.functional as F
 
 class Resample:
