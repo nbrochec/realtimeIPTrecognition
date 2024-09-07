@@ -198,6 +198,11 @@ python realtime.py --name your_project --input 0 --channel 1
 Predictions [0, n_class-1] are sent via UDP through selected port (default is 5005) with a `/class` address.
 Use a UDP receiver to retrieve the predictions as integers.
 
+## Real-time Usage Example
+
+[cmdexample.png](https://postimg.cc/R33ZgXsG)
+[maxexemple.png](https://postimg.cc/jLGq3zfh)
+
 ## Related works
 If you use this code in your research, please cite the following papers.
 
