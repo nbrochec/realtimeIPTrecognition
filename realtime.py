@@ -39,6 +39,7 @@ def parse_arguments():
     parser.add_argument('--name', type=str, required=True, help='Name of the project.')
     parser.add_argument('--buffer_size', type=int, default=256, help='Specify audio buffer size.')
     parser.add_argument('--moving_average', type=int, default=5, help='Window size for smoothing predictions with a moving average.')
+    parser.add_argument('--port', type=int, default=5005, help='Specify UDP port.')
     return parser.parse_args()
 
 args = parse_arguments()
@@ -66,7 +67,7 @@ NUM_CLASSES = dict['Number of Classes']
 SMOOTH_WINDOW = 10
 
 pred_buffer = PredictionBuffer(NUM_CLASSES, SMOOTH_WINDOW)
-sender = SendOSCMessage()
+sender = SendOSCMessage(args)
 cumulativeAudio = torch.zeros((1, 1, SEGMENT_LENGTH))
 
 
