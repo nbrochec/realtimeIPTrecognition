@@ -201,7 +201,7 @@ Use a UDP receiver to retrieve the predictions as integers.
 ## Real-time Usage Example
 
 ![](docs/cmdexample.png)
-![](docs/maxexemple.png)
+![](docs/maxpatchexemple.png)
 
 ## Related works
 If you use this code in your research, please cite the following papers.
