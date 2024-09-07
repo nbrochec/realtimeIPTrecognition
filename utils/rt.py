@@ -21,9 +21,9 @@ class Resample:
         return torchaudio.functional.resample(tensor, original_sr, target_sr)
     
 class SendOSCMessage:
-    def __init__(self):
+    def __init__(self, args):
         self.ip = "127.0.0.1" #localhost
-        self.port = 5005
+        self.port = args.port
         self.client = udp_client.SimpleUDPClient(self.ip, self.port)
 
     def send_message(self, pred):
