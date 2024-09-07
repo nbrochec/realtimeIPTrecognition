@@ -193,8 +193,9 @@ python realtime.py --name your_project --input 0 --channel 1
 | `--gpu`             | Specify which GPU to use.                                           | Integer                        | `0`             |
 | `--buffer_size`     | Specify audio buffer size.                                          | Integer                        | `256`           |
 | `--moving_average`  | Window size for smoothing predictions with a moving average.        | Integer                        | `5`             |
+| `--port`            | Specify UDP port.                                                   | Integer                        | `5005`          |
 
-Predictions [0, n_class-1] are sent via UDP through port 5005 with a `/class` address.
+Predictions [0, n_class-1] are sent via UDP through selected port (default is 5005) with a `/class` address.
 Use a UDP receiver to retrieve the predictions as integers.
 
 ## Related works
