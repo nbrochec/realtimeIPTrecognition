@@ -200,8 +200,8 @@ Use a UDP receiver to retrieve the predictions as integers.
 
 ## Real-time Usage Example
 
-![cmdexample.png](https://postimg.cc/R33ZgXsG)
-![maxexemple.png](https://postimg.cc/jLGq3zfh)
+![](docs/cmdexample.png)
+![](docs/maxexemple.png)
 
 ## Related works
 If you use this code in your research, please cite the following papers.
