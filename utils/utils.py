@@ -238,7 +238,7 @@ class ProcessDataset:
         self.y = torch.tensor(self.y)
 
     def get_data(self):
-        return TensorDataset(self.X, self.y)
+        return TensorDataset(self.X, self.y).to(self.device)
 
 class BalancedDataLoader:
     """
@@ -249,10 +249,11 @@ class BalancedDataLoader:
     dataset : Dataset
         The PyTorch dataset.
     """
-    def __init__(self, dataset):
+    def __init__(self, dataset, device):
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
         self.batch_size = self.num_classes
+        self.device = device
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
@@ -291,8 +292,8 @@ class BalancedDataLoader:
             segments.extend(segs)
             labels.extend(lbls)
 
-        segments_tensor = torch.stack(segments)
-        labels_tensor = torch.tensor(labels)
+        segments_tensor = torch.stack(segments).to(self.device)
+        labels_tensor = torch.tensor(labels).to(self.device)
 
         return segments_tensor, labels_tensor
 
@@ -313,6 +314,7 @@ class PrepareData:
         self.args = args
         self.csv = csv_file_path
         self.seg_len = seg_len
+        self.device = args.device
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
@@ -320,7 +322,7 @@ class PrepareData:
         test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
 
-        train_loader = BalancedDataLoader(train_dataset.get_data()).get_dataloader()
+        train_loader = BalancedDataLoader(train_dataset.get_data(), self.device).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
         val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
         
@@ -411,9 +413,10 @@ class GetDevice:
         gpu = args.gpu
         
         if device_name != 'cpu':
-            torch.set_default_device(f'{device_name}:{gpu}')
+            device = torch.set_device(f'{device_name}:{gpu}')
             print(f'This script uses {device_name}:{gpu} as the torch device.')
         else:
-            torch.set_default_device('cpu')
+            device = torch.set_device('cpu')
             print(f'This script uses CPU as the torch device.')
         
+        return device
