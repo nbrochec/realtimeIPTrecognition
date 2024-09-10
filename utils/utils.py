@@ -238,7 +238,7 @@ class ProcessDataset:
         self.y = torch.tensor(self.y)
 
     def get_data(self):
-        return TensorDataset(self.X, self.y).to(self.device)
+        return TensorDataset(self.X, self.y)
 
 class BalancedDataLoader:
     """
