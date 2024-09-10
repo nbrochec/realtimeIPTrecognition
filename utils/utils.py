@@ -387,6 +387,12 @@ class SaveYAML:
         cwd = os.getcwd()
         path_to_run = os.path.join(cwd, 'runs', name)
 
+        if not os.path.exists(os.path.join(cwd, 'runs')):
+            os.makedirs(os.path.join(cwd, 'runs'))
+
+        if not os.path.exists(path_to_run):
+            os.makedirs(path_to_run)
+
         current_config = {'Name':args.name, 'Model': args.config , 'Sampling Rate':args.sr,'Segment Overlap':args.segment_overlap,
                       'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Augmentations':args.augment,
                       'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduceLR, 'Number of Classes':num_classes}
