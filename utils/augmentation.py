@@ -11,8 +11,9 @@
 #############################################################################
 
 import torch
-from torch_audiomentations import PitchShift, AddColoredNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
+from audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
 import torch.nn.functional as F
+import numpy as np
 
 '''
 Principally using torch_audiomentations because:
@@ -38,73 +39,74 @@ class ApplyAugmentations:
         """
         Applies the selected augmentations to the given data.
         """
-        data = data.to(self.device)
-        original_size = data.size(-1)
+        data = data.cpu().squeeze(1).detach().numpy()
+
+        original_size = data.shape[1]
         augmented_data_list = []
 
-        with torch.no_grad():
-            augmentations_dict = {
-                'pitchshift': self.pitch_shift,
-                'timeshift': self.shift,
-                'addnoise': self.add_noise,
-                'polarityinversion': self.polarity_inversion,
-                'gain': self.gain,
-                'hpf': self.highpassfilter,
-                'lpf': self.lowpassfilter
-            }
+        augmentations_dict = {
+            'pitchshift': self.pitch_shift,
+            'timeshift': self.shift,
+            'addnoise': self.add_noise,
+            'polarityinversion': self.polarity_inversion,
+            'gain': self.gain,
+            'hpf': self.highpassfilter,
+            'lpf': self.lowpassfilter
+        }
 
-            for augmentation in self.augmentations:
-                if augmentation == 'all':
-                    aug_data = [
-                        augmentations_dict['pitchshift'](data),
-                        augmentations_dict['timeshift'](data),
-                        augmentations_dict['addnoise'](data),
-                        augmentations_dict['polarityinversion'](data),
-                        augmentations_dict['gain'](data),
-                        augmentations_dict['hpf'](data),
-                        augmentations_dict['lpf'](data)
-                    ]
-                    augmented_data_list.extend(aug_data)
-                    continue 
+        for augmentation in self.augmentations:
+            if augmentation == 'all':
+                aug_data = [
+                    augmentations_dict['pitchshift'](data),
+                    augmentations_dict['timeshift'](data),
+                    augmentations_dict['addnoise'](data),
+                    augmentations_dict['polarityinversion'](data),
+                    augmentations_dict['gain'](data),
+                    augmentations_dict['hpf'](data),
+                    augmentations_dict['lpf'](data)
+                ]
+                augmented_data_list.extend(aug_data)
+                continue 
 
-                aug_data = augmentations_dict.get(augmentation, lambda x: x)(data)
-                aug_data = self.pad_or_trim(aug_data, original_size)
-                augmented_data_list.append(aug_data)
+            aug_data = augmentations_dict.get(augmentation, lambda x: x)(data)
+            aug_data = self.pad_or_trim(aug_data, original_size)
+            augmented_data_list.append(aug_data)
 
-            augmented_data = torch.cat(augmented_data_list, dim=0).to(self.device)
+        augmented_data_list = [torch.tensor(d).unsqueeze(1) for d in augmented_data_list] 
+        augmented_data = torch.cat(augmented_data_list, dim=0).to(self.device)
 
         return augmented_data
 
     def pad_or_trim(self, data, original_size):
-        current_size = data.size(-1)
+        current_size = data.shape[1]
         
         if current_size > original_size:
             data = data[..., :original_size]
         elif current_size < original_size:
             padding = (0, original_size - current_size)
-            data = F.pad(data, pad=padding, mode='constant', value=0).to(self.device)
+            data = np.pad(data, pad_width=padding, mode='constant', constant_values=0)
         
         return data
 
     def pitch_shift(self, data):
-        transform = PitchShift(min_transpose_semitones=-12.0, max_transpose_semitones=12.0, p=1, sample_rate=self.sr)
-        return transform(data)
+        transform = PitchShift(min_semitones=-12.0, max_semitones=12.0, p=1)
+        return transform(data, sample_rate= self.sr)
 
     def shift(self, data):
         transform = Shift(rollover=True, p=1)
-        return transform(data)
+        return transform(data, sample_rate= self.sr)
 
     def add_noise(self, data):
-        transform = AddColoredNoise(p=1)
+        transform = AddColorNoise(p=1)
         return transform(data, sample_rate=self.sr)
     
     def polarity_inversion(self, data):
         transform = PolarityInversion(p=1)
-        return transform(data)
+        return transform(data, sample_rate= self.sr)
     
     def gain(self, data):
         transform = Gain(p=1)
-        return transform(data)
+        return transform(data, sample_rate= self.sr)
     
     def highpassfilter(self, data):
         transform = HighPassFilter(p=1)
