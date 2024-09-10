@@ -411,11 +411,9 @@ class GetDevice:
         gpu = args.gpu
         
         if device_name != 'cpu':
-            torch.cuda.set_device(gpu)
-            device = torch.device(f'cuda:{gpu}')
+            torch.cuda.set_default_device(f'{device_name}:{gpu}')
             print(f'This script uses {device_name}:{gpu} as the torch device.')
         else:
-            device = torch.device('cpu')
+            torch.cuda.set_default_device('cpu')
             print(f'This script uses CPU as the torch device.')
         
-        return device
