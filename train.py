@@ -68,7 +68,11 @@ def get_csv_file_path(args):
 
 if __name__ == '__main__':
     args = parse_arguments()
-    GetDevice.get_device(args)
+    # GetDevice.get_device(args)
+
+    if args.device:
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        print('cuda')
 
     csv_file_path = get_csv_file_path(args)
 
