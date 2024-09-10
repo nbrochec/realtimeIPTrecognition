@@ -252,7 +252,7 @@ class BalancedDataLoader:
     def __init__(self, dataset, device):
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
-        self.batch_size = self.num_classes
+        self.batch_size = self.num_classes * 2
         self.device = device
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
