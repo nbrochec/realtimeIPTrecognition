@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     best_state = None
 
-    trainer = ModelTrainer(model, loss_fn)
+    trainer = ModelTrainer(model, loss_fn, args.device)
 
     for epoch in range(args.epochs):
         print(f'Epoch {epoch+1}/{args.epochs}')
