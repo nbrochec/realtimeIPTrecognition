@@ -27,8 +27,8 @@ class LoadModel:
         self.models = {
             'v1': v1,
             'v2': v2,
-            'one_residual': one_residual,
-            'two_residual': two_residual,
+            'one-residual': one_residual,
+            'two-residual': two_residual,
             'transformer': transformer,
         }
     
