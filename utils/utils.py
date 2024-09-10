@@ -400,19 +400,16 @@ class SaveYAML:
 class GetDevice:
     @staticmethod
     def get_device(args):
-        """Automatically select the device."""
+        """Automatically select the device and move everything to it."""
         device_name = args.device
         gpu = args.gpu
         
         if device_name != 'cpu':
-            if gpu == 0:
-                torch.set_default_device('cuda:0')
-                print(f'This script uses {device_name}:0 as the torch device.')
-            else:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-                torch.set_default_device(f'{device_name}:{gpu}')
-                print(f'This script uses {device_name}:{gpu} as the torch device.')
+            torch.cuda.set_device(gpu)
+            device = torch.device(f'cuda:{gpu}')
+            print(f'This script uses {device_name}:{gpu} as the torch device.')
         else:
-            torch.set_default_device('cpu')
+            device = torch.device('cpu')
             print(f'This script uses CPU as the torch device.')
+        
+        return device
