@@ -42,38 +42,36 @@ class ApplyAugmentations:
         original_size = data.size(-1)
         augmented_data_list = []
 
-        for augmentation in self.augmentations:
-            if augmentation == 'pitchshift':
-                aug_data = self.pitch_shift(data)
-            elif augmentation == 'timeshift':
-                aug_data = self.shift(data)
-            elif augmentation == 'addnoise':
-                aug_data = self.add_noise(data)
-            elif augmentation == 'polarityinversion':
-                aug_data = self.polarity_inversion(data)
-            elif augmentation == 'gain':
-                aug_data = self.gain(data)
-            elif augmentation == 'hpf':
-                aug_data = self.highpassfilter(data)
-            elif augmentation == 'lpf':
-                aug_data = self.lowpassfilter(data)
-            elif augmentation == 'all':
-                aug_data = [
-                    self.pitch_shift(data),
-                    self.shift(data),
-                    self.add_noise(data),
-                    self.polarity_inversion(data),
-                    self.gain(data),
-                    self.highpassfilter(data),
-                    self.lowpassfilter(data)
-                ]
-                augmented_data_list.extend(aug_data)
-                continue 
+        with torch.no_grad():
+            augmentations_dict = {
+                'pitchshift': self.pitch_shift,
+                'timeshift': self.shift,
+                'addnoise': self.add_noise,
+                'polarityinversion': self.polarity_inversion,
+                'gain': self.gain,
+                'hpf': self.highpassfilter,
+                'lpf': self.lowpassfilter
+            }
 
-            aug_data = self.pad_or_trim(aug_data, original_size)
-            augmented_data_list.append(aug_data)
+            for augmentation in self.augmentations:
+                if augmentation == 'all':
+                    aug_data = [
+                        augmentations_dict['pitchshift'](data),
+                        augmentations_dict['timeshift'](data),
+                        augmentations_dict['addnoise'](data),
+                        augmentations_dict['polarityinversion'](data),
+                        augmentations_dict['gain'](data),
+                        augmentations_dict['hpf'](data),
+                        augmentations_dict['lpf'](data)
+                    ]
+                    augmented_data_list.extend(aug_data)
+                    continue 
 
-        augmented_data = torch.cat(augmented_data_list, dim=0).to(self.device)
+                aug_data = augmentations_dict.get(augmentation, lambda x: x)(data)
+                aug_data = self.pad_or_trim(aug_data, original_size)
+                augmented_data_list.append(aug_data)
+
+            augmented_data = torch.cat(augmented_data_list, dim=0).to(self.device)
 
         return augmented_data
 
