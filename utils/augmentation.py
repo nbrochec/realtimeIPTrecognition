@@ -12,6 +12,7 @@
 
 import torch
 from torch_audiomentations import PitchShift, AddColoredNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
+import torch.nn.functional as F
 
 '''
 Principally using torch_audiomentations because:
@@ -20,7 +21,7 @@ Principally using torch_audiomentations because:
 '''
 
 class ApplyAugmentations:
-    def __init__(self, augmentations, sample_rate):
+    def __init__(self, augmentations, sample_rate, device):
         """
         Initializes the augmentation class with the list of augmentations to apply.
 
@@ -31,6 +32,7 @@ class ApplyAugmentations:
         """
         self.augmentations = augmentations
         self.sr = sample_rate
+        self.device = device
 
     def apply(self, data):
         """
@@ -70,7 +72,7 @@ class ApplyAugmentations:
             aug_data = self.pad_or_trim(aug_data, original_size)
             augmented_data_list.append(aug_data)
 
-        augmented_data = torch.cat(augmented_data_list, dim=0)
+        augmented_data = torch.cat(augmented_data_list, dim=0).to(self.device)
 
         return augmented_data
 
