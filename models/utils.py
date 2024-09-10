@@ -215,11 +215,11 @@ class ModelTrainer:
                 batch_size = data.size(0)
                 _, predicted = torch.max(outputs, 1)
 
-                accuracy_metric.update(preds=predicted, target=targets).to(self.device)
-                precision_metric.update(preds=predicted, target=targets).to(self.device)
-                recall_metric.update(preds=predicted, target=targets).to(self.device)
-                f1_metric.update(preds=predicted, target=targets).to(self.device)
-                cm_metric.update(preds=predicted, target=targets).to(self.device)
+                accuracy_metric.update(preds=predicted, target=targets)
+                precision_metric.update(preds=predicted, target=targets)
+                recall_metric.update(preds=predicted, target=targets)
+                f1_metric.update(preds=predicted, target=targets)
+                cm_metric.update(preds=predicted, target=targets)
 
                 running_loss += loss.item() * batch_size
                 total_samples += batch_size
