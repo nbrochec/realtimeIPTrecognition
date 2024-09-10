@@ -87,7 +87,7 @@ if __name__ == '__main__':
     if args.reduceLR == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
 
-    augmentations = ApplyAugmentations(args.augment.split(), args.sr)
+    augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
     aug_nbr = augmentations.get_aug_nbr()
 
     max_val_loss = np.inf
