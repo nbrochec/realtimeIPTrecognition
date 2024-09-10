@@ -38,6 +38,7 @@ class ApplyAugmentations:
         """
         Applies the selected augmentations to the given data.
         """
+        data = data.to(self.device)
         original_size = data.size(-1)
         augmented_data_list = []
 
@@ -83,7 +84,7 @@ class ApplyAugmentations:
             data = data[..., :original_size]
         elif current_size < original_size:
             padding = (0, original_size - current_size)
-            data = F.pad(data, pad=padding, mode='constant', value=0)
+            data = F.pad(data, pad=padding, mode='constant', value=0).to(self.device)
         
         return data
 
