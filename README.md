@@ -19,6 +19,13 @@ Create a conda environment with Python 3.11.7
 conda create --name IPT python=3.11.7
 conda activate IPT
 ```
+Make sure that `portaudio`is installed on your computer.
+```
+sudo apt-get install portaudio19-dev
+```
+```
+brew install portaudio
+```
 Install dependencies.
 ```
 pip install -r requirements.txt
