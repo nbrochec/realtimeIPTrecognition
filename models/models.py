@@ -225,7 +225,7 @@ class transformer(nn.Module):
 
         self.transformer = nn.Transformer(d_model=256, nhead=4, num_encoder_layers=3, num_decoder_layers=3, batch_first=True)
 
-        self.maxpool2d = nn.MaxPool2d((4, 1)) 
+        self.avgpool2d = nn.AvgPool2d((4, 1)) 
 
         self.fc = nn.Sequential(
             nn.Linear(256, 128),
@@ -240,7 +240,7 @@ class transformer(nn.Module):
         x = self.cnn(x).squeeze(3)
         x = x.permute(0, 2, 1)
         x = self.transformer(x, x)
-        x = self.maxpool2d(x)
+        x = self.avgpool2d(x)
         x = x.flatten(start_dim=1)
         x = self.fc(x)
         return x
