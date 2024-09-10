@@ -200,7 +200,7 @@ class ProcessDataset:
         """
         Process all audio files and store them in X and y.
         """
-        for _, row in self.data.iterrows():
+        for _, row in tqdm(self.data.iterrows()):
             file_path = row['file_path']
             label = row['label']
             label = self.label_map[label]
