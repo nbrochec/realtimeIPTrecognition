@@ -107,7 +107,7 @@ if __name__ == '__main__':
         print(f'Validation Loss: {val_loss:.4f}')
 
         if args.reduceLR:
-            scheduler.step()
+            scheduler.step(val_loss)
         
         if args.early_stopping:
             if val_loss < max_val_loss:
