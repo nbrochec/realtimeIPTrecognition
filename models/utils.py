@@ -15,7 +15,7 @@ import humanize
 import sys
 import pandas as pd
 
-from models import v1, v2, one_residual, two_residual, transformer
+from models import v1, v2, v3, one_residual, two_residual, transformer
 import torch.nn.init as init
 
 from tqdm import tqdm
@@ -27,6 +27,7 @@ class LoadModel:
         self.models = {
             'v1': v1,
             'v2': v2,
+            'v3': v3,
             'one-residual': one_residual,
             'two-residual': two_residual,
             'transformer': transformer,
@@ -239,7 +240,7 @@ class ModelTrainer:
         print(f'Test Macro F1 Score: {f1:.4f}')
 
         stacked_metrics = torch.stack([accuracy.to(self.device), precision.to(self.device), recall.to(self.device), f1.to(self.device), torch.tensor(running_loss).to(self.device)], dim=0)
-        
+
         return stacked_metrics, cm
     
 class PrepareModel:
