@@ -93,6 +93,51 @@ class v2(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+class v3(nn.Module):
+    def __init__(self, output_nbr):
+        super(v2, self).__init__()
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        
+        self.cnn = nn.Sequential(
+            custom2DCNN(1, 64, (2,3), "same"),
+            custom2DCNN(64, 64, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            custom2DCNN(64, 128, (2,3), "same"),
+            custom2DCNN(128, 128, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            custom2DCNN(128, 256, 2, "same"),
+            custom2DCNN(256, 256, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            custom2DCNN(256, 256, 2, "same"),
+            custom2DCNN(256, 256, 2, "same"),
+            nn.MaxPool2d(2),
+            custom2DCNN(256, 512, 2, "same"),
+            custom2DCNN(512, 512, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            custom2DCNN(512, 512, 2, "same"),
+            custom2DCNN(512, 512, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            custom2DCNN(512, 512, 2, "same"),
+            custom2DCNN(512, 512, 2, "same"),
+            nn.MaxPool2d(2),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ELU(),
+            nn.Linear(256, 128),
+            nn.ELU(),
+            nn.Linear(128, output_nbr),
+        )
+
+    def forward(self, x):
+        x = self.logmel(x)
+        x = self.cnn(x)
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
 
 class one_residual(nn.Module):
     def __init__(self, output_nbr):
