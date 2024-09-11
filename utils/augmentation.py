@@ -11,9 +11,10 @@
 #############################################################################
 
 import torch
-from audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter
+from audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, LowPassFilter, Mp3Compression, ClippingDistortion, BitCrush, AirAbsorption
 import torch.nn.functional as F
 import numpy as np
+import librosa
 
 '''
 Principally using torch_audiomentations because:
@@ -46,24 +47,32 @@ class ApplyAugmentations:
 
         augmentations_dict = {
             'pitchshift': self.pitch_shift,
+            'lb_pitchshift': self.lb_pitch_shift,
             'timeshift': self.shift,
             'addnoise': self.add_noise,
             'polarityinversion': self.polarity_inversion,
             'gain': self.gain,
             'hpf': self.highpassfilter,
-            'lpf': self.lowpassfilter
+            'lpf': self.lowpassfilter,
+            'clipping': self.clippingdisto,
+            'bitcrush': self.bitcrush,
+            'airabso': self.airabso
         }
 
         for augmentation in self.augmentations:
             if augmentation == 'all':
                 aug_data = [
                     augmentations_dict['pitchshift'](data),
+                    augmentations_dict['lb_pitchshift'](data),
                     augmentations_dict['timeshift'](data),
                     augmentations_dict['addnoise'](data),
                     augmentations_dict['polarityinversion'](data),
                     augmentations_dict['gain'](data),
                     augmentations_dict['hpf'](data),
-                    augmentations_dict['lpf'](data)
+                    augmentations_dict['lpf'](data),
+                    augmentations_dict['clipping'](data),
+                    augmentations_dict['bitcrush'](data),
+                    augmentations_dict['airabso'](data)
                 ]
                 augmented_data_list.extend(aug_data)
                 continue 
@@ -91,6 +100,11 @@ class ApplyAugmentations:
     def pitch_shift(self, data):
         transform = PitchShift(min_semitones=-12.0, max_semitones=12.0, p=1)
         return transform(data, sample_rate= self.sr)
+    
+    def lb_pitch_shift(self, data):
+        ra = np.random.randint(-24, 24, dtype=int)
+        data = librosa.effects.pitch_shift(data, sr=self.sr, bins_per_octave=24, n_steps=ra)
+        return data
 
     def shift(self, data):
         transform = Shift(rollover=True, p=1)
@@ -116,8 +130,20 @@ class ApplyAugmentations:
         transform = LowPassFilter(p=1)
         return transform(data, sample_rate=self.sr)
     
+    def clippingdisto(self, data):
+        transform = ClippingDistortion(p=1)
+        return transform(data, sample_rate=self.sr)
+    
+    def bitcrush(self, data):
+        transform = BitCrush(p=1)
+        return transform(data, sample_rate=self.sr)
+    
+    def airabso(self, data):
+        transform = AirAbsorption(p=1)
+        return transform(data, sample_rate=self.sr)
+    
     def get_aug_nbr(self):
         aug_nbr = len(self.augmentations)
         if self.augmentations == ['all']:
-            aug_nbr = 7
+            aug_nbr = 11
         return aug_nbr
