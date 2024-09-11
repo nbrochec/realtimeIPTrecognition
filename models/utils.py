@@ -224,10 +224,10 @@ class ModelTrainer:
                 running_loss += loss.item() * batch_size
                 total_samples += batch_size
 
-        accuracy = torch.round(accuracy_metric.compute(), decimals=4).to(self.device)
-        precision = torch.round(precision_metric.compute(), decimals=4).to(self.device)
-        recall = torch.round(recall_metric.compute(), decimals=4).to(self.device)
-        f1 = torch.round(f1_metric.compute(), decimals=4).to(self.device)
+        accuracy = torch.round(accuracy_metric.compute(), decimals=4)
+        precision = torch.round(precision_metric.compute(), decimals=4)
+        recall = torch.round(recall_metric.compute(), decimals=4)
+        f1 = torch.round(f1_metric.compute(), decimals=4)
         cm = cm_metric.compute()
 
         running_loss = running_loss / total_samples
@@ -238,7 +238,8 @@ class ModelTrainer:
         print(f'Test Recall: {recall:.4f}')
         print(f'Test Macro F1 Score: {f1:.4f}')
 
-        stacked_metrics = torch.stack([accuracy, precision, recall, f1, torch.tensor(running_loss)], dim=0).to(self.device)
+        stacked_metrics = torch.stack([accuracy.to(self.device), precision.to(self.device), recall.to(self.device), f1.to(self.device), torch.tensor(running_loss).to(self.device)], dim=0)
+        
         return stacked_metrics, cm
     
 class PrepareModel:
