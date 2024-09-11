@@ -96,7 +96,7 @@ class v2(nn.Module):
     
 class v3(nn.Module):
     def __init__(self, output_nbr):
-        super(v2, self).__init__()
+        super(v3, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
         
