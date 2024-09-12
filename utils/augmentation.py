@@ -16,12 +16,6 @@ import torch.nn.functional as F
 import numpy as np
 import librosa
 
-'''
-Principally using torch_audiomentations because:
-1. Augmentations are applied inside the training loop.
-2. torch_audiomentations enables GPU computation to generate augmentated data.
-'''
-
 class ApplyAugmentations:
     def __init__(self, augmentations, sample_rate, device):
         """
@@ -31,6 +25,10 @@ class ApplyAugmentations:
         ----------
         augmentations : list
             List of names of augmentations to apply.
+        sample_rate : int
+            Sample rate.
+        device : torch.device
+            The device to which the data will be moved.
         """
         self.augmentations = augmentations
         self.sr = sample_rate
@@ -56,7 +54,8 @@ class ApplyAugmentations:
             'lpf': self.lowpassfilter,
             'clipping': self.clippingdisto,
             'bitcrush': self.bitcrush,
-            'airabso': self.airabso
+            'airabso': self.airabso,
+            'gaussnoise': self.gaussnoise
         }
 
         for augmentation in self.augmentations:
@@ -72,7 +71,8 @@ class ApplyAugmentations:
                     augmentations_dict['lpf'](data),
                     augmentations_dict['clipping'](data),
                     augmentations_dict['bitcrush'](data),
-                    augmentations_dict['airabso'](data)
+                    augmentations_dict['airabso'](data),
+                    augmentations_dict['gaussnoise'](data)
                 ]
                 augmented_data_list.extend(aug_data)
                 continue 
@@ -102,13 +102,20 @@ class ApplyAugmentations:
         return transform(data, sample_rate= self.sr)
     
     def lb_pitch_shift(self, data):
-        ra = np.random.randint(-24, 24, dtype=int)
-        data = librosa.effects.pitch_shift(data, sr=self.sr, bins_per_octave=24, n_steps=ra)
-        return data
+        random_number = np.random.uniform(-100, 100)
+        random_tuning = 440 + random_number
+        change_tuning = librosa.A4_to_tuning(random_tuning)
+        return librosa.effects.pitch_shift(data, sr=self.sr, n_steps=change_tuning, bins_per_octave=12)
 
     def shift(self, data):
         transform = Shift(rollover=True, p=1)
         return transform(data, sample_rate= self.sr)
+    
+    def gaussnoise(self, data):
+        length = len(data)
+        y = data + np.random.normal(0, 0.01) * np.random.randn(length)
+        y = y[:length]
+        return y
 
     def add_noise(self, data):
         transform = AddColorNoise(p=1)
@@ -145,5 +152,5 @@ class ApplyAugmentations:
     def get_aug_nbr(self):
         aug_nbr = len(self.augmentations)
         if self.augmentations == ['all']:
-            aug_nbr = 11
+            aug_nbr = 12
         return aug_nbr
