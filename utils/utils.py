@@ -363,13 +363,13 @@ class SaveResultsToDisk:
 
             if write_header:
                 writer.writerow([
-                    'Date', 'Time', 'Model Name', 'Sample Rate', 'Segment Overlap',
+                    'Date', 'Time', 'Run Name', 'Model Name', 'Sample Rate', 'Segment Overlap',
                     'Fmin', 'Learning Rate', 'Epochs', 'Augmentations', 'Early Stopping',
                     'Reduce LR on Plateau', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Loss'
                 ])
 
             writer.writerow([
-                date, time, args.name, args.sr, args.segment_overlap,
+                date, time, args.name, args.config, args.sr, args.segment_overlap,
                 args.fmin, args.lr, args.epochs, args.augment,
                 args.early_stopping, args.reduceLR, accuracy, precision,
                 recall, f1, loss
