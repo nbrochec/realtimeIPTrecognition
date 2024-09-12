@@ -83,7 +83,7 @@ class ApplyAugmentations:
 
         augmented_data_list = [torch.tensor(d).unsqueeze(1) for d in augmented_data_list] 
         augmented_data = torch.cat(augmented_data_list, dim=0).to(self.device)
-
+        augmented_data = augmented_data.to(torch.float32)
         return augmented_data
 
     def pad_or_trim(self, data, original_size):
@@ -105,17 +105,18 @@ class ApplyAugmentations:
         random_number = np.random.uniform(-100, 100)
         random_tuning = 440 + random_number
         change_tuning = librosa.A4_to_tuning(random_tuning)
-        return librosa.effects.pitch_shift(data, sr=self.sr, n_steps=change_tuning, bins_per_octave=12)
+        data = librosa.effects.pitch_shift(data, sr=self.sr, n_steps=change_tuning, bins_per_octave=12)
+        return data
 
     def shift(self, data):
         transform = Shift(rollover=True, p=1)
         return transform(data, sample_rate= self.sr)
     
     def gaussnoise(self, data):
-        length = len(data)
-        y = data + np.random.normal(0, 0.01) * np.random.randn(length)
-        y = y[:length]
-        return y
+        n_channels, length = data.shape
+        data = data + np.random.normal(0, 0.01, size=(n_channels, length)) * np.random.randn(n_channels, length)
+        data = data[:, :length]
+        return data
 
     def add_noise(self, data):
         transform = AddColorNoise(p=1)
