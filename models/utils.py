@@ -160,7 +160,6 @@ class ModelTrainer:
             data, targets = data.to(self.device), targets.to(self.device)
             optimizer.zero_grad()
 
-            # Apply augmentations
             augmented_data = augmentations.apply(data)
             new_data = torch.cat((data, augmented_data), dim=0)
             all_targets = torch.flatten(targets.repeat(aug_number + 1, 1))
@@ -179,14 +178,40 @@ class ModelTrainer:
         """
         self.model.eval()
         running_loss = 0.0
+
+        all_targets = []
+        for data, targets in loader:
+            all_targets.append(targets.cpu())
+        all_targets = torch.cat(all_targets)
+        class_nbr = len(torch.unique(all_targets))
+
+        val_acc = MulticlassAccuracy(num_classes=class_nbr)
+        val_f1 = MulticlassF1Score(num_classes=class_nbr, average='macro')
+        val_pre = MulticlassPrecision(num_classes=class_nbr).to(self.device)
+        val_rec = MulticlassRecall(num_classes=class_nbr).to(self.device)
+
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Validation", leave=False):
                 data, targets = data.to(self.device), targets.to(self.device)
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 running_loss += loss.item() * data.size(0)
-        
-        return running_loss / len(loader.dataset)
+                _, predicted = torch.max(outputs, 1)
+
+                val_acc.update(preds=predicted, target=targets)
+                val_pre.update(preds=predicted, target=targets)
+                val_rec.update(preds=predicted, target=targets)
+                val_f1.update(preds=predicted, target=targets)
+
+        val_loss = running_loss / len(loader.dataset)
+        val_loss = torch.tensor(val_loss).to(self.device)
+    
+        val_acc = val_acc.compute().detach().cpu().item()
+        val_pre = val_pre.compute().detach().cpu().item()
+        val_rec = val_rec.compute().detach().cpu().item()
+        val_f1 = val_f1.compute().detach().cpu().item()
+
+        return val_loss, val_acc, val_pre, val_rec, val_f1
 
     def test_model(self, loader):
         """
