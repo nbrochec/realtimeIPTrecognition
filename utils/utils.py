@@ -373,7 +373,7 @@ class SaveResultsToDisk:
         return label_map
 
     @staticmethod
-    def save_to_disk(args, stacked_metrics, cm, date, time, csv_file_path):
+    def save_to_disk(args, stacked_metrics, cm, date, time, csv_file_path, run_name):
         """
         Save the results to disk as a CSV file.
         """
@@ -381,7 +381,7 @@ class SaveResultsToDisk:
         label_map = SaveResultsToDisk.get_class_names(csv_file_path)
         labels = sorted(label_map.keys())
 
-        log_dir = os.path.join(os.getcwd(), 'logs', args.name)
+        log_dir = os.path.join(os.getcwd(), 'logs', run_name)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir) 
 
@@ -417,10 +417,10 @@ class SaveResultsToDisk:
 
 class SaveYAML:
     @staticmethod
-    def save_to_disk(args, num_classes):
+    def save_to_disk(args, num_classes, current_run):
         name = args.name
         cwd = os.getcwd()
-        path_to_run = os.path.join(cwd, 'runs', name)
+        path_to_run = current_run
 
         if not os.path.exists(os.path.join(cwd, 'runs')):
             os.makedirs(os.path.join(cwd, 'runs'))
