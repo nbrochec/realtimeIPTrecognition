@@ -26,6 +26,7 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.tensorboard import SummaryWriter
 
 from models import *
 from utils import *
@@ -55,7 +56,6 @@ def get_run_dir(run_name):
     runs = os.path.join(cwd, 'runs')
     if not os.path.exists(runs):
         os.makedirs(runs, exist_ok=True)
-    os.makedirs(os.path.join(runs, run_name), exist_ok=True)
     current_run = os.path.join(runs, run_name)
     return current_run
 
@@ -78,10 +78,6 @@ if __name__ == '__main__':
     modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH)
     model = modelPreparator.prepare()
 
-    SaveYAML.save_to_disk(args, num_classes)
-
-    current_run = get_run_dir(args.name)
-
     loss_fn = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr)
     if args.reduceLR == True:
@@ -95,16 +91,25 @@ if __name__ == '__main__':
     counter = 0
     num_epoch = 0
 
-    best_state = None
-
     trainer = ModelTrainer(model, loss_fn, args.device)
+    date = datetime.datetime.now().strftime('%Y%m%d')
+    time = datetime.datetime.now().strftime('%H%M%S')
+    writer = SummaryWriter(log_dir= f'runs/{args.name}_{date}_{time}')
+    current_run = f'{get_run_dir(args.name)}_{date}_{time}'
+    SaveYAML.save_to_disk(args, num_classes, current_run)
 
     for epoch in range(args.epochs):
-        print(f'Epoch {epoch+1}/{args.epochs}')
+        # print(f'Epoch {epoch+1}/{args.epochs}')
         train_loss = trainer.train_epoch(train_loader, optimizer, augmentations, aug_nbr)
-        print(f'Training Loss: {train_loss:.4f}')
-        val_loss = trainer.validate_epoch(val_loader)
-        print(f'Validation Loss: {val_loss:.4f}')
+        writer.add_scalar('epoch/epoch', epoch, epoch)
+        writer.add_scalar('Loss/train', train_loss, epoch)
+
+        val_loss, val_acc, val_pre, val_rec, val_f1 = trainer.validate_epoch(val_loader)
+        writer.add_scalar('Loss/val', val_loss, epoch)
+        writer.add_scalar('Accuracy/val', val_acc, epoch)
+        writer.add_scalar('Precision/val', val_pre, epoch)
+        writer.add_scalar('Recall/val', val_rec, epoch)
+        writer.add_scalar('F1/val', val_f1, epoch)
 
         if args.reduceLR:
             scheduler.step(val_loss)
@@ -126,16 +131,15 @@ if __name__ == '__main__':
 
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
-    date = datetime.datetime.now().strftime('%Y%m%d')
-    time = datetime.datetime.now().strftime('%H%M%S')
-    torch.save(model.state_dict(), f'{current_run}/{args.name}_ckpt_{date}_{time}.pth')
+    torch.save(model.state_dict(), f'{current_run}/{args.name}_{date}_{time}.pth')
     print(f'Checkpoints has been saved in the {os.path.relpath(current_run)} directory.')
 
     if args.export_ts:
         scripted_model = torch.jit.script(model)
-        scripted_model.save(f'{current_run}/{args.name}_ckpt_{date}_{time}.ts')
+        scripted_model.save(f'{current_run}/{args.name}_{date}_{time}.ts')
         print(f'TorchScript file has been exported to the {os.path.relpath(current_run)} directory.')
     
     if args.save_logs:
-        SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, date, time, csv_file_path)
+        run_name = os.path.basename(os.path.normpath(current_run))
+        SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, date, time, csv_file_path, run_name)
         print(f'Results have been save to logs directory.')
