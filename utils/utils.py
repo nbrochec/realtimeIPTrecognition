@@ -32,7 +32,7 @@ class DirectoryManager:
 
 class DatasetSplitter:
     @staticmethod
-    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_ratio=0.2, val_split='train', name='title'):
+    def split_train_validation(base_dir, destination='data/dataset/', train_dir='train', test_dir='test', val_dir=None, val_ratio=0.2, val_split='train', name='title'):
         """
         Splits the dataset into training, validation, and test sets, and saves the information in a CSV file.
 
@@ -44,6 +44,8 @@ class DatasetSplitter:
             The name of the training directory.
         test_dir : str
             The name of the test directory.
+        val_dir : str
+            The name of the val directory.
         val_ratio : float
             The ratio of the validation set to the total training dataset.
         val_split : str
@@ -53,62 +55,93 @@ class DatasetSplitter:
         """
         train_path = os.path.join(base_dir, train_dir)
         test_path = os.path.join(base_dir, test_dir)
+        val_path = os.path.join(base_dir, val_dir)
         csv_filename = f'{name}_dataset_split.csv'
 
         csv_path = os.path.join(destination, csv_filename)
 
         if val_split != 'train' and val_split != 'test':
             raise ValueError("val_split must be either 'train' or 'test'.")
+        
+        if val_dir is None:
+            with open(csv_path, mode='w', newline='') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(['file_path', 'label', 'set'])
 
-        with open(csv_path, mode='w', newline='') as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(['file_path', 'label', 'set'])
+                # Process train directory
+                for root, dirs, files in tqdm(os.walk(train_path), desc='Process training audio files.'):
+                    label = os.path.basename(root)
+                    all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
-            # Process train directory
-            for root, dirs, files in tqdm(os.walk(train_path), desc='Process training audio files.'):
-                label = os.path.basename(root)
-                all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+                    if val_split == 'train':
+                        # Split into train and validation sets
+                        num_files = len(all_files)
+                        num_val = int(num_files * val_ratio)
+                        val_files = random.sample(all_files, num_val)
+                        train_files = list(set(all_files) - set(val_files))
 
-                if val_split == 'train':
-                    # Split into train and validation sets
-                    num_files = len(all_files)
-                    num_val = int(num_files * val_ratio)
-                    val_files = random.sample(all_files, num_val)
-                    train_files = list(set(all_files) - set(val_files))
+                        for file in train_files:
+                            writer.writerow([file, label, 'train'])
 
-                    for file in train_files:
-                        writer.writerow([file, label, 'train'])
+                        for file in val_files:
+                            writer.writerow([file, label, 'val'])
+                    else:
+                        train_files = list(set(all_files))
+                        for file in train_files:
+                            writer.writerow([file, label, 'train'])
 
-                    for file in val_files:
-                        writer.writerow([file, label, 'val'])
-                else:
+                # Process test directory
+                for root, dirs, files in tqdm(os.walk(test_path), desc='Process test audio files.'):
+                    label = os.path.basename(root)
+                    all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+
+                    if val_split == 'test':
+                        # Split into test and validation sets
+                        num_files = len(all_files)
+                        num_val = int(num_files * val_ratio)
+                        val_files = random.sample(all_files, num_val)
+                        test_files = list(set(all_files) - set(val_files))
+
+                        for file in test_files:
+                            writer.writerow([file, label, 'test'])
+
+                        for file in val_files:
+                            writer.writerow([file, label, 'val'])
+                    else:
+                        test_files = list(set(all_files))
+                        for file in test_files:
+                            writer.writerow([file, label, 'test'])
+            
+        if val_dir is not None:
+            with open(csv_path, mode='w', newline='') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(['file_path', 'label', 'set'])
+
+                for root, dirs, files in tqdm(os.walk(train_path), desc='Process training audio files.'):
+                    label = os.path.basename(root)
+                    all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+
                     train_files = list(set(all_files))
                     for file in train_files:
                         writer.writerow([file, label, 'train'])
 
-            # Process test directory
-            for root, dirs, files in tqdm(os.walk(test_path), desc='Process test audio files.'):
-                label = os.path.basename(root)
-                all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
-
-                if val_split == 'test':
-                    # Split into test and validation sets
-                    num_files = len(all_files)
-                    num_val = int(num_files * val_ratio)
-                    val_files = random.sample(all_files, num_val)
-                    test_files = list(set(all_files) - set(val_files))
-
-                    for file in test_files:
-                        writer.writerow([file, label, 'test'])
-
-                    for file in val_files:
-                        writer.writerow([file, label, 'val'])
-                else:
+                for root, dirs, files in tqdm(os.walk(test_path), desc='Process test audio files.'):
+                    label = os.path.basename(root)
+                    all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+                    
                     test_files = list(set(all_files))
                     for file in test_files:
                         writer.writerow([file, label, 'test'])
 
-        print(f"CSV file '{csv_filename}' created successfully in {base_dir}.")
+                for root, dirs, files in tqdm(os.walk(test_path), desc='Process val audio files.'):
+                    label = os.path.basename(root)
+                    all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
+                    
+                    val_files = list(set(all_files))
+                    for file in val_files:
+                        writer.writerow([file, label, 'val'])           
+
+            print(f"CSV file '{csv_filename}' created successfully in {base_dir}.")
 
 class DatasetValidator:
     @staticmethod
