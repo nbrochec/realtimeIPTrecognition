@@ -79,9 +79,9 @@ if __name__ == '__main__':
     model = modelPreparator.prepare()
 
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=args.lr)
+    optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     if args.reduceLR == True:
-        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1, verbose=True)
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1, verbose=True)
 
     augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
     aug_nbr = augmentations.get_aug_nbr()
