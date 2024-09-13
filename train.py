@@ -99,7 +99,6 @@ if __name__ == '__main__':
     SaveYAML.save_to_disk(args, num_classes, current_run)
 
     for epoch in range(args.epochs):
-        # print(f'Epoch {epoch+1}/{args.epochs}')
         train_loss = trainer.train_epoch(train_loader, optimizer, augmentations, aug_nbr)
         writer.add_scalar('epoch/epoch', epoch, epoch)
         writer.add_scalar('Loss/train', train_loss, epoch)
