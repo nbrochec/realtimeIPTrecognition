@@ -139,7 +139,7 @@ You can use the following arguments if you want to test different configurations
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|  
 | `--name`             | Name of the project.                                              | String                         | `None`          |
-| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `one-residual`, `two-residual`, `transformer` | `v2`            |
+| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`, `one-residual`, `two-residual`, `transformer` | `v2`            |
 | `--device`          | Specify the hardware on which computation should be performed.     | `cpu`, `cuda`, `mps`           | `cpu`           |
 | `--gpu`             | Specify which GPU to use.                                          | Integer                          | `0`             |
 | `--sr`              | Sampling rate for downsampling the audio files.                    | `16000`, `22050`, `24000`, ... (Hz)| `24000`         |
@@ -151,22 +151,27 @@ You can use the following arguments if you want to test different configurations
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
-| `--save_logs`       | Save logs to disk.                                               | `True`, `False`               | `True`         |
+| `--save_logs`       | Save logs to disk.                                               | `True`, `False`               | `False`         |
 
 Training your model will create a `runs` folder with the name of your project.
-After training, the script automatically saves the model checkpoints in the `/runs/project_name/` folder.
+You can monitor the training using tensorboard.
+```
+tensorboard --logdir . --bind_all
+```
+A project folder with the date and time attached will be created such as `project_name_date_time`.
+After training, the script automatically saves the model checkpoints in the `/runs/project_name_date_time/` folder.
 If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 
 ```
 └── 📁runs
-    └── 📁project_name
+    └── 📁project_name_date_time
 ```
 
 `--save_logs True` will create a folder of the name of your project into the `logs` folder.
 This folder will include a `results.csv` file containing the model's metrics as well as a CSV file for the confusion matrix.
 ```
 └── 📁logs
-    └── 📁project_name
+    └── 📁project_name_date_time
 ```
 
 ### Running the model in real-time
