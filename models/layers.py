@@ -43,9 +43,10 @@ class LogMelSpectrogramLayer(nn.Module):
     def min_max_normalize(self, t, min=0, max=1):
         min = 0
         max = 1
+        eps = 1e-10
+
         if ((torch.max(t)-torch.min(t)) == 0):
-            upsilon = 0.00001
-            t_std = (t - torch.min(t)) / ((torch.max(t)-torch.min(t))+upsilon)
+            t_std = (t - torch.min(t)) / ((torch.max(t)-torch.min(t))+eps)
             t_scaled = t_std * (max - min) + min
         else:
             t_std = (t - torch.min(t)) / (torch.max(t)-torch.min(t))
