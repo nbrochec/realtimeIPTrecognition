@@ -28,17 +28,23 @@ class v1(nn.Module):
             custom2DCNN(1, 40, (2,3), "same"),
             custom2DCNN(40, 40, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2,3), "same"),
             custom2DCNN(80, 80, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
         )
 
         self.fc = nn.Sequential(
@@ -64,19 +70,26 @@ class v2(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
         )
 
         self.fc = nn.Sequential(
@@ -104,24 +117,31 @@ class v3(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
             custom2DCNN(128, 256, 2, "same"),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 256, 2, "same"),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 512, 2, "same"),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
         )
 
         self.fc = nn.Sequential(
@@ -149,9 +169,11 @@ class one_residual(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
             )
         
         self.downsample = nn.MaxPool2d((32, 5))
@@ -159,14 +181,19 @@ class one_residual(nn.Module):
         self.cnn_part2 = nn.Sequential(
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
         )
 
         self.fc_input_dim = 512 + 128
@@ -199,9 +226,11 @@ class two_residual(nn.Module):
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
             )
         
         self.downsample1 = nn.MaxPool2d((32, 5))
@@ -209,10 +238,13 @@ class two_residual(nn.Module):
         self.cnn_part2 = nn.Sequential(
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
         )
 
         self.downsample2 = nn.MaxPool2d((4, 2))
@@ -220,8 +252,10 @@ class two_residual(nn.Module):
         self.cnn_part3 = nn.Sequential(
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(512, 512, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
         )
 
         self.fc_input_dim = (512 * 2) + 128
@@ -256,16 +290,21 @@ class transformer(nn.Module):
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
             custom2DCNN(64, 64, (2,3), "same"),
-            nn.MaxPool2d((2, 1)), 
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
             custom2DCNN(64, 128, (2,3), "same"),
             custom2DCNN(128, 128, (2,3), "same"),
             nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
             custom2DCNN(128, 256, 2, "same"),
             nn.MaxPool2d((2, 1)), 
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
             custom2DCNN(256, 256, 2, "same"),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
         )
 
         self.transformer = nn.Transformer(d_model=256, nhead=4, num_encoder_layers=3, num_decoder_layers=3, batch_first=True)
