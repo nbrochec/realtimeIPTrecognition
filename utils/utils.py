@@ -20,6 +20,8 @@ from tqdm import tqdm
 from torch.utils.data import TensorDataset, DataLoader
 from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
+from utils.augmentation import ApplyAugmentations
+
 class DirectoryManager:
     @staticmethod
     def ensure_dir_exists(directory):
@@ -275,24 +277,32 @@ class ProcessDataset:
 
 class BalancedDataLoader:
     """
-    A class for creating a balanced DataLoader from a PyTorch dataset.
+    A class for creating a balanced DataLoader from a PyTorch dataset with augmentations.
 
     Parameters
     ----------
     dataset : Dataset
         The PyTorch dataset.
+    device : torch.device
+        The device to load the data onto.
+    args : Arguments
+        Arguments object containing settings for augmentations and other configurations.
     """
-    def __init__(self, dataset, device):
+    def __init__(self, dataset, device, args):
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
-        self.batch_size = self.num_classes
         self.device = device
+
+        # Initialize augmentations based on args
+        self.augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
+        self.aug_nbr = self.augmentations.get_aug_nbr()
+        self.batch_size = 128 // (self.aug_nbr + 1)
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
 
+        # Prepare indices per class
         class_idxs = [[] for _ in range(self.num_classes)]
-
         for i in range(self.num_classes):
             indexes = torch.nonzero(all_targets == i).squeeze()
             class_idxs[i] = indexes.tolist()
@@ -300,6 +310,7 @@ class BalancedDataLoader:
         total_samples = len(self.dataset)
         n_batches = total_samples // self.batch_size
 
+        # Use a batch sampler that balances the classes
         self.batch_sampler = SamplerFactory().get(
             class_idxs=class_idxs,
             batch_size=self.batch_size,
@@ -309,36 +320,40 @@ class BalancedDataLoader:
         )
 
     def get_num_classes(self):
-        """
-        Determines the number of unique classes in the dataset.
-        """
+        """ Determines the number of unique classes in the dataset. """
         all_labels = [label.item() for label in self.dataset.tensors[1]]
         unique_classes = set(all_labels)
-        num_unique_classes = len(unique_classes)
-        return num_unique_classes
+        return len(unique_classes)
     
     def custom_collate_fn(self, batch):
         segments = []
         labels = []
         
         for segs, lbls in batch:
-            segments.extend(segs)
-            labels.extend(lbls)
+            segs = segs.unsqueeze(0)
+            aug_segs = self.augmentations.apply(segs)
+            new_data = torch.cat((aug_segs, segs), dim=0)
+            
+            all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1))
+            
+            segments.extend(new_data)
+            labels.extend(all_targets)
 
-        segments_tensor = torch.stack(segments).to(self.device)
+        segments = [seg.unsqueeze(0) if seg.dim() == 2 else seg for seg in segments]
+
+        segments_tensor = torch.cat(segments).to(self.device)
         labels_tensor = torch.tensor(labels).to(self.device)
 
         return segments_tensor, labels_tensor
 
     def get_dataloader(self):
-        """
-        Returns a DataLoader with the balanced batch sampler.
-        """
+        """ Returns a DataLoader with the balanced batch sampler. """
         return DataLoader(
             self.dataset,
             batch_sampler=self.batch_sampler,
+            collate_fn=self.custom_collate_fn,
         )
-
+    
 class PrepareData:
     """
     Prepare datasets.
@@ -355,7 +370,7 @@ class PrepareData:
         test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
 
-        train_loader = BalancedDataLoader(train_dataset.get_data(), self.device).get_dataloader()
+        train_loader = BalancedDataLoader(train_dataset.get_data(), self.device, self.args).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
         val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
         
