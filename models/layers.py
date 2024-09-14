@@ -41,16 +41,18 @@ class LogMelSpectrogramLayer(nn.Module):
         self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power', top_db=80.0)
 
     def min_max_normalize(self, t, min=0, max=1):
-        min = 0
-        max = 1
+        min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
+        max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
         eps = 1e-10
+        t_min = torch.min(t)
+        t_max = torch.max(t)
 
-        if ((torch.max(t)-torch.min(t)) == 0):
-            t_std = (t - torch.min(t)) / ((torch.max(t)-torch.min(t))+eps)
-            t_scaled = t_std * (max - min) + min
+        if (t_max - t_min) == 0:
+            t_std = (t - t_min) / ((t_max - t_min) + eps)
         else:
-            t_std = (t - torch.min(t)) / (torch.max(t)-torch.min(t))
-            t_scaled = t_std * (max - min) + min
+            t_std = (t - t_min) / (t_max - t_min)
+        t_scaled = t_std * (max_tensor - min_tensor) + min_tensor
+        
         return t_scaled
 
     def forward(self, x):
