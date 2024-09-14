@@ -330,7 +330,7 @@ class BalancedDataLoader:
         labels = []
         
         for segs, lbls in batch:
-            segs = segs.unsqueeze(0)
+            segs = segs.unsqueeze(0).to(self.device)
             aug_segs = self.augmentations.apply(segs)
             aug_segs = aug_segs.to(self.device)
             new_data = torch.cat((aug_segs, segs), dim=0).to(self.device)
