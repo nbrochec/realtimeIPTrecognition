@@ -40,11 +40,22 @@ class LogMelSpectrogramLayer(nn.Module):
 
         self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power', top_db=80.0)
 
+    def min_max_normalize(self, tensor, min_value=0, max_value=1):
+        tensor_min = torch.min(tensor)
+        tensor_max = torch.max(tensor)
+
+        if tensor_max - tensor_min == 0:
+            tensor_normalized = tensor - tensor_min
+        else:
+            tensor_normalized = (tensor - tensor_min) / (tensor_max - tensor_min)
+
+        tensor_scaled = tensor_normalized * (max_value - min_value) + min_value
+        return tensor_scaled
+
     def forward(self, x):
         x = self.mel_scale(x)
         x = self.amplitude_to_db(x)
-        x = F.normalize(x, dim=2)
-        x = F.normalize(x, dim=3)
+        x = self.min_max_normalize(x)
         return x
 
 class EnvelopeExtractor(nn.Module):
@@ -65,13 +76,13 @@ class custom2DCNN(nn.Module):
         self.conv = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=kernel_size, stride=1, padding=padding)
         self.batch = nn.BatchNorm2d(output_channels)
         self.activ = nn.LeakyReLU()
-        self.drop = nn.Dropout2d(0.25)
+        # self.drop = nn.Dropout2d(0.25)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.batch(x)
         x = self.activ(x)
-        x = self.drop(x)
+        # x = self.drop(x)
         return x
 
 class custom1DCNN(nn.Module):
