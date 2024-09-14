@@ -332,8 +332,8 @@ class BalancedDataLoader:
         for segs, lbls in batch:
             segs = segs.unsqueeze(0)
             aug_segs = self.augmentations.apply(segs)
+            aug_segs = aug_segs.to(self.device)
             new_data = torch.cat((aug_segs, segs), dim=0).to(self.device)
-            
             all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1)).to(self.device)
 
             segments.extend(new_data)
