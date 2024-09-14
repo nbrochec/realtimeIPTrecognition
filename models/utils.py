@@ -159,13 +159,15 @@ class ModelTrainer:
         for data, targets in tqdm(loader, desc="Training", leave=False):
             data, targets = data.to(self.device), targets.to(self.device)
             optimizer.zero_grad()
+            # print(data.shape)
+            # print(targets)
 
-            augmented_data = augmentations.apply(data)
-            new_data = torch.cat((data, augmented_data), dim=0)
-            all_targets = torch.flatten(targets.repeat(aug_number + 1, 1))
+            # augmented_data = augmentations.apply(data)
+            # new_data = torch.cat((data, augmented_data), dim=0)
+            # all_targets = torch.flatten(targets.repeat(aug_number + 1, 1))
 
-            outputs = self.model(new_data)
-            loss = self.loss_fn(outputs, all_targets)
+            outputs = self.model(data)
+            loss = self.loss_fn(outputs, targets)
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * data.size(0)
