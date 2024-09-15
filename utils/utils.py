@@ -304,13 +304,27 @@ class BalancedDataLoader:
         # Prepare indices per class
         class_idxs = [[] for _ in range(self.num_classes)]
         for i in range(self.num_classes):
-            indexes = torch.nonzero(all_targets == i).squeeze()
-            class_idxs[i] = indexes.tolist()
+            indexes = torch.nonzero(all_targets == i, as_tuple=True)
+            if indexes[0].numel() > 0:
+                class_idxs[i] = indexes[0].tolist()
+            else:
+                print(f"Class {i} has no indices")
 
         total_samples = len(self.dataset)
         n_batches = total_samples // self.batch_size
 
-        # Use a batch sampler that balances the classes
+        class_counts = [0] * self.num_classes
+        for i in range(len(self.dataset)):
+            _, label = self.dataset[i]
+            if label.dim() == 0:
+                label = label.item()
+            else:
+                label = label.argmax().item()
+            if 0 <= label < self.num_classes:
+                class_counts[label] += 1
+
+        print(f"Class distribution: {class_counts}")
+
         self.batch_sampler = SamplerFactory().get(
             class_idxs=class_idxs,
             batch_size=self.batch_size,
@@ -319,12 +333,15 @@ class BalancedDataLoader:
             kind='fixed'
         )
 
+
     def get_num_classes(self):
         """ Determines the number of unique classes in the dataset. """
         all_labels = [label.item() for label in self.dataset.tensors[1]]
         unique_classes = set(all_labels)
-        return len(unique_classes)
-
+        num_classes = len(unique_classes)
+        print(f"Unique classes detected: {unique_classes}")
+        return num_classes
+    
     def custom_collate_fn(self, batch):
         segments, labels = [], []
 
@@ -333,13 +350,14 @@ class BalancedDataLoader:
             aug_segs = self.augmentations.apply(segs).to(self.device)
             
             new_data = torch.cat((aug_segs, segs), dim=0)
-            all_targets = lbls.repeat(self.aug_nbr + 1).to(self.device) 
+
+            all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1)).to(self.device)
 
             segments.append(new_data)
             labels.append(all_targets)
 
-        segments_tensor = torch.cat(segments)
-        labels_tensor = torch.cat(labels)
+        segments_tensor = torch.cat(segments).to(self.device)
+        labels_tensor = torch.cat(labels).to(self.device)
 
         if segments_tensor.size(0) > 128:
             indices = torch.randperm(segments_tensor.size(0))[:128].to(self.device)
