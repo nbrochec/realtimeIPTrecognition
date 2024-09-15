@@ -255,7 +255,7 @@ class ProcessDataset:
             if self.set_type == 'train':
                 augmented_waveforms = self.augmentations.apply(waveform)  # [nbr_augmentations, channels, samples]
             else:
-                augmented_waveforms = waveform.unsqueeze(0)  # Add a fake augmentation dimension for consistency
+                augmented_waveforms = waveform.unsqueeze(0).to(self.args.device)  # Add a fake augmentation dimension for consistency
 
             # For each augmented waveform, process into segments
             for aug_waveform in augmented_waveforms:
@@ -265,7 +265,7 @@ class ProcessDataset:
                 if self.segment_overlap:
                     for i in range(0, num_samples, self.segment_length // 2):
                         if i + self.segment_length <= num_samples:
-                            segment = aug_waveform[:, i:i + self.segment_length]
+                            segment = aug_waveform[:, i:i + self.segment_length].to(self.args.device) 
                         else:
                             segment = torch.zeros((aug_waveform.size(0), self.segment_length)).to(self.args.device)
                             segment[:, :num_samples - i] = aug_waveform[:, i:]
@@ -275,7 +275,7 @@ class ProcessDataset:
                     # Handle non-overlapping segments
                     for i in range(0, num_samples, self.segment_length):
                         if i + self.segment_length <= num_samples:
-                            segment = aug_waveform[:, i:i + self.segment_length]
+                            segment = aug_waveform[:, i:i + self.segment_length].to(self.args.device) 
                         else:
                             segment = torch.zeros((aug_waveform.size(0), self.segment_length)).to(self.args.device)
                             segment[:, :num_samples - i] = aug_waveform[:, i:]
