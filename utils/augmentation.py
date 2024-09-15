@@ -47,9 +47,9 @@ class ApplyAugmentations:
             'pitchshift': self.pitch_shift,
             'lb_pitchshift': self.lb_pitch_shift,
             'timeshift': self.shift,
-            'addnoise': self.add_noise,
+            # 'addnoise': self.add_noise,
             'polarityinversion': self.polarity_inversion,
-            'gain': self.gain,
+            # 'gain': self.gain,
             'hpf': self.highpassfilter,
             'lpf': self.lowpassfilter,
             'clipping': self.clippingdisto,
@@ -64,9 +64,9 @@ class ApplyAugmentations:
                     augmentations_dict['pitchshift'](data),
                     augmentations_dict['lb_pitchshift'](data),
                     augmentations_dict['timeshift'](data),
-                    augmentations_dict['addnoise'](data),
+                    # augmentations_dict['addnoise'](data),
                     augmentations_dict['polarityinversion'](data),
-                    augmentations_dict['gain'](data),
+                    # augmentations_dict['gain'](data),
                     augmentations_dict['hpf'](data),
                     augmentations_dict['lpf'](data),
                     augmentations_dict['clipping'](data),
@@ -153,5 +153,5 @@ class ApplyAugmentations:
     def get_aug_nbr(self):
         aug_nbr = len(self.augmentations)
         if self.augmentations == ['all']:
-            aug_nbr = 12
+            aug_nbr = 10
         return aug_nbr
