@@ -178,7 +178,7 @@ class DatasetValidator:
 
 
 class ProcessDataset:
-    def __init__(self, set_type, csv_path, target_sr, segment_overlap, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
+    def __init__(self, args, set_type, csv_path, target_sr, segment_overlap, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
         Initialize the ProcessDataset class.
 
@@ -197,13 +197,15 @@ class ProcessDataset:
         min_silence_len : float
             Minimum length of silence to remove.
         """
+        self.args = args
         self.set_type = set_type
         self.csv_path = csv_path
         self.target_sr = target_sr
         self.segment_length = segment_length
         self.silence_threshold = silence_threshold
         self.min_silence_len = min_silence_len
-        self.segment_overlap = segment_overlap # implement rollof 
+        self.segment_overlap = segment_overlap # implement overlap 
+        self.augmentations = ApplyAugmentations(self.args.augment.split(), self.args.sr, self.args.device)
 
         self.data = pd.read_csv(self.csv_path)
         
@@ -242,23 +244,35 @@ class ProcessDataset:
 
             waveform, original_sr = torchaudio.load(file_path)
 
+            # Resample if necessary
             if original_sr != self.target_sr:
                 waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
 
+            # Remove silence from the waveform
             waveform = self.remove_silence(waveform)
             num_samples = waveform.size(1)
 
-            if self.segment_overlap == True and self.set_type == 'train':
-                for i in range(0, num_samples, self.segment_length//2):
+            # Handle overlapping segments for training
+            if self.segment_overlap and self.set_type == 'train':
+                for i in range(0, num_samples, self.segment_length // 2):
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
                         segment = torch.zeros((waveform.size(0), self.segment_length))
                         segment[:, :num_samples - i] = waveform[:, i:]
 
-                    self.X.append(segment)
-                    self.y.append(label)
+                    # Apply augmentations if set_type is 'train'
+                    if self.set_type == 'train':
+                        augmented_segments = self.augmentations.apply(segment)  # Output: [nbr_augmentations, samples]
+                    else:
+                        augmented_segments = segment.unsqueeze(0)  # Add a fake augmentation dimension for consistency
+
+                    # Store each augmented segment and corresponding label
+                    for aug_segment in augmented_segments:
+                        self.X.append(aug_segment)
+                        self.y.append(label)
             else:
+                # Handle non-overlapping segments
                 for i in range(0, num_samples, self.segment_length):
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
@@ -266,12 +280,21 @@ class ProcessDataset:
                         segment = torch.zeros((waveform.size(0), self.segment_length))
                         segment[:, :num_samples - i] = waveform[:, i:]
 
-                    self.X.append(segment)
-                    self.y.append(label)
+                    # Apply augmentations if set_type is 'train'
+                    if self.set_type == 'train':
+                        augmented_segments = self.augmentations.apply(segment) 
+                    else:
+                        augmented_segments = segment.unsqueeze(0)
 
+                    # Store each augmented segment and corresponding label
+                    for aug_segment in augmented_segments:
+                        self.X.append(aug_segment)
+                        self.y.append(label)
+
+        # Stack all the processed data
         self.X = torch.stack(self.X)
         self.y = torch.tensor(self.y)
-
+    
     def get_data(self):
         return TensorDataset(self.X, self.y)
 
@@ -294,9 +317,9 @@ class BalancedDataLoader:
         self.device = device
 
         # Initialize augmentations based on args
-        self.augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
-        self.aug_nbr = self.augmentations.get_aug_nbr()
-        self.batch_size = 128 // (self.aug_nbr + 1)
+        # self.augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
+        # self.aug_nbr = self.augmentations.get_aug_nbr()
+        self.batch_size = 128 #// (self.aug_nbr + 1)
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
@@ -333,7 +356,6 @@ class BalancedDataLoader:
             kind='fixed'
         )
 
-
     def get_num_classes(self):
         """ Determines the number of unique classes in the dataset. """
         all_labels = [label.item() for label in self.dataset.tensors[1]]
@@ -359,10 +381,10 @@ class BalancedDataLoader:
         segments_tensor = torch.cat(segments).to(self.device)
         labels_tensor = torch.cat(labels).to(self.device)
 
-        # if segments_tensor.size(0) > 128:
-        #     indices = torch.randperm(segments_tensor.size(0))[:128].to(self.device)
-        #     segments_tensor = segments_tensor[indices]
-        #     labels_tensor = labels_tensor[indices]
+        if segments_tensor.size(0) > 128:
+            indices = torch.randperm(segments_tensor.size(0))[:128].to(self.device)
+            segments_tensor = segments_tensor[indices]
+            labels_tensor = labels_tensor[indices]
 
         # elif segments_tensor.size(0) < 128:
         #     num_additional_samples = 128 - segments_tensor.size(0)
@@ -400,7 +422,7 @@ class BalancedDataLoader:
         return DataLoader(
             self.dataset,
             batch_sampler=self.batch_sampler,
-            collate_fn=self.custom_collate_fn,
+            # collate_fn=self.custom_collate_fn,
         )
     
 class PrepareData:
@@ -415,9 +437,9 @@ class PrepareData:
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
-        train_dataset = ProcessDataset('train', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
-        test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
-        val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
+        train_dataset = ProcessDataset(self.args , 'train', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
+        test_dataset = ProcessDataset(self.args , 'test', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
+        val_dataset = ProcessDataset(self.args , 'val', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
 
         train_loader = BalancedDataLoader(train_dataset.get_data(), self.device, self.args).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
