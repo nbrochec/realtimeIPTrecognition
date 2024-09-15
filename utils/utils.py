@@ -250,51 +250,42 @@ class ProcessDataset:
 
             # Remove silence from the waveform
             waveform = self.remove_silence(waveform)
-            num_samples = waveform.size(1)
 
-            # Handle overlapping segments for training
-            if self.segment_overlap and self.set_type == 'train':
-                for i in range(0, num_samples, self.segment_length // 2):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        segment = torch.zeros((waveform.size(0), self.segment_length))
-                        segment[:, :num_samples - i] = waveform[:, i:]
-
-                    # Apply augmentations if set_type is 'train'
-                    if self.set_type == 'train':
-                        augmented_segments = self.augmentations.apply(segment)  # Output: [nbr_augmentations, samples]
-                    else:
-                        augmented_segments = segment.unsqueeze(0)  # Add a fake augmentation dimension for consistency
-
-                    # Store each augmented segment and corresponding label
-                    for aug_segment in augmented_segments:
-                        self.X.append(aug_segment)
-                        self.y.append(label)
+            # Apply augmentations only if set_type is 'train'
+            if self.set_type == 'train':
+                augmented_waveforms = self.augmentations.apply(waveform)  # [nbr_augmentations, channels, samples]
             else:
-                # Handle non-overlapping segments
-                for i in range(0, num_samples, self.segment_length):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        segment = torch.zeros((waveform.size(0), self.segment_length))
-                        segment[:, :num_samples - i] = waveform[:, i:]
+                augmented_waveforms = waveform.unsqueeze(0)  # Add a fake augmentation dimension for consistency
 
-                    # Apply augmentations if set_type is 'train'
-                    if self.set_type == 'train':
-                        augmented_segments = self.augmentations.apply(segment) 
-                    else:
-                        augmented_segments = segment.unsqueeze(0)
+            # For each augmented waveform, process into segments
+            for aug_waveform in augmented_waveforms:
+                num_samples = aug_waveform.size(1)
 
-                    # Store each augmented segment and corresponding label
-                    for aug_segment in augmented_segments:
-                        self.X.append(aug_segment)
+                # Handle overlapping segments for training
+                if self.segment_overlap:
+                    for i in range(0, num_samples, self.segment_length // 2):
+                        if i + self.segment_length <= num_samples:
+                            segment = aug_waveform[:, i:i + self.segment_length]
+                        else:
+                            segment = torch.zeros((aug_waveform.size(0), self.segment_length))
+                            segment[:, :num_samples - i] = aug_waveform[:, i:]
+                        self.X.append(segment)
+                        self.y.append(label)
+                else:
+                    # Handle non-overlapping segments
+                    for i in range(0, num_samples, self.segment_length):
+                        if i + self.segment_length <= num_samples:
+                            segment = aug_waveform[:, i:i + self.segment_length]
+                        else:
+                            segment = torch.zeros((aug_waveform.size(0), self.segment_length))
+                            segment[:, :num_samples - i] = aug_waveform[:, i:]
+                        self.X.append(segment)
                         self.y.append(label)
 
         # Stack all the processed data
         self.X = torch.stack(self.X)
         self.y = torch.tensor(self.y)
-    
+
     def get_data(self):
         return TensorDataset(self.X, self.y)
 
