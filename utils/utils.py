@@ -255,7 +255,7 @@ class ProcessDataset:
             if self.set_type == 'train':
                 augmented_waveforms = self.augmentations.apply(waveform)  # [nbr_augmentations, channels, samples]
             else:
-                augmented_waveforms = waveform.unsqueeze(0)  # Add a fake augmentation dimension for consistency
+                augmented_waveforms = waveform.unsqueeze(0).to(self.args.device)  # Add a fake augmentation dimension for consistency
 
             # For each augmented waveform, process into segments
             for aug_waveform in augmented_waveforms:
@@ -283,8 +283,8 @@ class ProcessDataset:
                         self.y.append(label)
 
         # Stack all the processed data
-        self.X = torch.stack(self.X).to(self.device)
-        self.y = torch.tensor(self.y).to(self.device)
+        self.X = torch.stack(self.X).to(self.args.device)
+        self.y = torch.tensor(self.y).to(self.args.device)
 
     def get_data(self):
         return TensorDataset(self.X, self.y)
