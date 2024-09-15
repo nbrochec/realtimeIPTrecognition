@@ -283,8 +283,8 @@ class ProcessDataset:
                         self.y.append(label)
 
         # Stack all the processed data
-        self.X = torch.stack(self.X)
-        self.y = torch.tensor(self.y)
+        self.X = torch.stack(self.X).to(self.device)
+        self.y = torch.tensor(self.y).to(self.device)
 
     def get_data(self):
         return TensorDataset(self.X, self.y)
