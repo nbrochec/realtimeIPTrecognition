@@ -25,7 +25,6 @@ class LogMelSpectrogramLayer(nn.Module):
         self.hop_length = hop_length
         self.n_mels = n_mels
         self.f_min = f_min
-        self.f_max = f_max if f_max is not None else sample_rate / 2
         
         self.mel_scale = Taudio.MelSpectrogram(
             sample_rate=self.sample_rate,
@@ -33,9 +32,7 @@ class LogMelSpectrogramLayer(nn.Module):
             win_length=self.win_length,
             hop_length=self.hop_length,
             n_mels=self.n_mels,
-            f_min=self.f_min,
-            f_max=self.f_max,
-            power=2.0
+            f_min=self.f_min
         )
 
         self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power')
@@ -43,7 +40,7 @@ class LogMelSpectrogramLayer(nn.Module):
     def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
         min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
         max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
-        eps = 1e-7
+        eps = 1e-5
         t_min = torch.min(t)
         t_max = torch.max(t)
 
@@ -59,7 +56,7 @@ class LogMelSpectrogramLayer(nn.Module):
         x = self.mel_scale(x)
         x = self.amplitude_to_db(x)
         x = self.min_max_normalize(x)
-        return x
+        return x.to(torch.float32)
 
 class EnvelopeExtractor(nn.Module):
     def __init__(self, sample_rate=24000, cutoff_freq=10, Q=0.707):
