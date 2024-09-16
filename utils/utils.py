@@ -310,7 +310,7 @@ class BalancedDataLoader:
         # Initialize augmentations based on args
         # self.augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
         # self.aug_nbr = self.augmentations.get_aug_nbr()
-        self.batch_size = 128 #// (self.aug_nbr + 1)
+        self.batch_size = 64 #// (self.aug_nbr + 1)
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
