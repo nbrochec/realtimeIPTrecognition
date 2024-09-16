@@ -361,30 +361,30 @@ class BalancedDataLoader:
             segments_tensor = segments_tensor[indices]
             labels_tensor = labels_tensor[indices]
 
-        # elif segments_tensor.size(0) < 128:
-        #     num_additional_samples = 128 - segments_tensor.size(0)
+        elif segments_tensor.size(0) < 128:
+            num_additional_samples = 128 - segments_tensor.size(0)
             
-        #     class_indices = {i: torch.where(labels_tensor == i)[0] for i in range(self.num_classes)}
+            class_indices = {i: torch.where(labels_tensor == i)[0] for i in range(self.num_classes)}
             
-        #     extra_segments, extra_labels = [], []
-        #     samples_per_class = num_additional_samples // self.num_classes
+            extra_segments, extra_labels = [], []
+            samples_per_class = num_additional_samples // self.num_classes
             
-        #     for class_id, indices in class_indices.items():
-        #         num_samples = min(samples_per_class, len(indices))
-        #         if num_samples > 0:
-        #             selected_indices = indices[:num_samples]
-        #             extra_segments.append(segments_tensor[selected_indices])
-        #             extra_labels.append(labels_tensor[selected_indices])
+            for class_id, indices in class_indices.items():
+                num_samples = min(samples_per_class, len(indices))
+                if num_samples > 0:
+                    selected_indices = indices[:num_samples]
+                    extra_segments.append(segments_tensor[selected_indices])
+                    extra_labels.append(labels_tensor[selected_indices])
 
-        #     extra_needed = 128 - (segments_tensor.size(0) + sum(s.size(0) for s in extra_segments))
-        #     if extra_needed > 0:
-        #         remaining_indices = torch.cat(list(class_indices.values()))
-        #         selected_indices = remaining_indices[:extra_needed]
-        #         extra_segments.append(segments_tensor[selected_indices])
-        #         extra_labels.append(labels_tensor[selected_indices])
+            extra_needed = 128 - (segments_tensor.size(0) + sum(s.size(0) for s in extra_segments))
+            if extra_needed > 0:
+                remaining_indices = torch.cat(list(class_indices.values()))
+                selected_indices = remaining_indices[:extra_needed]
+                extra_segments.append(segments_tensor[selected_indices])
+                extra_labels.append(labels_tensor[selected_indices])
 
-        #     segments_tensor = torch.cat([segments_tensor] + extra_segments).to(self.device)
-        #     labels_tensor = torch.cat([labels_tensor] + extra_labels).to(self.device)
+            segments_tensor = torch.cat([segments_tensor] + extra_segments).to(self.device)
+            labels_tensor = torch.cat([labels_tensor] + extra_labels).to(self.device)
 
         shuffled_indices = torch.randperm(segments_tensor.size(0)).to(self.device)
         segments_tensor = segments_tensor[shuffled_indices]
