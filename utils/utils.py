@@ -230,9 +230,11 @@ class ProcessDataset:
         # start = max(0, non_silent_indices[0] - min_silence_samples)
         # end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
         # return waveform[:, start:end]
+
         wav = waveform.detach().cpu().numpy()
         wav = librosa.effects.trim(wav)
-        return torch.tensor(wav[0])
+
+        return torch.tensor(wav[0]).to(self.device)
     
     def process_all_files(self):
         """
