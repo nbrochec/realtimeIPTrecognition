@@ -234,7 +234,7 @@ class ProcessDataset:
         wav = waveform.detach().cpu().numpy()
         wav = librosa.effects.trim(wav)
 
-        return torch.tensor(wav[0]).to(self.device)
+        return torch.tensor(wav[0])
     
     def process_all_files(self):
         """
