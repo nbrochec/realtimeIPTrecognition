@@ -229,7 +229,7 @@ class ModelTrainer:
         all_targets = torch.cat(all_targets)
         class_nbr = len(torch.unique(all_targets))
 
-        accuracy_metric = MulticlassAccuracy(num_classes=class_nbr).to(self.device)
+        accuracy_metric = MulticlassAccuracy(num_classes=class_nbr, average='micro').to(self.device)
         precision_metric = MulticlassPrecision(num_classes=class_nbr).to(self.device)
         recall_metric = MulticlassRecall(num_classes=class_nbr).to(self.device)
         f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
