@@ -11,7 +11,7 @@
 #############################################################################
 
 import os, csv, yaml
-import torch, torchaudio, random
+import torch, torchaudio, random, librosa
 
 import pandas as pd
 
@@ -220,16 +220,19 @@ class ProcessDataset:
         """
         Remove silence from the audio waveform.
         """
-        min_silence_samples = int(self.min_silence_len * self.target_sr)
-        amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
-        non_silent_indices = torch.where(amplitude > self.silence_threshold)[0]
+        # min_silence_samples = int(self.min_silence_len * self.target_sr)
+        # amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
+        # non_silent_indices = torch.where(amplitude > self.silence_threshold)[0]
 
-        if len(non_silent_indices) == 0:
-            return waveform
+        # if len(non_silent_indices) == 0:
+        #     return waveform
 
-        start = max(0, non_silent_indices[0] - min_silence_samples)
-        end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
-        return waveform[:, start:end]
+        # start = max(0, non_silent_indices[0] - min_silence_samples)
+        # end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
+        # return waveform[:, start:end]
+        wav = waveform.detach().cpu().numpy()
+        wav = librosa.effects.trim(wav)
+        return torch.tensor(wav[0])
     
     def process_all_files(self):
         """
