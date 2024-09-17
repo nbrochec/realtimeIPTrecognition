@@ -143,7 +143,7 @@ python preprocess.py --name project_name
 | `--val_split`          | Specify from which dataset the validation set will be generated.      | `train`, `test`                   | `train`      |
 | `--val_ratio`          | Amount of validation samples.                                     | 0 <= Float value < 1             | `0.2`           |
 
-If `--val_dir`is not specified, the validation set will generated from the folder specified with the `--val_split` argument.
+If `--val_dir`is not specified, the validation set will be generated from the folder specified with `--val_split`.
 
 A CSV file will be saved in the `/data/dataset/` folder with the following syntax:
 ```
