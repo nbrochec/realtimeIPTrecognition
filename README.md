@@ -189,7 +189,7 @@ tensorboard --logdir . --bind_all
 
 If you are working on a remote ssh server, use the following command to connect on the server, and monitor with tensorboard from your internet browser.
 ```
-ssh -L 6006:localhost:6006 login@server
+ssh -L 6006:localhost:6006 user@server
 ```
 
 A project folder with the date and time attached will be created such as `project_name_date_time`.
