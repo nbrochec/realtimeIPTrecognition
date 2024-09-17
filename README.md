@@ -17,6 +17,11 @@ cd realtimeIPTrecognition
 Create a conda environment with Python 3.11.7
 ```
 conda create --name IPT python=3.11.7
+```
+```
+source activate base
+```
+```
 conda activate IPT
 ```
 Make sure that `portaudio`is installed on your computer.
@@ -29,6 +34,10 @@ brew install portaudio
 Install dependencies.
 ```
 pip install -r requirements.txt
+```
+Install PyAudio separately.
+```
+pip install pyaudio
 ```
 
 ## Folder structure
@@ -111,6 +120,15 @@ You can use multiple training datasets. They must share the same names for IPT c
 ```
 
 ### Preprocess your datasets
+
+Use `screen` to access multiple separate login session insde a single terminal window.
+Open a screen.
+```
+screen -S IPT
+conda activate IPT
+cd realtimeIPTrecognition
+```
+
 To preprocess your datasets, use the following command. The only required argument is `--name`.
 ```
 python preprocess.py --name project_name
@@ -119,10 +137,13 @@ python preprocess.py --name project_name
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
 | `--name`             | Name of the project.                                               | String                         | `None`          |
-| `--train`             | Specify train directory.                                           | String                         | `train`          |
-| `--test`             | Specify test directory.                                             | String                         | `test`          |
-| `--val_split`          | Specify which dataset the validation set will be generated.      | `train`, `test`                   | `train`      |
+| `--train_dir`             | Specify train directory.                                           | String                         | `train`          |
+| `--test_dir`             | Specify test directory.                                             | String                         | `test`          |
+| `--val_dir`             | Specify val directory.                                             | String                         | `val`          |
+| `--val_split`          | Specify from which dataset the validation set will be generated.      | `train`, `test`                   | `train`      |
 | `--val_ratio`          | Amount of validation samples.                                     | 0 <= Float value < 1             | `0.2`           |
+
+If `--val_dir`is not specified, the validation set will generated from the folder specified with the `--val_split` argument.
 
 A CSV file will be saved in the `/data/dataset/` folder with the following syntax:
 ```
@@ -151,13 +172,26 @@ You can use the following arguments if you want to test different configurations
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
-| `--save_logs`       | Save logs to disk.                                               | `True`, `False`               | `False`         |
+| `--save_logs`       | Save logs results to disk.                                               | `True`, `False`               | `False`         |
 
 Training your model will create a `runs` folder with the name of your project.
+Detach from current screen `ctrl`+`A`+`D`.
+Open a new screen.
+```
+screen -S m
+conda activate IPT
+cd realtimeIPTrecognition
+```
 You can monitor the training using tensorboard.
 ```
 tensorboard --logdir . --bind_all
 ```
+
+If you are working on a remote ssh server, use the following command to connect on the server, and monitor with tensorboard from your internet browser.
+```
+ssh -L 6006:localhost:6006 login@server
+```
+
 A project folder with the date and time attached will be created such as `project_name_date_time`.
 After training, the script automatically saves the model checkpoints in the `/runs/project_name_date_time/` folder.
 If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
