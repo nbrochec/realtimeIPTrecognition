@@ -207,6 +207,10 @@ This folder will include a `results.csv` file containing the model's metrics as 
 └── 📁logs
     └── 📁project_name_date_time
 ```
+Display confusion matrix or results in your terminal using the following command.
+```
+column -s, -t < results.csv | less -#2 -N -S
+```
 
 ### Running the model in real-time
 
