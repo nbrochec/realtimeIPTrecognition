@@ -81,7 +81,7 @@ if __name__ == '__main__':
     loss_fn = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr) # weight_decay=1e-5
     if args.reduceLR == True:
-        scheduler = ReduceLROnPlateau(optimizer, 'max', patience=10, factor=0.1)
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)
 
     augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
     aug_nbr = augmentations.get_aug_nbr()
@@ -111,7 +111,7 @@ if __name__ == '__main__':
         writer.add_scalar('F1/val', val_f1, epoch)
 
         if args.reduceLR:
-            scheduler.step(val_acc)
+            scheduler.step(val_loss)
         
         if args.early_stopping:
             if val_loss < max_val_loss:
