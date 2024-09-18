@@ -474,13 +474,19 @@ class SaveResultsToDisk:
         cm_path = os.path.join(log_dir, f'cm.csv')
         cm_np = cm.cpu().numpy()
         df_cm = pd.DataFrame(cm_np, index=labels, columns=labels)
-        df_cm_normalized = df_cm.div(df_cm.sum(axis=1), axis=0) * 100
         df_cm.to_csv(cm_path)
         print(f'Results saved to {csv_path}')
 
+        df_cm_normalized = df_cm.div(df_cm.sum(axis=1), axis=0) * 100
+        print(df_cm_normalized)
+
         plt.figure(figsize=(12,7))
+        plt.xticks(rotation=45)
         cm_heatmap = sn.heatmap(df_cm_normalized, annot=True, fmt=".2f", cmap="Blues").get_figure()
+
         writerTensorboard.add_figure('Confusion Matrix', cm_heatmap, 0)
+        writerTensorboard.close()
+        
 
 class SaveYAML:
     @staticmethod
