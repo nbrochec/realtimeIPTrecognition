@@ -426,7 +426,7 @@ class PrepareData:
 
         return train_loader, test_loader, val_loader, num_classes
 
-class SaveResultsToDisk:
+class SaveResultsToTensorboard:
     @staticmethod
     def get_class_names(csv_file_path):
         data = pd.read_csv(csv_file_path)
@@ -436,49 +436,24 @@ class SaveResultsToDisk:
         return label_map
 
     @staticmethod
-    def save_to_disk(args, stacked_metrics, cm, date, time, csv_file_path, run_name, writerTensorboard):
+    def upload(stacked_metrics, cm, csv_file_path, writerTensorboard):
         """
-        Save the results to disk as a CSV file.
+        Save the results to tensorboard.
         """
 
-        label_map = SaveResultsToDisk.get_class_names(csv_file_path)
+        label_map = SaveResultsToTensorboard.get_class_names(csv_file_path)
         labels = sorted(label_map.keys())
 
-        log_dir = os.path.join(os.getcwd(), 'logs', run_name)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir) 
+        acc, pre, rec, f1, loss = stacked_metrics.tolist()
 
-        csv_path = os.path.join(log_dir, f'results.csv')
+        dictResult = {'Accuracy': '%.4f'%acc, 'Precision': '%.4f'%pre, 'Macro F1 Score': '%.4f'%f1, 'Recall': '%.4f'%rec, 'Loss': '%.8f'%loss}
 
-        accuracy, precision, recall, f1, loss = stacked_metrics.tolist()
+        writerTensorboard.add_text('Results', Dict2MDTable.apply(dictResult), 0)
 
-        write_header = not os.path.exists(csv_path)
-
-        with open(csv_path, mode='a', newline='') as csv_file:
-            writer = csv.writer(csv_file)
-
-            if write_header:
-                writer.writerow([
-                    'Date', 'Time', 'Run Name', 'Model Name', 'Sample Rate', 'Segment Overlap',
-                    'Fmin', 'Learning Rate', 'Epochs', 'Augmentations', 'Early Stopping',
-                    'Reduce LR on Plateau', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Loss'
-                ])
-
-            writer.writerow([
-                date, time, args.name, args.config, args.sr, args.segment_overlap,
-                args.fmin, args.lr, args.epochs, args.augment,
-                args.early_stopping, args.reduceLR, accuracy, precision,
-                recall, f1, loss
-            ])  
-
-        cm_path = os.path.join(log_dir, f'cm.csv')
         cm_np = cm.cpu().numpy()
         df_cm = pd.DataFrame(cm_np, index=labels, columns=labels)
-        df_cm.to_csv(cm_path)
-        print(f'Results saved to {csv_path}')
 
         df_cm_normalized = df_cm.div(df_cm.sum(axis=1), axis=0) * 100
-        print(df_cm_normalized)
 
         plt.figure(figsize=(12,7))
         plt.xticks(rotation=45)
@@ -526,3 +501,12 @@ class GetDevice:
             print(f'This script uses CPU as the torch device.')
         
         return device
+
+class Dict2MDTable:
+    @staticmethod
+    def apply(d, key='Name', val='Value'):
+        """Convert args dictionnary to markdown table"""
+        rows = [f'| {key} | {val} |']
+        rows += ['|--|--|']
+        rows += [f'| {k} | {v} |' for k, v in d.items()]
+        return "  \n".join(rows)
