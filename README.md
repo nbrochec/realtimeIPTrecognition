@@ -173,7 +173,6 @@ You can use the following arguments if you want to test different configurations
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
-| `--save_logs`       | Save logs results to disk.                                               | `True`, `False`               | `False`         |
 
 Training your model will create a `runs` folder with the name of your project.
 Detach from current screen `ctrl`+`A`+`D`.
@@ -183,7 +182,9 @@ screen -S m
 conda activate IPT
 cd realtimeIPTrecognition
 ```
+
 You can monitor the training using tensorboard.
+Confusion matrix and results will be uploaded to tensorboard after training.
 ```
 tensorboard --logdir . --bind_all
 ```
@@ -200,17 +201,6 @@ If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 ```
 └── 📁runs
     └── 📁project_name_date_time
-```
-
-`--save_logs True` will create a folder of the name of your project into the `logs` folder.
-This folder will include a `results.csv` file containing the model's metrics as well as a CSV file for the confusion matrix.
-```
-└── 📁logs
-    └── 📁project_name_date_time
-```
-Display confusion matrix or results in your terminal using the following command.
-```
-column -s, -t < results.csv | less -#2 -N -S
 ```
 
 ### Running the model in real-time
