@@ -14,6 +14,8 @@ import os, csv, yaml
 import torch, torchaudio, random, librosa
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sn
 
 from glob import glob
 from tqdm import tqdm
@@ -340,14 +342,17 @@ class BalancedDataLoader:
 
         for segs, lbls in batch:
             segs = segs.unsqueeze(0).to(self.device)
-            aug_segs = self.augmentations.apply(segs).to(self.device)
-            
-            new_data = torch.cat((aug_segs, segs), dim=0)
 
-            all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1)).to(self.device)
+            if self.aug_nbr != 0 :
+                aug_segs = self.augmentations.apply(segs).to(self.device)
+                new_data = torch.cat((aug_segs, segs), dim=0)
+                all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1)).to(self.device)
+                segments.append(new_data)
+                labels.append(all_targets)
 
-            segments.append(new_data)
-            labels.append(all_targets)
+            else:
+                segments.append(segs)
+                labels.append(torch.flatten(lbls).to(self.device))
 
         segments_tensor = torch.cat(segments).to(self.device)
         labels_tensor = torch.cat(labels).to(self.device)
@@ -430,7 +435,7 @@ class SaveResultsToDisk:
         return label_map
 
     @staticmethod
-    def save_to_disk(args, stacked_metrics, cm, date, time, csv_file_path, run_name):
+    def save_to_disk(args, stacked_metrics, cm, date, time, csv_file_path, run_name, writerTensorboard):
         """
         Save the results to disk as a CSV file.
         """
@@ -463,14 +468,18 @@ class SaveResultsToDisk:
                 args.fmin, args.lr, args.epochs, args.augment,
                 args.early_stopping, args.reduceLR, accuracy, precision,
                 recall, f1, loss
-            ])
+            ])  
 
-        cm_path = os.path.join(log_dir, f'{date}_{time}_cm.csv')
+        cm_path = os.path.join(log_dir, f'cm.csv')
         cm_np = cm.cpu().numpy()
         df_cm = pd.DataFrame(cm_np, index=labels, columns=labels)
         df_cm.to_csv(cm_path)
-
         print(f'Results saved to {csv_path}')
+
+        plt.figure(figsize=(12,7))
+        cm_heatmap = sn.heatmap(df_cm, annot=True).get_figure()
+        writerTensorboard.add_figure('Confusion Matrix', cm_heatmap, 0)
+
 
 class SaveYAML:
     @staticmethod
