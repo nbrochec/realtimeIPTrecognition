@@ -178,7 +178,7 @@ class DatasetValidator:
 
 
 class ProcessDataset:
-    def __init__(self, set_type, csv_path, target_sr, segment_overlap, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
+    def __init__(self, set_type, csv_path, args, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
         Initialize the ProcessDataset class.
 
@@ -188,8 +188,8 @@ class ProcessDataset:
             The type of dataset to process ('train', 'test', or 'val').
         csv_path : str
             Path to the CSV file containing file paths, labels, and set information.
-        target_sr : int
-            Target sampling rate for audio files.
+        args : Arguments
+            Arguments object containing settings for augmentations and other configurations.
         segment_length : int
             The length of each audio segment to be extracted.
         silence_threshold : float
@@ -199,11 +199,12 @@ class ProcessDataset:
         """
         self.set_type = set_type
         self.csv_path = csv_path
-        self.target_sr = target_sr
+        self.target_sr = args.sr
         self.segment_length = segment_length
         self.silence_threshold = silence_threshold
         self.min_silence_len = min_silence_len
-        self.segment_overlap = segment_overlap # implement rollof 
+        self.segment_overlap = args.segment_overlap # implement rollof 
+        self.padding = args.padding
 
         self.data = pd.read_csv(self.csv_path)
         
@@ -220,20 +221,8 @@ class ProcessDataset:
         """
         Remove silence from the audio waveform.
         """
-        # min_silence_samples = int(self.min_silence_len * self.target_sr)
-        # amplitude = torch.sqrt(torch.mean(waveform**2, dim=0))
-        # non_silent_indices = torch.where(amplitude > self.silence_threshold)[0]
-
-        # if len(non_silent_indices) == 0:
-        #     return waveform
-
-        # start = max(0, non_silent_indices[0] - min_silence_samples)
-        # end = min(waveform.shape[1], non_silent_indices[-1] + min_silence_samples)
-        # return waveform[:, start:end]
-
         wav = waveform.detach().cpu().numpy()
         wav = librosa.effects.trim(wav)
-
         return torch.tensor(wav[0])
     
     def process_all_files(self):
@@ -258,8 +247,9 @@ class ProcessDataset:
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
-                        segment = torch.zeros((waveform.size(0), self.segment_length))
-                        segment[:, :num_samples - i] = waveform[:, i:]
+                        if self.padding:
+                            segment = torch.zeros((waveform.size(0), self.segment_length))
+                            segment[:, :num_samples - i] = waveform[:, i:]
 
                     self.X.append(segment)
                     self.y.append(label)
@@ -268,8 +258,9 @@ class ProcessDataset:
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
-                        segment = torch.zeros((waveform.size(0), self.segment_length))
-                        segment[:, :num_samples - i] = waveform[:, i:]
+                        if self.padding:
+                            segment = torch.zeros((waveform.size(0), self.segment_length))
+                            segment[:, :num_samples - i] = waveform[:, i:]
 
                     self.X.append(segment)
                     self.y.append(label)
@@ -417,9 +408,9 @@ class PrepareData:
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
-        train_dataset = ProcessDataset('train', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
-        test_dataset = ProcessDataset('test', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
-        val_dataset = ProcessDataset('val', self.csv, self.args.sr, self.args.segment_overlap, self.seg_len)
+        train_dataset = ProcessDataset('train', self.csv, self.args, self.seg_len)
+        test_dataset = ProcessDataset('test', self.csv, self.args, self.seg_len)
+        val_dataset = ProcessDataset('val', self.csv, self.args, self.seg_len)
 
         train_loader = BalancedDataLoader(train_dataset.get_data(), self.device, self.args).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
