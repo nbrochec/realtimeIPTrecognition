@@ -39,7 +39,7 @@ def parse_arguments():
     parser.add_argument('--gpu', type=int, default=0, help='Specify which GPU to use.')
     parser.add_argument('--device', type=str, default='cpu', help='Specify the hardware on which computation should be performed.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate for downsampling the audio files.')
-    parser.add_argument('--augment', type=str, default='pitchshift', help='Specify which augmentations to use.')
+    parser.add_argument('--augment', type=str, default='', help='Specify which augmentations to use.')
     parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate if validation plateaus.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
