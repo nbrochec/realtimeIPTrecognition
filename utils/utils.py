@@ -473,7 +473,7 @@ class SaveResultsToDisk:
 
         cm_path = os.path.join(log_dir, f'cm.csv')
         cm_np = cm.cpu().numpy()
-        df_cm = pd.DataFrame(cm_np / np.sum(cm_np, axis=1), index=labels, columns=labels)
+        df_cm = pd.DataFrame(cm_np / np.sum(cm_np, axis=1)[:, None], index=labels, columns=labels)
         df_cm.to_csv(cm_path)
         print(f'Results saved to {csv_path}')
 
