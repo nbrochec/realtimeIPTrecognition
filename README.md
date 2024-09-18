@@ -169,6 +169,7 @@ You can use the following arguments if you want to test different configurations
 | `--lr`              | Learning rate.                                                      | 0 < Float value                | `0.001`         |
 | `--epochs`          | Number of training epochs.                                         | 0 < Integer value              | `100`           |
 | `--augment`         | Specify which augmentations to use.                                 | `pitchshift`, `lb_pitchshift`, `timeshift`, `addnoise`, `polarityinversion`, `gain`, `hpf`, `lpf`, `clipping`, `bitcrush`, `airabso`, `gaussnoise` or `all`| `pitchshift` |
+| `--padding`          | Pad the arrays of audio samples with zeros.                                         | `True`, `False`             | `False`           |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
