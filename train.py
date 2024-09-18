@@ -47,7 +47,6 @@ def parse_arguments():
     parser.add_argument('--name', type=str, help='Name of the project.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
-    # parser.add_argument('--save_logs', type=bool, default=True, help='Save logs to disk.')
     parser.add_argument('--padding', type=bool, default=False, help='Pad the arrays.')
     return parser.parse_args()
     
