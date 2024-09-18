@@ -252,10 +252,10 @@ class ModelTrainer:
                 running_loss += loss.item() * batch_size
                 total_samples += batch_size
 
-        accuracy = torch.round(accuracy_metric.compute(), decimals=4)
-        precision = torch.round(precision_metric.compute(), decimals=4)
-        recall = torch.round(recall_metric.compute(), decimals=4)
-        f1 = torch.round(f1_metric.compute(), decimals=4)
+        accuracy = torch.round(accuracy_metric.compute(), decimals=6) * 100
+        precision = torch.round(precision_metric.compute(), decimals=6) * 100
+        recall = torch.round(recall_metric.compute(), decimals=6) * 100
+        f1 = torch.round(f1_metric.compute(), decimals=6) * 100
         cm = cm_metric.compute()
 
         running_loss = running_loss / total_samples
