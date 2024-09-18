@@ -45,25 +45,34 @@ def parse_arguments():
 args = parse_arguments()
 GetDevice.get_device(args)
 
-path_to_yaml = os.path.join(os.getcwd(), 'runs', args.name, f'{args.name}.yaml')
-yaml_file = open(path_to_yaml, 'r')
-dict = yaml.load(yaml_file, Loader=Loader)
+path_to_runs = os.path.join(os.getcwd(), 'runs')
 
-path_to_models = os.path.join(os.getcwd(), 'runs', args.name, '*.pth')
-list_of_files = glob.glob(path_to_models)
-latest_model = max(list_of_files, key=os.path.getctime)
-print(list_of_files)
+list_of_yaml = glob.glob(os.path.join(path_to_runs, f'{args.name}_*/{args.name}_*.yaml'))
+latest_yaml = max(list_of_yaml, key=os.path.getctime)
+
+list_of_models = glob.glob(os.path.join(path_to_runs, f'{args.name}_*/{args.name}_*.pth'))
+latest_model = max(list_of_models, key=os.path.getctime)
+
+yaml_name = os.path.splitext(os.path.basename(latest_yaml))[0]
+model_name = os.path.splitext(os.path.basename(latest_model))[0]
+
+if yaml_name != model_name:
+    raise ValueError("The YAML and PTH files do not correspond to the same date.")
+
+yaml_file = open(latest_yaml, 'r')
+yaml_dict = yaml.load(yaml_file, Loader=Loader)
 
 ckpt = torch.load(latest_model, map_location=args.device)
+
 model_loader = LoadModel()
-model = model_loader.get_model(dict['Model'], int(dict['Number of Classes']))
+model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes']))
 model.load_state_dict(ckpt)
 model.eval()
 
 audioFlux = pyaudio.PyAudio() 
 SR_ORIGINAL = int(audioFlux.get_device_info_by_index(args.input)['defaultSampleRate'])
-SR_TARGET = dict['Sample Rate']
-NUM_CLASSES = dict['Number of Classes']
+SR_TARGET = yaml_dict['Sampling Rate']
+NUM_CLASSES = yaml_dict['Number of Classes']
 SMOOTH_WINDOW = 10
 
 pred_buffer = PredictionBuffer(NUM_CLASSES, SMOOTH_WINDOW)
