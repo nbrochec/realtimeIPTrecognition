@@ -67,6 +67,13 @@ def get_csv_file_path(args):
     csv_file_path = os.path.join(cwd, name)
     return csv_file_path
 
+def dict2mdtable(d, key='Name', val='Value'):
+    """Convert args dictionnary to markdown table"""
+    rows = [f'| {key} | {val} |']
+    rows += ['|--|--|']
+    rows += [f'| {k} | {v} |' for k, v in d.items()]
+    return "  \n".join(rows)
+
 if __name__ == '__main__':
     args = parse_arguments()
     device = GetDevice.get_device(args)
@@ -95,9 +102,13 @@ if __name__ == '__main__':
     trainer = ModelTrainer(model, loss_fn, args.device)
     date = datetime.datetime.now().strftime('%Y%m%d')
     time = datetime.datetime.now().strftime('%H%M%S')
-    writer = SummaryWriter(log_dir= f'runs/{args.name}_{date}_{time}')
     current_run = f'{get_run_dir(args.name)}_{date}_{time}'
     SaveYAML.save_to_disk(args, num_classes, current_run)
+
+    writer = SummaryWriter(log_dir= f'runs/{args.name}_{date}_{time}')
+    args.num_classes = num_classes
+    args_dict = vars(args)
+    writer.add_text('Hyperparameters', dict2mdtable(args_dict), 1)
 
     for epoch in range(args.epochs):
         train_loss = trainer.train_epoch(train_loader, optimizer, augmentations, aug_nbr)
@@ -141,5 +152,5 @@ if __name__ == '__main__':
     
     if args.save_logs:
         run_name = os.path.basename(os.path.normpath(current_run))
-        SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, date, time, csv_file_path, run_name)
+        SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, date, time, csv_file_path, run_name, writer)
         print(f'Results have been save to logs directory.')
