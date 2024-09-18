@@ -17,7 +17,7 @@ import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
 class LogMelSpectrogramLayer(nn.Module):
-    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
+    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150):
         super(LogMelSpectrogramLayer, self).__init__()
         self.sample_rate = sample_rate
         self.n_fft = n_fft
