@@ -16,6 +16,7 @@ import torch, torchaudio, random, librosa
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sn
+import numpy as np
 
 from glob import glob
 from tqdm import tqdm
@@ -205,7 +206,7 @@ class ProcessDataset:
         self.segment_length = segment_length
         self.silence_threshold = silence_threshold
         self.min_silence_len = min_silence_len
-        self.segment_overlap = args.segment_overlap # implement rollof 
+        self.segment_overlap = args.segment_overlap
         self.padding = args.padding
 
         self.data = pd.read_csv(self.csv_path)
@@ -472,14 +473,13 @@ class SaveResultsToDisk:
 
         cm_path = os.path.join(log_dir, f'cm.csv')
         cm_np = cm.cpu().numpy()
-        df_cm = pd.DataFrame(cm_np, index=labels, columns=labels)
+        df_cm = pd.DataFrame(cm_np / np.sum(cm_np, axis=1), index=labels, columns=labels)
         df_cm.to_csv(cm_path)
         print(f'Results saved to {csv_path}')
 
         plt.figure(figsize=(12,7))
         cm_heatmap = sn.heatmap(df_cm, annot=True).get_figure()
         writerTensorboard.add_figure('Confusion Matrix', cm_heatmap, 0)
-
 
 class SaveYAML:
     @staticmethod
