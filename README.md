@@ -212,7 +212,7 @@ python check_io.py
 ```
 
 This will display a list of the devices and their respective ID.
-
+The use of BlackHole to route the audio stream from Max to PyAudio is recommended.
 ```
 Input Device ID  0  -  MacBook Pro Microphone
 Input Device ID  1  -  BlackHole 2ch
@@ -220,7 +220,7 @@ Input Device ID  2  -  BlackHole 16ch
 ```
 
 Once you have found your device ID, use the command `python realtime.py` to run your model in real time. The arguments `--name`, `--input`, and `--channel` are required.
-The script will automatically run the most recent model of your project.
+The script will automatically run the most recent model saved in the `runs` folder.
 ```
 python realtime.py --name your_project --input 0 --channel 1 
 ```
