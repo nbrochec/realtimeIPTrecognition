@@ -47,7 +47,7 @@ def parse_arguments():
     parser.add_argument('--name', type=str, help='Name of the project.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
-    parser.add_argument('--save_logs', type=bool, default=True, help='Save logs to disk.')
+    # parser.add_argument('--save_logs', type=bool, default=True, help='Save logs to disk.')
     parser.add_argument('--padding', type=bool, default=False, help='Pad the arrays.')
     return parser.parse_args()
     
@@ -66,13 +66,6 @@ def get_csv_file_path(args):
     cwd = os.path.join(os.getcwd(), 'data', 'dataset')
     csv_file_path = os.path.join(cwd, name)
     return csv_file_path
-
-def dict2mdtable(d, key='Name', val='Value'):
-    """Convert args dictionnary to markdown table"""
-    rows = [f'| {key} | {val} |']
-    rows += ['|--|--|']
-    rows += [f'| {k} | {v} |' for k, v in d.items()]
-    return "  \n".join(rows)
 
 if __name__ == '__main__':
     args = parse_arguments()
@@ -108,7 +101,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(log_dir= f'runs/{args.name}_{date}_{time}')
     args.num_classes = num_classes
     args_dict = vars(args)
-    writer.add_text('Hyperparameters', dict2mdtable(args_dict), 1)
+    writer.add_text('Hyperparameters', Dict2MDTable.apply(args_dict), 1)
 
     for epoch in range(args.epochs):
         train_loss = trainer.train_epoch(train_loader, optimizer, augmentations, aug_nbr)
@@ -142,6 +135,9 @@ if __name__ == '__main__':
 
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
+    SaveResultsToTensorboard.upload(stkd_mtrs, cm, csv_file_path, writer)
+    print(f'Results have been uploaded to tensorboard.')
+
     torch.save(model.state_dict(), f'{current_run}/{args.name}_{date}_{time}.pth')
     print(f'Checkpoints has been saved in the {os.path.relpath(current_run)} directory.')
 
@@ -149,8 +145,5 @@ if __name__ == '__main__':
         scripted_model = torch.jit.script(model)
         scripted_model.save(f'{current_run}/{args.name}_{date}_{time}.ts')
         print(f'TorchScript file has been exported to the {os.path.relpath(current_run)} directory.')
-    
-    if args.save_logs:
-        run_name = os.path.basename(os.path.normpath(current_run))
-        SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, date, time, csv_file_path, run_name, writer)
-        print(f'Results have been save to logs directory.')
+
+
