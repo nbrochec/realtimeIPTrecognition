@@ -480,7 +480,7 @@ class SaveYAML:
                       'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Augmentations':args.augment,
                       'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduceLR, 'Number of Classes':num_classes}
 
-        yaml_file = os.path.join(path_to_run, f'{current_run}.yaml')
+        yaml_file = os.path.join(path_to_run, f'{os.path.basename(path_to_run)}.yaml')
 
         if not os.path.exists(yaml_file):   
             with open(yaml_file, 'w') as file:
