@@ -462,11 +462,67 @@ class SaveResultsToTensorboard:
         writerTensorboard.add_figure('Confusion Matrix', cm_heatmap, 0)
         writerTensorboard.close()
         
+class SaveResultsToDisk:
+    @staticmethod
+    def get_class_names(csv_file_path):
+        data = pd.read_csv(csv_file_path)
+        data = data[data['set'] == 'train']
+        label_map = {label: idx for idx, label in enumerate(sorted(data['label'].unique()))}
 
+        return label_map
+
+    @staticmethod
+    def save_to_disk(args, stacked_metrics, cm, csv_file_path, current_run):
+        """
+        Save the results to disk as a CSV file.
+        """
+        label_map = SaveResultsToDisk.get_class_names(csv_file_path)
+        labels = sorted(label_map.keys())
+
+        log_dir = os.path.join(os.getcwd(), 'logs')
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        current_log_dir = os.path.join(log_dir, os.path.basename(current_run))
+        if not os.path.exists(current_log_dir):
+            os.makedirs(current_log_dir) 
+
+        csv_path = os.path.join(current_log_dir, f'results_{os.path.basename(current_run)}.csv')
+
+        acc, pre, rec, f1, loss = stacked_metrics.tolist()
+        accuracy = '%.4f'%acc
+        precision = '%.4f'%pre
+        f1 = '%.4f'%f1
+        recall = '%.4f'%rec
+        loss = '%.8f'%loss
+
+        write_header = not os.path.exists(csv_path)
+
+        with open(csv_path, mode='a', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+
+            if write_header:
+                writer.writerow([
+                    'Run Name', 'Model Name', 'Sample Rate', 'Segment Overlap',
+                    'Fmin', 'Learning Rate', 'Epochs', 'Augmentations', 'Early Stopping',
+                    'Reduce LR on Plateau', 'Padding', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Loss'
+                ])
+
+            writer.writerow([
+                args.name, args.config, args.sr, args.segment_overlap,
+                args.fmin, args.lr, args.epochs, args.augment,
+                args.early_stopping, args.reduceLR, args.padding, 
+                accuracy, precision, recall, f1, loss
+            ])  
+
+        cm_path = os.path.join(current_log_dir, f'cm_{os.path.basename(current_run)}.csv')
+        cm_np = cm.cpu().numpy()
+        df_cm = pd.DataFrame(cm_np, index=labels, columns=labels)
+        df_cm.to_csv(cm_path)
+        
 class SaveYAML:
     @staticmethod
     def save_to_disk(args, num_classes, current_run):
-        name = args.name
         cwd = os.getcwd()
         path_to_run = current_run
 
