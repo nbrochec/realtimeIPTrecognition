@@ -6,7 +6,7 @@ data/dataset/
 runs/
 memo.txt
 folder_structure.md
-logs/test/
+logs/
 data/raw_data/HB-bridge
 data/raw_data/HB-couple
 data/raw_data/HB-neck
