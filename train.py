@@ -48,6 +48,7 @@ def parse_arguments():
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
     parser.add_argument('--padding', type=bool, default=False, help='Pad the arrays.')
+    parser.add_argument('--save_logs', type=bool, default=True, help='Save results and confusion matrix to disk.')
     return parser.parse_args()
     
 def get_run_dir(run_name):
@@ -136,6 +137,9 @@ if __name__ == '__main__':
 
     SaveResultsToTensorboard.upload(stkd_mtrs, cm, csv_file_path, writer)
     print(f'Results have been uploaded to tensorboard.')
+
+    SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, csv_file_path, current_run)
+    print(f'Results and Confusion Matrix have been saved in the logs/{os.path.basename(current_run)} directory.')
 
     torch.save(model.state_dict(), f'{current_run}/{args.name}_{date}_{time}.pth')
     print(f'Checkpoints has been saved in the {os.path.relpath(current_run)} directory.')
