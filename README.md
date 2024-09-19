@@ -173,6 +173,7 @@ You can use the following arguments if you want to test different configurations
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
 | `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
+| `--save_logs`       | Save logs results to disk.                                               | `True`, `False`               | `True`         |
 
 Training your model will create a `runs` folder with the name of your project.
 Detach from current screen `ctrl`+`A`+`D`.
@@ -201,6 +202,14 @@ If you use `--export_ts True`, the `.ts` file will be saved in the same folder.
 ```
 └── 📁runs
     └── 📁project_name_date_time
+```
+
+The results and the confusion matrix will be saved to disk as a CSV file in the `logs` directory.
+```
+└── 📁logs
+    └── 📁project_name_date_time
+        └── cm_project_name_date_time.csv
+        └── results_project_name_date_time.csv
 ```
 
 ### Running the model in real-time
