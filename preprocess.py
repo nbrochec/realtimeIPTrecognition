@@ -18,7 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Preprocess the dataset and save to disk a csv file.')
     parser.add_argument('--train_dir', type=str, help='Directory of training samples to preprocess.', default='train')
     parser.add_argument('--test_dir', type=str, help='Directory of test samples to preprocess.', default='test')
-    parser.add_argument('--val_dir', type=str, help='Directory of val samples to preprocess.', default='None')
+    parser.add_argument('--val_dir', type=str, help='Directory of val samples to preprocess.', default='')
     parser.add_argument('--val_split', type=str, help='Specify on which dataset the validation split would be made.', default='train')
     parser.add_argument('--val_ratio', type=float, help='Amount of validation samples.', default=0.2)
     parser.add_argument('--name', type=str, help='Name of the project.', required=True)
