@@ -15,7 +15,7 @@ import humanize
 import sys
 import pandas as pd
 
-from models import v1, v2, v3, one_residual, two_residual, transformer
+from models import v1, v2, v3, one_residual, two_residual, transformer, v2bis, oneDimension
 import torch.nn.init as init
 
 from tqdm import tqdm
@@ -28,14 +28,16 @@ class LoadModel:
             'v1': v1,
             'v2': v2,
             'v3': v3,
+            'v2bis': v2bis,
             'one-residual': one_residual,
             'two-residual': two_residual,
             'transformer': transformer,
+            'oneDimension': oneDimension
         }
     
-    def get_model(self, model_name, output_nbr):
+    def get_model(self, model_name, output_nbr, sr):
         if model_name in self.models:
-            return self.models[model_name](output_nbr)
+            return self.models[model_name](output_nbr, sr)
         else:
             raise ValueError(f"Model {model_name} is not recognized.")
 
@@ -278,7 +280,7 @@ class PrepareModel:
         self.device = args.device
 
     def prepare(self):
-        model = LoadModel().get_model(self.args.config, self.num_classes).to(self.device)
+        model = LoadModel().get_model(self.args.config, self.num_classes, self.args.sr).to(self.device)
 
         tester = ModelTester(model, input_shape=(1, 1, self.seg_len), device=self.device)
         output = tester.test()
