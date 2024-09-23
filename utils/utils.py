@@ -234,15 +234,20 @@ class ProcessDataset:
         """
         for _, row in tqdm(self.data.iterrows()):
             file_path = row['file_path']
-            label = row['label']
-            label = self.label_map[label]
-
+            label_name = row['label']
+            label = self.label_map[label_name]
+            
             waveform, original_sr = torchaudio.load(file_path)
 
             if original_sr != self.target_sr:
                 waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
 
-            waveform = self.remove_silence(waveform)
+            if label_name != 'silence':
+                waveform = self.remove_silence(waveform)
+
+            if waveform.shape[0] == 2:
+                waveform = waveform[0, :].unsqueeze(0)
+
             num_samples = waveform.size(1)
 
             if self.segment_overlap == True and self.set_type == 'train':
