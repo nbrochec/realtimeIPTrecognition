@@ -65,7 +65,7 @@ yaml_dict = yaml.load(yaml_file, Loader=Loader)
 ckpt = torch.load(latest_model, map_location=args.device)
 
 model_loader = LoadModel()
-model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes']))
+model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes'], int(yaml_dict['Sampling Rate'])))
 model.load_state_dict(ckpt)
 model.eval()
 
