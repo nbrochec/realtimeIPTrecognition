@@ -16,13 +16,13 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
-from models.layers import LogMelSpectrogramLayer, custom2DCNN
+from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN
 
 class v1(nn.Module):
-    def __init__(self, output_nbr):
+    def __init__(self, output_nbr, sr):
         super(v1, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 40, (2,3), "same"),
@@ -61,10 +61,10 @@ class v1(nn.Module):
         return z
 
 class v2(nn.Module):
-    def __init__(self, output_nbr):
+    def __init__(self, output_nbr, sr):
         super(v2, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -107,11 +107,58 @@ class v2(nn.Module):
         z = self.fc(x_flat)
         return z
     
+class v2bis(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v2bis, self).__init__()
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        
+        self.cnn = nn.Sequential(
+            custom2DCNN(1, 64, (2,3), "same"),
+            custom2DCNN(64, 64, (2,3), "same"),
+            nn.AvgPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(64, 128, (2,3), "same"),
+            custom2DCNN(128, 128, (2,3), "same"),
+            nn.AvgPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(128, 256, 2, "same"),
+            nn.AvgPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(256, 256, 2, "same"),
+            nn.AvgPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(256, 512, 2, "same"),
+            nn.AvgPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(512, 512, 2, "same"),
+            nn.AvgPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(512, 512, 2, "same"),
+            nn.AvgPool2d(2),
+            nn.Dropout2d(0.25),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ELU(),
+            nn.Linear(256, 128),
+            nn.ELU(),
+            nn.Linear(128, output_nbr),
+        )
+
+    def forward(self, x):
+        x = self.logmel(x)
+        x = self.cnn(x)
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
+    
 class v3(nn.Module):
-    def __init__(self, output_nbr):
+    def __init__(self, output_nbr, sr):
         super(v3, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -160,10 +207,10 @@ class v3(nn.Module):
         return z
 
 class one_residual(nn.Module):
-    def __init__(self, output_nbr):
+    def __init__(self, output_nbr, sr):
         super(one_residual, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn_part1 = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -217,10 +264,10 @@ class one_residual(nn.Module):
         return z
 
 class two_residual(nn.Module):
-    def __init__(self, output_nbr):
+    def __init__(self, output_nbr, sr):
         super(two_residual, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn_part1 = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -282,10 +329,10 @@ class two_residual(nn.Module):
         return w
 
 class transformer(nn.Module):
-    def __init__(self, output_nbr):
+    def __init__(self, output_nbr, sr):
         super(transformer, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=24000)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -328,3 +375,48 @@ class transformer(nn.Module):
         x = x.flatten(start_dim=1)
         x = self.fc(x)
         return x
+
+class oneDimension(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(oneDimension, self).__init__()
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+
+        self.cnn = nn.Sequential(
+            custom1DCNN(1, 64, 8, "same", 2),
+            custom1DCNN(64, 64, 7, "same", 2),
+            nn.AvgPool1d(2),
+            nn.Dropout1d(0.25),
+            custom1DCNN(64, 64, 6, "same", 1),
+            custom1DCNN(64, 64, 5, "same", 1),
+            nn.AvgPool1d(2),
+            nn.Dropout1d(0.25),
+            custom1DCNN(64, 64, 4, "same", 1),
+            nn.AvgPool1d(2),
+            nn.Dropout1d(0.25),
+            custom1DCNN(64, 64, 3, "same", 1),
+            nn.AvgPool1d(3),
+            nn.Dropout1d(0.25),
+            custom1DCNN(64, 64, 2, "same", 1),
+            nn.AvgPool1d(2),
+            nn.Dropout1d(0.25),
+            custom1DCNN(64, 64, 2, "same", 1),
+            nn.AvgPool1d(2),
+            nn.Dropout1d(0.25),
+            custom1DCNN(64, 64, 2, "same", 1),
+            nn.AvgPool1d(4),
+            nn.Dropout1d(0.25),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(5 * 64, 64),
+            nn.LeakyReLU(),
+            nn.Linear(64, output_nbr),
+        )
+
+    def forward(self, x):
+        x = self.logmel(x)
+        x = x.reshape(x.size(0), 1, x.size(2)*x.size(3))
+        x = self.cnn(x)
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
