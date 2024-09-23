@@ -138,7 +138,7 @@ class DatasetSplitter:
                     for file in test_files:
                         writer.writerow([file, label, 'test'])
 
-                for root, dirs, files in tqdm(os.walk(test_path), desc='Process val audio files.'):
+                for root, dirs, files in tqdm(os.walk(val_path), desc='Process val audio files.'):
                     label = os.path.basename(root)
                     all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
                     
