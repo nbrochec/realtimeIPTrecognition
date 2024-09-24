@@ -62,10 +62,10 @@ if yaml_name != model_name:
 yaml_file = open(latest_yaml, 'r')
 yaml_dict = yaml.load(yaml_file, Loader=Loader)
 
-ckpt = torch.load(latest_model, map_location=args.device)
+ckpt = torch.load(latest_model, map_location=args.device, weights_only=True)
 
 model_loader = LoadModel()
-model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes'], int(yaml_dict['Sampling Rate'])))
+model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes']), int(yaml_dict['Sampling Rate']))
 model.load_state_dict(ckpt)
 model.eval()
 
@@ -79,17 +79,18 @@ pred_buffer = PredictionBuffer(NUM_CLASSES, SMOOTH_WINDOW)
 sender = SendOSCMessage(args)
 cumulativeAudio = torch.zeros((1, 1, SEGMENT_LENGTH))
 
-
 def callback(in_data, frame_count, time_info, flag):
     global cumulativeAudio
 
     audioSample = torch.frombuffer(in_data, dtype=torch.float32)
+
     audioSample = Resample.resample(audioSample, SR_ORIGINAL, SR_TARGET)
 
     concat = torch.concatenate((cumulativeAudio, audioSample.unsqueeze(0).unsqueeze(0)), axis=2)
-
+    
     if concat.shape[2] >= SEGMENT_LENGTH:
         concat = concat[:,:,-SEGMENT_LENGTH:]
+
         audioON = torch.sum(torch.abs(audioSample))
 
         if audioON > 0:
@@ -114,7 +115,7 @@ audioStream = audioFlux.open(format=pyaudio.paFloat32,
                  rate=SR_ORIGINAL,
                  output=False,
                  input=True,
-                 input_device_index=args.input, # Change le numéro de périphérique audio ici (il faut lancer pyaudio-check.py pour trouver le bon numéro)
+                 input_device_index=args.input,
                  stream_callback=callback,
                  frames_per_buffer=args.buffer_size)
 
