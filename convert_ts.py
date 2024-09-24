@@ -26,7 +26,7 @@ def get_ts_file(run_dir):
 if __name__ == '__main__':
     args = parse_arguments()
 
-    run_dir = get_run_dir(args.name)
+    run_dir = get_run_dir(args.run_name)
     model_path = get_ts_file(run_dir)
 
     model_gpu = torch.jit.load(model_path, map_localtion=args.device)
