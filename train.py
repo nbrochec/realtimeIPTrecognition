@@ -145,6 +145,7 @@ if __name__ == '__main__':
     print(f'Checkpoints has been saved in the {os.path.relpath(current_run)} directory.')
 
     if args.export_ts:
+        model = model.to('cpu')
         scripted_model = torch.jit.script(model)
         scripted_model.save(f'{current_run}/{args.name}_{date}_{time}.ts')
         print(f'TorchScript file has been exported to the {os.path.relpath(current_run)} directory.')
