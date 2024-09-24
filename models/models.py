@@ -448,3 +448,74 @@ class oneDimension(nn.Module):
         x_flat = c.view(c.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+
+class v1bis(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v1bis, self).__init__()
+        
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        self.env = EnvelopeExtractor(sample_rate=sr)
+
+        self.cnn1d = nn.Sequential(
+            custom1DCNN(1, 64, 8, "same", 2),
+            custom1DCNN(64, 64, 7, "same", 2),
+            nn.AvgPool1d(8),
+            custom1DCNN(64, 64, 6, "same", 1),
+            custom1DCNN(64, 64, 5, "same", 1),
+            nn.AvgPool1d(4),
+            custom1DCNN(64, 64, 4, "same", 1),
+            nn.AvgPool1d(4),
+            custom1DCNN(64, 64, 3, "same", 1),
+            nn.AvgPool1d(2),
+            custom1DCNN(64, 128, 2, "same", 1),
+            nn.AvgPool1d(2),
+            custom1DCNN(128, 128, 2, "same", 1),
+            nn.AvgPool1d(2),
+            custom1DCNN(128, 128, 2, "same", 1),
+            nn.AvgPool1d(7),
+            nn.Dropout1d(0.25),
+        )
+
+        self.cnn2d = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(160 + 128, 128),
+            nn.ELU(),
+            nn.Linear(128, 64),
+            nn.ELU(),
+            nn.Linear(64, output_nbr),
+        )
+
+    def forward(self, x):
+        a = self.logmel(x)
+        b = self.env(x)
+
+        a = self.cnn2d(a)
+        b = self.cnn1d(b)
+
+        c = torch.cat((a.squeeze(3), b), dim=1)
+        x_flat = c.view(c.size(0), -1)
+        z = self.fc(x_flat)
+        return z
