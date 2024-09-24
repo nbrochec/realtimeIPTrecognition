@@ -29,7 +29,7 @@ if __name__ == '__main__':
     run_dir = get_run_dir(args.run_name)
     model_path = get_ts_file(run_dir)
 
-    model_gpu = torch.jit.load(model_path, map_localtion=args.device)
+    model_gpu = torch.jit.load(model_path, map_location=args.device)
     model_cpu = model_gpu.to('cpu')
 
     model_cpu_path = os.path.join(run_dir, f'cpu_{os.path.basename(model_path)}')
