@@ -67,7 +67,7 @@ class EnvelopeExtractor(nn.Module):
 
     def forward(self, x):
         x = torch.abs(x)
-        x = Faudio.highpass_biquad(x, sample_rate=self.sr, cutoff_freq=self.cutoff, Q=self.Q)
+        x = Faudio.highpass_biquad(x, sample_rate=self.sr, cutoff_freq=float(self.cutoff), Q=self.Q)
         return x
 
 class custom2DCNN(nn.Module):
