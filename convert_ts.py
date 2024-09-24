@@ -32,6 +32,11 @@ if __name__ == '__main__':
     model_gpu = torch.jit.load(model_path, map_location=args.device)
     model_cpu = model_gpu.to('cpu')
 
+    for attr_name in dir(model_cpu):
+        attr = getattr(model_cpu, attr_name)
+        if isinstance(attr, torch.Tensor) and attr.is_cuda:
+            setattr(model_cpu, attr_name, attr.cpu())
+
     model_cpu_path = os.path.join(run_dir, f'cpu_{os.path.basename(model_path)}')
     torch.jit.save(model_cpu, model_cpu_path)
     print(f'Model has been transfered to CPU and save at {os.path.relpath(model_path)}')
