@@ -31,6 +31,8 @@ if __name__ == '__main__':
     if args.val_dir == '':
         args.val_dir = None
 
+    print(args.val_dir)
+
     csv_dir = 'data/dataset/'
     base_dir = 'data/raw_data/'
 
