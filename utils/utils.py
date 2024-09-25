@@ -73,7 +73,7 @@ class DatasetSplitter:
         if val_split != 'train' and val_split != 'test':
             raise ValueError("val_split must be either 'train' or 'test'.")
         
-        if val_dir is None:
+        if val_path is None:
             with open(csv_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
                 writer.writerow(['file_path', 'label', 'set'])
@@ -123,7 +123,7 @@ class DatasetSplitter:
                             for file in all_files:
                                 writer.writerow([file, label, 'test'])
             
-        if val_dir is not None:
+        if val_path is not None:
             with open(csv_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
                 writer.writerow(['file_path', 'label', 'set'])
