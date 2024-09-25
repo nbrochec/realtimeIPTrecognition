@@ -250,28 +250,29 @@ class ProcessDataset:
 
             num_samples = waveform.size(1)
 
-            if self.segment_overlap == True and self.set_type == 'train':
-                for i in range(0, num_samples, self.segment_length//2):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        if self.padding:
-                            segment = torch.zeros((waveform.size(0), self.segment_length))
-                            segment[:, :num_samples - i] = waveform[:, i:]
+            if num_samples >= self.segment_length:
+                if self.segment_overlap == True and self.set_type == 'train':
+                    for i in range(0, num_samples, self.segment_length//2):
+                        if i + self.segment_length <= num_samples:
+                            segment = waveform[:, i:i + self.segment_length]
+                        else:
+                            if self.padding:
+                                segment = torch.zeros((waveform.size(0), self.segment_length))
+                                segment[:, :num_samples - i] = waveform[:, i:]
 
-                    self.X.append(segment)
-                    self.y.append(label)
-            else:
-                for i in range(0, num_samples, self.segment_length):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        if self.padding:
-                            segment = torch.zeros((waveform.size(0), self.segment_length))
-                            segment[:, :num_samples - i] = waveform[:, i:]
+                        self.X.append(segment)
+                        self.y.append(label)
+                else:
+                    for i in range(0, num_samples, self.segment_length):
+                        if i + self.segment_length <= num_samples:
+                            segment = waveform[:, i:i + self.segment_length]
+                        else:
+                            if self.padding:
+                                segment = torch.zeros((waveform.size(0), self.segment_length))
+                                segment[:, :num_samples - i] = waveform[:, i:]
 
-                    self.X.append(segment)
-                    self.y.append(label)
+                        self.X.append(segment)
+                        self.y.append(label)
 
         self.X = torch.stack(self.X)
         self.y = torch.tensor(self.y)
