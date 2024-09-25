@@ -92,14 +92,18 @@ class DatasetSplitter:
                     num_files = len(files)
                     num_val = int(num_files * val_ratio)
 
-                    val_files = random.sample(files, num_val)
-                    train_files = list(set(files) - set(val_files))
+                    if val_split == 'train':
+                        val_files = random.sample(files, num_val)
+                        train_files = list(set(files) - set(val_files))
 
-                    for file in train_files:
-                        writer.writerow([file, label, 'train'])
+                        for file in train_files:
+                            writer.writerow([file, label, 'train'])
 
-                    for file in val_files:
-                        writer.writerow([file, label, 'val'])
+                        for file in val_files:
+                            writer.writerow([file, label, 'val'])
+                    else:
+                        for file in all_files:
+                            writer.writerow([file, label, 'train'])
 
                 # Process test directory
                 for root, dirs, files in tqdm(os.walk(test_path), desc='Process test audio files.'):
