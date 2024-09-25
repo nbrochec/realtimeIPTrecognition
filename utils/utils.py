@@ -25,6 +25,8 @@ from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
 from utils.augmentation import ApplyAugmentations
 
+from sklearn.model_selection import train_test_split
+
 class DirectoryManager:
     @staticmethod
     def ensure_dir_exists(directory):
@@ -78,23 +80,17 @@ class DatasetSplitter:
                 writer = csv.writer(csv_file)
                 writer.writerow(['file_path', 'label', 'set'])
 
-                class_files = {}  # Dictionnaire pour stocker les fichiers par classe
-
                 # Process train directory
                 for root, dirs, files in tqdm(os.walk(train_path), desc='Process training audio files.'):
                     label = os.path.basename(root)
                     all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
-                    if all_files:
-                        class_files[label] = all_files
-
-                for label, files in class_files.items():
-                    num_files = len(files)
-                    num_val = int(num_files * val_ratio)
-
                     if val_split == 'train':
-                        val_files = random.sample(files, num_val)
-                        train_files = list(set(files) - set(val_files))
+                        # Split into train and validation sets
+                        num_files = len(all_files)
+                        num_val = int(num_files * val_ratio)
+                        val_files = random.sample(all_files, num_val)
+                        train_files = list(set(all_files) - set(val_files))
 
                         for file in train_files:
                             writer.writerow([file, label, 'train'])
@@ -102,7 +98,8 @@ class DatasetSplitter:
                         for file in val_files:
                             writer.writerow([file, label, 'val'])
                     else:
-                        for file in all_files:
+                        train_files = list(set(all_files))
+                        for file in train_files:
                             writer.writerow([file, label, 'train'])
 
                 # Process test directory
@@ -110,22 +107,22 @@ class DatasetSplitter:
                     label = os.path.basename(root)
                     all_files = [os.path.join(root, f) for f in files if f.lower().endswith(('.wav', '.aiff', '.aif', '.mp3'))]
 
-                    if all_files:
+                    if val_split == 'test':
+                        # Split into test and validation sets
                         num_files = len(all_files)
                         num_val = int(num_files * val_ratio)
+                        val_files = random.sample(all_files, num_val)
+                        test_files = list(set(all_files) - set(val_files))
 
-                        if val_split == 'test':
-                            val_files = random.sample(all_files, num_val)
-                            test_files = list(set(all_files) - set(val_files))
+                        for file in test_files:
+                            writer.writerow([file, label, 'test'])
 
-                            for file in test_files:
-                                writer.writerow([file, label, 'test'])
-
-                            for file in val_files:
-                                writer.writerow([file, label, 'val'])
-                        else:
-                            for file in all_files:
-                                writer.writerow([file, label, 'test'])
+                        for file in val_files:
+                            writer.writerow([file, label, 'val'])
+                    else:
+                        test_files = list(set(all_files))
+                        for file in test_files:
+                            writer.writerow([file, label, 'test'])
             
         if val_path is not None:
             with open(csv_path, mode='w', newline='') as csv_file:
