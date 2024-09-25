@@ -60,7 +60,12 @@ class DatasetSplitter:
         """
         train_path = os.path.join(base_dir, train_dir)
         test_path = os.path.join(base_dir, test_dir)
-        val_path = os.path.join(base_dir, val_dir)
+
+        if val_dir is not None:
+            val_path = os.path.join(base_dir, val_dir)
+        else:
+            val_path = None
+            
         csv_filename = f'{name}_dataset_split.csv'
 
         csv_path = os.path.join(destination, csv_filename)
