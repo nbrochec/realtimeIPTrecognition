@@ -97,7 +97,8 @@ if __name__ == '__main__':
     time = datetime.datetime.now().strftime('%H%M%S')
     current_run = f'{get_run_dir(args.name)}_{date}_{time}'
     SaveYAML.save_to_disk(args, num_classes, current_run)
-
+    print(f'Run {args.name}_{date}_{time}.')
+    
     writer = SummaryWriter(log_dir= f'runs/{args.name}_{date}_{time}')
     args.num_classes = num_classes
     args_dict = vars(args)
