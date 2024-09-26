@@ -39,7 +39,8 @@ def parse_arguments():
     parser.add_argument('--gpu', type=int, default=0, help='Specify which GPU to use.')
     parser.add_argument('--device', type=str, default='cpu', help='Specify the hardware on which computation should be performed.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate for downsampling the audio files.')
-    parser.add_argument('--augment', type=str, default='', help='Specify which augmentations to use.')
+    parser.add_argument('--online_augment', type=str, default='', help='Specify which online augmentations to use.')
+    parser.add_argument('--offline_augment', type=bool, default=True, help='Use offline augmentations.')
     parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
     parser.add_argument('--reduceLR', type=bool, default=False, help='Reduce learning rate if validation plateaus.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
@@ -47,8 +48,9 @@ def parse_arguments():
     parser.add_argument('--name', type=str, help='Name of the project.', required=True)
     parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
     parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap the segment when preparing the datasets.')
-    parser.add_argument('--padding', type=bool, default=False, help='Pad the arrays.')
+    parser.add_argument('--padding', type=bool, default=False, help='Pad the arrays with zero.')
     parser.add_argument('--save_logs', type=bool, default=True, help='Save results and confusion matrix to disk.')
+    parser.add_argument('--batch_size', type=int, default=128, help='Specify batch size.')
     return parser.parse_args()
     
 def get_run_dir(run_name):
@@ -104,7 +106,10 @@ if __name__ == '__main__':
     writer.add_text('Hyperparameters', Dict2MDTable.apply(args_dict), 1)
 
     for epoch in range(args.epochs):
-        train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
+        if args.online_augment is True:
+            train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
+        else:
+            train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
         writer.add_scalar('epoch/epoch', epoch, epoch)
         writer.add_scalar('Loss/train', train_loss, epoch)
 
