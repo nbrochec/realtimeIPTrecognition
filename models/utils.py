@@ -34,7 +34,7 @@ class LoadModel:
             # 'two-residual': two_residual,
             # 'transformer': transformer,
             'v2_1d': v2_1d,
-            'v1_d1_e': v1_1d_e,
+            'v1_1d_e': v1_1d_e,
         }
     
     def get_model(self, model_name, output_nbr, sr):
