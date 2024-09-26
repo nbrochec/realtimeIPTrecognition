@@ -84,8 +84,7 @@ if __name__ == '__main__':
     if args.reduceLR == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)
 
-    augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
-    aug_nbr = augmentations.get_aug_nbr()
+    augmenter = AudioOnlineTransforms(args)
 
     max_val_loss = np.inf
     early_stopping_threshold = args.early_stopping
@@ -105,7 +104,7 @@ if __name__ == '__main__':
     writer.add_text('Hyperparameters', Dict2MDTable.apply(args_dict), 1)
 
     for epoch in range(args.epochs):
-        train_loss = trainer.train_epoch(train_loader, optimizer, augmentations, aug_nbr)
+        train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
         writer.add_scalar('epoch/epoch', epoch, epoch)
         writer.add_scalar('Loss/train', train_loss, epoch)
 
