@@ -215,6 +215,7 @@ class ProcessDataset:
         self.min_silence_len = min_silence_len
         self.segment_overlap = args.segment_overlap
         self.padding = args.padding
+        self.args = args
 
         self.data = pd.read_csv(self.csv_path)
         
@@ -274,6 +275,22 @@ class ProcessDataset:
 
                     self.X.append(segment)
                     self.y.append(label)
+
+            elif self.set_type == 'train' and self.args.augment:
+                for i in range(0, num_samples, self.segment_length):
+                    if i + self.segment_length <= num_samples:
+                        segment = waveform[:, i:i + self.segment_length]
+                    else:
+                        if self.padding == True:
+                            valid_length = num_samples - i
+                            segment = torch.zeros((waveform.size(0), self.segment_length))
+                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    
+                    self.X.append(segment)
+                    self.y.append(label)
+
+                # detuned =
+        
             else:
                 for i in range(0, num_samples, self.segment_length):
                     if i + self.segment_length <= num_samples:
