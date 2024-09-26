@@ -352,7 +352,8 @@ class v2_1d(nn.Module):
 #         x_flat = c.view(c.size(0), -1)
 #         z = self.fc(x_flat)
 #         return z
-    
+
+
 class v1_1d(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_1d, self).__init__()
@@ -432,7 +433,7 @@ class v1_1d(nn.Module):
             nn.ReLU(),
             nn.Linear(80, output_nbr),
         )
-
+# autre possibilité: env + spec )-> energie
     def forward(self, x):
         a = self.logmel(x)
         b = self.env(x)
@@ -442,15 +443,115 @@ class v1_1d(nn.Module):
         b = self.cnn1d(b)
         e = self.cnn1d_energy(e)
         
-        c = torch.cat((b.squeeze(2), e.squeeze(2)), dim=1)
+        c = torch.cat((b.squeeze(2), a.squeeze(2).squeeze(2)), dim=1)
         c = c.view(c.size(0), -1)
         v = self.fc1(c)
 
-        d = torch.cat((v, a.squeeze(2).squeeze(2)), dim=1)
+        d = torch.cat((v, e.squeeze(2)), dim=1)
         z = d.view(d.size(0), -1)
         z = self.fc2(z)
 
         return z
+
+# GOOOOD 27 09 24
+# class v1_1d(nn.Module):
+#     def __init__(self, output_nbr, sr):
+#         super(v1_1d, self).__init__()
+        
+#         self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+#         self.env = EnvelopeExtractor(sample_rate=sr)
+#         self.spectral_energy = spectralEnergyExtractor()
+
+#         self.cnn1d_energy = nn.Sequential(
+#             custom1DCNN(1, 40, 3, "same", 1),
+#             nn.AvgPool1d(5),
+#             custom1DCNN(40, 80, 3, "same", 1),
+#             custom1DCNN(80, 160, 2, "same", 1),
+#             nn.AvgPool1d(3),
+#             nn.Dropout1d(0.1),
+#         )
+
+#         self.cnn1d = nn.Sequential(
+#             custom1DCNN(1, 40, 7, "same", 2),
+#             custom1DCNN(40, 40, 6, "same", 2),
+#             nn.AvgPool1d(8),
+#             custom1DCNN(40, 80, 5, "same", 1),
+#             custom1DCNN(80, 80, 4, "same", 1),
+#             nn.AvgPool1d(4),
+#             custom1DCNN(80, 160, 3, "same", 1),
+#             nn.AvgPool1d(4),
+#             custom1DCNN(160, 160, 2, "same", 1),
+#             nn.AvgPool1d(2),
+#             custom1DCNN(160, 160, 2, "same", 1),
+#             nn.AvgPool1d(2),
+#             custom1DCNN(160, 160, 2, "same", 1),
+#             nn.AvgPool1d(2),
+#             custom1DCNN(160, 160, 2, "same", 1),
+#             nn.AvgPool1d(7),
+#             nn.Dropout1d(0.1),
+#         )
+
+#         self.cnn2d = nn.Sequential(
+#             custom2DCNN(1, 40, (2,3), "same"),
+#             custom2DCNN(40, 40, (2,3), "same"),
+#             nn.MaxPool2d((2, 1)),
+#             nn.Dropout2d(0.25),
+#             custom2DCNN(40, 80, (2,3), "same"),
+#             custom2DCNN(80, 80, (2,3), "same"),
+#             nn.MaxPool2d((2, 3)),
+#             nn.Dropout2d(0.25),
+#             custom2DCNN(80, 160, 2, "same"),
+#             nn.MaxPool2d((2, 1)),
+#             nn.Dropout2d(0.25),
+#             custom2DCNN(160, 160, 2, "same"),
+#             nn.MaxPool2d(2),
+#             nn.Dropout2d(0.25),
+#             custom2DCNN(160, 160, 2, "same"),
+#             nn.MaxPool2d((2, 1)),
+#             nn.Dropout2d(0.25),
+#             custom2DCNN(160, 160, 2, "same"),
+#             nn.MaxPool2d((2, 1)),
+#             nn.Dropout2d(0.25),
+#             custom2DCNN(160, 160, 2, "same"),
+#             nn.MaxPool2d(2),
+#             nn.Dropout2d(0.25),
+#         )
+
+#         self.fc1 = nn.Sequential(
+#             nn.Linear(160 * 2, 160),
+#             nn.BatchNorm1d(160),
+#             nn.ReLU(),
+#             nn.Dropout1d(0.1)
+#         )
+
+#         self.fc2 = nn.Sequential(
+#             nn.Linear(160 * 2, 160),
+#             nn.BatchNorm1d(160),
+#             nn.ReLU(),
+#             nn.Linear(160, 80),
+#             nn.BatchNorm1d(80),
+#             nn.ReLU(),
+#             nn.Linear(80, output_nbr),
+#         )
+# # autre possibilité: env + spec )-> energie
+#     def forward(self, x):
+#         a = self.logmel(x)
+#         b = self.env(x)
+#         e = self.spectral_energy(a)
+
+#         a = self.cnn2d(a)
+#         b = self.cnn1d(b)
+#         e = self.cnn1d_energy(e)
+        
+#         c = torch.cat((b.squeeze(2), e.squeeze(2)), dim=1)
+#         c = c.view(c.size(0), -1)
+#         v = self.fc1(c)
+
+#         d = torch.cat((v, a.squeeze(2).squeeze(2)), dim=1)
+#         z = d.view(d.size(0), -1)
+#         z = self.fc2(z)
+
+#         return z
 
 class v1_1d_e(nn.Module):
     def __init__(self, output_nbr, sr):
