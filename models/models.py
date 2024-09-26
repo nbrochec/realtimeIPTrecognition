@@ -420,12 +420,15 @@ class v1_1d(nn.Module):
             nn.Linear(160 * 2, 160),
             nn.BatchNorm1d(160),
             nn.ReLU(),
+            nn.Dropout1d(0.1)
         )
 
         self.fc2 = nn.Sequential(
             nn.Linear(160 * 2, 160),
+            nn.BatchNorm1d(160),
             nn.ReLU(),
             nn.Linear(160, 80),
+            nn.BatchNorm1d(80),
             nn.ReLU(),
             nn.Linear(80, output_nbr),
         )
