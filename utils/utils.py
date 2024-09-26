@@ -23,7 +23,7 @@ from tqdm import tqdm
 from torch.utils.data import TensorDataset, DataLoader
 from externals.pytorch_balanced_sampler.sampler import SamplerFactory
 
-from utils.augmentation import ApplyAugmentations
+from utils.augmentation import AudioOfflineTransforms
 
 from sklearn.model_selection import train_test_split
 
@@ -217,6 +217,8 @@ class ProcessDataset:
         self.padding = args.padding
         self.args = args
 
+        self.offline_aug = True
+
         self.data = pd.read_csv(self.csv_path)
         
         self.data = self.data[self.data['set'] == self.set_type]
@@ -263,6 +265,8 @@ class ProcessDataset:
                 noise = torch.randn((waveform.size(0), extra_length)) * 0.001
                 waveform = torch.cat((waveform, noise), dim=1)
 
+            augmenter = AudioOfflineTransforms(self.args)
+
             if self.segment_overlap == True and self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length//2):
                     if i + self.segment_length <= num_samples:
@@ -272,11 +276,18 @@ class ProcessDataset:
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    
+                    if self.offline_aug == True:
+                        aug1, aug2 = augmenter(segment)
+
+                        self.X.append(aug1)
+                        self.X.append(aug2)
+                        self.y.extend([label] * 2)
 
                     self.X.append(segment)
                     self.y.append(label)
 
-            elif self.set_type == 'train' and self.args.augment:
+            elif self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length):
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
@@ -285,12 +296,17 @@ class ProcessDataset:
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
-                    
+
+                    if self.offline_aug == True:
+                        aug1, aug2 = augmenter(segment)
+
+                        self.X.append(aug1)
+                        self.X.append(aug2)
+                        self.y.extend([label] * 2)
+
                     self.X.append(segment)
                     self.y.append(label)
 
-                # detuned =
-        
             else:
                 for i in range(0, num_samples, self.segment_length):
                     if i + self.segment_length <= num_samples:
@@ -300,7 +316,7 @@ class ProcessDataset:
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
-
+                    
                     self.X.append(segment)
                     self.y.append(label)
 
@@ -328,9 +344,8 @@ class BalancedDataLoader:
         self.num_classes = self.get_num_classes()
         self.device = device
 
-        self.augmentations = ApplyAugmentations(args.augment.split(), args.sr, args.device)
-        self.aug_nbr = self.augmentations.get_aug_nbr()
-        self.batch_size = 128 // (self.aug_nbr + 1)
+        # self.batch_size = args.batch_size
+        self.batch_size = 128
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
@@ -374,68 +389,68 @@ class BalancedDataLoader:
         print(f"Unique classes detected: {unique_classes}")
         return num_classes
     
-    def custom_collate_fn(self, batch):
-        segments, labels = [], []
+    # def custom_collate_fn(self, batch):
+    #     segments, labels = [], []
 
-        for segs, lbls in batch:
-            segs = segs.unsqueeze(0).to(self.device)
+    #     for segs, lbls in batch:
+    #         segs = segs.unsqueeze(0).to(self.device)
 
-            if self.aug_nbr != 0 :
-                aug_segs = self.augmentations.apply(segs).to(self.device)
-                new_data = torch.cat((aug_segs, segs), dim=0)
-                all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1)).to(self.device)
-                segments.append(new_data)
-                labels.append(all_targets)
+    #         if self.aug_nbr != 0 :
+    #             aug_segs = self.augmentations.apply(segs).to(self.device)
+    #             new_data = torch.cat((aug_segs, segs), dim=0)
+    #             all_targets = torch.flatten(lbls.repeat(self.aug_nbr + 1, 1)).to(self.device)
+    #             segments.append(new_data)
+    #             labels.append(all_targets)
 
-            else:
-                segments.append(segs)
-                labels.append(torch.flatten(lbls).to(self.device))
+    #         else:
+    #             segments.append(segs)
+    #             labels.append(torch.flatten(lbls).to(self.device))
 
-        segments_tensor = torch.cat(segments).to(self.device)
-        labels_tensor = torch.cat(labels).to(self.device)
+    #     segments_tensor = torch.cat(segments).to(self.device)
+    #     labels_tensor = torch.cat(labels).to(self.device)
 
-        if segments_tensor.size(0) > 128:
-            indices = torch.randperm(segments_tensor.size(0))[:128].to(self.device)
-            segments_tensor = segments_tensor[indices]
-            labels_tensor = labels_tensor[indices]
+    #     if segments_tensor.size(0) > 128:
+    #         indices = torch.randperm(segments_tensor.size(0))[:128].to(self.device)
+    #         segments_tensor = segments_tensor[indices]
+    #         labels_tensor = labels_tensor[indices]
 
-        elif segments_tensor.size(0) < 128:
-            num_additional_samples = 128 - segments_tensor.size(0)
+    #     elif segments_tensor.size(0) < 128:
+    #         num_additional_samples = 128 - segments_tensor.size(0)
             
-            class_indices = {i: torch.where(labels_tensor == i)[0] for i in range(self.num_classes)}
+    #         class_indices = {i: torch.where(labels_tensor == i)[0] for i in range(self.num_classes)}
             
-            extra_segments, extra_labels = [], []
-            samples_per_class = num_additional_samples // self.num_classes
+    #         extra_segments, extra_labels = [], []
+    #         samples_per_class = num_additional_samples // self.num_classes
             
-            for class_id, indices in class_indices.items():
-                num_samples = min(samples_per_class, len(indices))
-                if num_samples > 0:
-                    selected_indices = indices[:num_samples]
-                    extra_segments.append(segments_tensor[selected_indices])
-                    extra_labels.append(labels_tensor[selected_indices])
+    #         for class_id, indices in class_indices.items():
+    #             num_samples = min(samples_per_class, len(indices))
+    #             if num_samples > 0:
+    #                 selected_indices = indices[:num_samples]
+    #                 extra_segments.append(segments_tensor[selected_indices])
+    #                 extra_labels.append(labels_tensor[selected_indices])
 
-            extra_needed = 128 - (segments_tensor.size(0) + sum(s.size(0) for s in extra_segments))
-            if extra_needed > 0:
-                remaining_indices = torch.cat(list(class_indices.values()))
-                selected_indices = remaining_indices[:extra_needed]
-                extra_segments.append(segments_tensor[selected_indices])
-                extra_labels.append(labels_tensor[selected_indices])
+    #         extra_needed = 128 - (segments_tensor.size(0) + sum(s.size(0) for s in extra_segments))
+    #         if extra_needed > 0:
+    #             remaining_indices = torch.cat(list(class_indices.values()))
+    #             selected_indices = remaining_indices[:extra_needed]
+    #             extra_segments.append(segments_tensor[selected_indices])
+    #             extra_labels.append(labels_tensor[selected_indices])
 
-            segments_tensor = torch.cat([segments_tensor] + extra_segments).to(self.device)
-            labels_tensor = torch.cat([labels_tensor] + extra_labels).to(self.device)
+    #         segments_tensor = torch.cat([segments_tensor] + extra_segments).to(self.device)
+    #         labels_tensor = torch.cat([labels_tensor] + extra_labels).to(self.device)
 
-        shuffled_indices = torch.randperm(segments_tensor.size(0)).to(self.device)
-        segments_tensor = segments_tensor[shuffled_indices]
-        labels_tensor = labels_tensor[shuffled_indices]
+    #     shuffled_indices = torch.randperm(segments_tensor.size(0)).to(self.device)
+    #     segments_tensor = segments_tensor[shuffled_indices]
+    #     labels_tensor = labels_tensor[shuffled_indices]
 
-        return segments_tensor, labels_tensor
+    #     return segments_tensor, labels_tensor
 
     def get_dataloader(self):
         """ Returns a DataLoader with the balanced batch sampler. """
         return DataLoader(
             self.dataset,
             batch_sampler=self.batch_sampler,
-            collate_fn=self.custom_collate_fn,
+            # collate_fn=self.custom_collate_fn,
         )
     
 class PrepareData:
