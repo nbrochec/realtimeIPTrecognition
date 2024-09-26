@@ -362,8 +362,8 @@ class v1_1d_e(nn.Module):
         self.spectral_energy = spectralEnergyExtractor()
 
         self.cnn1d_energy = nn.Sequential(
-            custom1DCNN(1, 40, 5, "same", 1),
-            custom1DCNN(40, 80, 3, "same", 1),
+            custom1DCNN(1, 40, 3, "same", 1),
+            custom1DCNN(40, 80, 2, "same", 1),
             nn.AvgPool1d(3),
             custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(5),
