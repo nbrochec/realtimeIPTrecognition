@@ -216,6 +216,7 @@ class ProcessDataset:
         self.segment_overlap = args.segment_overlap
         self.padding = args.padding
         self.args = args
+        self.offline_aug = args.offline_augment
 
         self.offline_aug = True
 
@@ -343,9 +344,9 @@ class BalancedDataLoader:
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
         self.device = device
-
+        self.args = args
         # self.batch_size = args.batch_size
-        self.batch_size = 128
+        self.batch_size = self.args.batch_size
 
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
@@ -555,13 +556,13 @@ class SaveResultsToDisk:
             if write_header:
                 writer.writerow([
                     'Run Name', 'Model Name', 'Sample Rate', 'Segment Overlap',
-                    'Fmin', 'Learning Rate', 'Epochs', 'Augmentations', 'Early Stopping',
+                    'Fmin', 'Learning Rate', 'Epochs', 'Offline Augmentations', 'Online Augmentations', 'Early Stopping',
                     'Reduce LR on Plateau', 'Padding', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Loss'
                 ])
 
             writer.writerow([
                 args.name, args.config, args.sr, args.segment_overlap,
-                args.fmin, args.lr, args.epochs, args.augment,
+                args.fmin, args.lr, args.epochs, args.offline_augment, args.online_augment,
                 args.early_stopping, args.reduceLR, args.padding, 
                 accuracy, precision, recall, f1, loss
             ])  
@@ -584,8 +585,9 @@ class SaveYAML:
             os.makedirs(path_to_run)
 
         current_config = {'Name':args.name, 'Model': args.config , 'Sampling Rate':args.sr,'Segment Overlap':args.segment_overlap,
-                      'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Augmentations':args.augment,
-                      'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduceLR, 'Number of Classes':num_classes}
+                      'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Offline Augmentations':args.offline_augment,
+                      'Online Augmentations': args.online_augment.split(), 'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduceLR,
+                      'Number of Classes':num_classes}
 
         yaml_file = os.path.join(path_to_run, f'{os.path.basename(path_to_run)}.yaml')
 
