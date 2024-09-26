@@ -99,3 +99,35 @@ class custom1DCNN(nn.Module):
         x = self.activ(x)
         # x = self.drop(x)
         return x
+    
+class spectralEnergyExtractor(nn.Module):
+    def __init__(self):
+        super(spectralEnergyExtractor, self).__init__()
+
+    def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
+        min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
+        max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
+        eps = 1e-5
+        t_min = torch.min(t)
+        t_max = torch.max(t)
+
+        if (t_max - t_min) == 0:
+            t_std = (t - t_min) / ((t_max - t_min) + eps)
+        else:
+            t_std = (t - t_min) / (t_max - t_min)
+        
+        t_scaled = t_std * (max_tensor - min_tensor) + min_tensor
+        return t_scaled
+    
+    def forward(self, x):
+        x = torch.sum(x, dim=[1, 2])
+        x = self.min_max_normalize(x)
+        return x
+    
+# class pitchDetector(nn.Module):
+#     def __init__(self, raw_sample, sample_rate):
+#         super(pitchDetector, self).__init__()
+#         self.raw_sample = raw_sample
+#         self.sample_rate = sample_rate
+
+#     def forward(self, x):
