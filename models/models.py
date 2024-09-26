@@ -367,6 +367,7 @@ class v1_1d_e(nn.Module):
             nn.AvgPool1d(3),
             custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(5),
+            nn.Dropout1d(0.1),
         )
 
         self.cnn1d = nn.Sequential(
@@ -386,6 +387,7 @@ class v1_1d_e(nn.Module):
             nn.AvgPool1d(2),
             custom1DCNN(160, 160, 2, "same", 1),
             nn.AvgPool1d(7),
+            nn.Dropout1d(0.1),
         )
 
         self.cnn2d = nn.Sequential(
@@ -435,7 +437,7 @@ class v1_1d_e(nn.Module):
         # c = torch.cat((a.squeeze(3), b), dim=1)
 
         c = a.squeeze(3) + b + e
-        # c = F.normalize(c, dim=1)
+        c = F.normalize(c, dim=1)
         # print(c.shape)
         x_flat = c.view(c.size(0), -1)
         z = self.fc(x_flat)
