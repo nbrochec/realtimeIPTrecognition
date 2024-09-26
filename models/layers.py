@@ -120,8 +120,8 @@ class spectralEnergyExtractor(nn.Module):
         return t_scaled
     
     def forward(self, x):
-        x = torch.sum(x ** 2, dim=2)
-        x = self.min_max_normalize(x)
+        rms = torch.sqrt(torch.mean(x ** 2, dim=2))
+        x = self.min_max_normalize(rms)
         return x
     
 # class pitchDetector(nn.Module):
