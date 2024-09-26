@@ -263,8 +263,13 @@ class ProcessDataset:
 
             if num_samples < self.segment_length:
                 extra_length = self.segment_length - num_samples
-                noise = torch.randn((waveform.size(0), extra_length)) * 0.001
-                waveform = torch.cat((waveform, noise), dim=1)
+                silence = torch.zeros((waveform.size(0), extra_length))
+                waveform = torch.cat((waveform, silence), dim=1)
+
+            noise_length = waveform.size(1) 
+            noise = torch.randn((waveform.size(0), noise_length)) * 0.001
+
+            waveform += noise
 
             augmenter = AudioOfflineTransforms(self.args)
 
