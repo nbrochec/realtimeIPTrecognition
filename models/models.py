@@ -446,7 +446,7 @@ class v1_1d(nn.Module):
         c = c.view(c.size(0), -1)
         v = self.fc1(c)
 
-        d = torch.cat((v, b), dim=1)
+        d = torch.cat((v, b.squeeze(2)), dim=1)
         z = d.view(d.size(0), -1)
         z = self.fc2(z)
 
@@ -517,11 +517,11 @@ class v1_1d_e(nn.Module):
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(160 * 3, 160),
-            nn.ReLU(),
             nn.Linear(160, 80),
             nn.ReLU(),
-            nn.Linear(80, output_nbr),
+            nn.Linear(80, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr),
         )
 
     def forward(self, x):
@@ -534,10 +534,10 @@ class v1_1d_e(nn.Module):
         b = self.cnn1d(b)
         e = self.cnn1d_energy(e)
         
-        c = torch.cat((a.squeeze(3), b, e), dim=1)
+        # c = torch.cat((a.squeeze(3), b, e), dim=1)
 
-        # c = a.squeeze(3) + b + e
-        # c = F.normalize(c, dim=1)
+        c = a.squeeze(3) + b + e
+        c = F.normalize(c, dim=1)
         # print(c.shape)
         x_flat = c.view(c.size(0), -1)
         z = self.fc(x_flat)
