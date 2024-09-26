@@ -167,7 +167,7 @@ class AudioOfflineTransforms:
         aug_detuned = self.pad_or_trim(detuned, original_size)
         aug_noised = self.pad_or_trim(noised, original_size)
 
-        aug1 = torch.tensor(aug_detuned).to(self.device).to(torch.float32)
-        aug2 = torch.tensor(aug_noised).to(self.device).to(torch.float32)
+        aug1 = torch.tensor(aug_detuned).to(torch.float32)
+        aug2 = torch.tensor(aug_noised).to(torch.float32)
 
         return aug1, aug2
