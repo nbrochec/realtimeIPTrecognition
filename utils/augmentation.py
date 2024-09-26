@@ -20,8 +20,8 @@ import librosa, random
 class AudioOnlineTransforms:
     def __init__(self, args):
         self.sr = args.sr
-        self.augment = args.augment.split()
         self.device = args.device
+        self.online_augment = args.online_augment.split()
 
     def tensor_to_array(self, data):
         data_numpy = data.cpu().squeeze(1).detach().numpy()
@@ -87,6 +87,8 @@ class AudioOnlineTransforms:
             padding = (0, original_size - current_size)
             data = np.pad(data, pad_width=padding, mode='constant', constant_values=0)
         return data
+    def none(self, data):
+        return data
     
     def __call__(self, data):
         data_numpy = self.tensor_to_array(data)
@@ -94,6 +96,7 @@ class AudioOnlineTransforms:
         aug_data_list = []
 
         aug_dict = {
+            'none': self.none,
             'pitchshift': self.pitch_shift,
             'timeshift': self.shift,
             'polarityinversion': self.polarity_inversion,
@@ -107,10 +110,11 @@ class AudioOnlineTransforms:
             'trim': self.trim
         }
 
-        for augmentation in self.augment:
+        for augmentation in self.online_augment:
             if augmentation in aug_dict and np.random.rand() < 0.5:
-                data_numpy = aug_dict[augmentation](data_numpy)
-
+                if augmentation != 'none':
+                    data_numpy = aug_dict[augmentation](data_numpy)
+        
         aug_data = self.pad_or_trim(data_numpy, original_size)
         aug_data_list.append(aug_data)
 
