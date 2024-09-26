@@ -152,7 +152,7 @@ class ModelTrainer:
         self.loss_fn = loss_fn
         self.device = device
 
-    def train_epoch(self, loader, optimizer, augmentations, aug_number):
+    def train_epoch(self, loader, optimizer, augmenter):
         """
         Perform one training epoch.
         """
@@ -162,14 +162,10 @@ class ModelTrainer:
         for data, targets in tqdm(loader, desc="Training", leave=False):
             data, targets = data.to(self.device), targets.to(self.device)
             optimizer.zero_grad()
-            # print(data.shape)
-            # print(targets)
 
-            # augmented_data = augmentations.apply(data)
-            # new_data = torch.cat((data, augmented_data), dim=0)
-            # all_targets = torch.flatten(targets.repeat(aug_number + 1, 1))
+            aug_data = augmenter(data)
 
-            outputs = self.model(data)
+            outputs = self.model(aug_data)
             loss = self.loss_fn(outputs, targets)
             loss.backward()
             optimizer.step()
