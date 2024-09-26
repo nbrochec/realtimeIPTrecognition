@@ -162,7 +162,7 @@ class ModelTrainer:
         for data, targets in tqdm(loader, desc="Training", leave=False):
             data, targets = data.to(self.device), targets.to(self.device)
             optimizer.zero_grad()
-
+            
             aug_data = augmenter(data)
 
             outputs = self.model(aug_data)
