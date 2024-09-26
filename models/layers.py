@@ -120,7 +120,7 @@ class spectralEnergyExtractor(nn.Module):
         return t_scaled
     
     def forward(self, x):
-        x = torch.sum(x, dim=[1, 2])
+        x = torch.sum(x ** 2, dim=2)
         x = self.min_max_normalize(x)
         return x
     

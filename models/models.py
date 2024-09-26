@@ -430,7 +430,7 @@ class v1_1d_e(nn.Module):
 
         a = self.cnn2d(a)
         b = self.cnn1d(b)
-        e = self.cnn1d_energy(e.unsqueeze(1))
+        e = self.cnn1d_energy(e)
         
         # c = torch.cat((a.squeeze(3), b), dim=1)
 
