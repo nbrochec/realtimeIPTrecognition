@@ -304,7 +304,7 @@ class ProcessDataset:
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
 
                     if self.offline_aug == True:
-                        aug1, aug2 = augmenter(segment)
+                        aug1, aug2, aug3 = augmenter(segment)
 
                         self.X.append(aug1)
                         self.X.append(aug2)
