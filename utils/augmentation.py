@@ -144,7 +144,7 @@ class AudioOfflineTransforms:
     
     def timestretch(self, data):
         transform = TimeStretch(p=1)
-        return transform(data)
+        return transform(data, sample_rate=self.sr)
     
     def pad_or_trim(self, data, original_size):
         current_size = data.shape[1]
