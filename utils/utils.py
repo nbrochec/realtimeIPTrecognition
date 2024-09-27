@@ -259,8 +259,8 @@ class ProcessDataset:
 
             if num_samples < self.segment_length:
                 extra_length = self.segment_length - num_samples
-                noise = torch.randn((waveform.size(0), extra_length)) * 0.001
-                waveform = torch.cat((waveform, noise), dim=1)
+                silence = torch.zeros((waveform.size(0), extra_length))
+                waveform = torch.cat((waveform, silence), dim=1)
 
             if self.segment_overlap == True and self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length//2):
