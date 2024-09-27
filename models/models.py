@@ -16,7 +16,7 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
-from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeExtractor, spectralEnergyExtractor
+from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeExtractor, spectralEnergyExtractor, HPSLayer
 
 class v1(nn.Module):
     def __init__(self, output_nbr, sr):
@@ -1366,3 +1366,80 @@ class v1_1d_e(nn.Module):
 #         x = x.flatten(start_dim=1)
 #         x = self.fc(x)
 #         return x
+
+
+
+class v1_mi4_hpss(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v1_mi4_hpss, self).__init__()
+        
+        # Initialiser HPSS layer
+        self.hpss = HPSLayer()
+        
+        # LogMel layer
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=256)
+        
+        # CNN pour harmonic et percussive
+        self.cnn1 = self._create_cnn_block()
+        self.cnn2 = self._create_cnn_block()
+        self.cnn3 = self._create_cnn_block()
+        self.cnn4 = self._create_cnn_block()
+
+        # Fully connected layer
+        self.fc = nn.Sequential(
+            nn.Linear(160 * 4, 240),
+            nn.ReLU(),
+            nn.Linear(240, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+
+    def _create_cnn_block(self):
+        return nn.Sequential(
+            custom2DCNN(1, 40, (2, 3), "same"),
+            custom2DCNN(40, 40, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2, 3), "same"),
+            custom2DCNN(80, 80, (2, 3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+    def forward(self, x):
+        # HPSS pour obtenir harmonic et percussive
+        harmonic, percussive = self.hpss(x)
+
+        # Transformation en Mel spectrogram
+        mel_harmonic = self.logmel(harmonic)
+        mel_percussive = self.logmel(percussive)
+        print(mel_harmonic.shape)
+
+        # Diviser en composants pour les CNN
+        x1, x2 = torch.split(mel_harmonic, 128, dim=2)
+        x3, x4 = torch.split(mel_percussive, 128, dim=2)
+
+        # CNN sur les composants
+        x1 = self.cnn1(x1)
+        x2 = self.cnn2(x2)
+        x3 = self.cnn3(x3)
+        x4 = self.cnn4(x4)
+
+        # Concatenation et passage à travers les couches fully connected
+        x = torch.cat((x1, x2, x3, x4), dim=1)
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        
+        return z

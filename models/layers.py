@@ -124,10 +124,31 @@ class spectralEnergyExtractor(nn.Module):
         x = self.min_max_normalize(rms)
         return x
     
-# class pitchDetector(nn.Module):
-#     def __init__(self, raw_sample, sample_rate):
-#         super(pitchDetector, self).__init__()
-#         self.raw_sample = raw_sample
-#         self.sample_rate = sample_rate
+class HPSLayer(nn.Module):
+    def __init__(self):
+        super(HPSLayer, self).__init__()
+        self.n_fft = 2048
+        self.hop_length = 512
+    
+    def forward(self, x):
+        batch_size, num_channels, sequence_length = x.shape
+        
+        x = x.view(batch_size * num_channels, sequence_length)
 
-#     def forward(self, x):
+        stft_result = torch.stft(x, n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True)
+        magnitude = torch.abs(stft_result)
+        
+        harmonic = nn.functional.avg_pool2d(magnitude.unsqueeze(1), (1, 31), padding=(0, 15)).squeeze(1)
+        percussive = nn.functional.avg_pool2d(magnitude.unsqueeze(1), (31, 1), padding=(15, 0)).squeeze(1)
+
+        harmonic_time = self.inverse_stft(harmonic, stft_result.angle())
+        percussive_time = self.inverse_stft(percussive, stft_result.angle())
+        
+        return harmonic_time.view(batch_size, num_channels, -1), percussive_time.view(batch_size, num_channels, -1)
+    
+    def inverse_stft(self, magnitude, phase):
+        magnitude_resized = nn.functional.interpolate(magnitude.unsqueeze(1), size=phase.size()[-2:], mode='bilinear').squeeze(1)
+        complex_spectrogram = magnitude_resized * torch.exp(1j * phase)
+        
+        time_domain_signal = torch.istft(complex_spectrogram, n_fft=self.n_fft, hop_length=self.hop_length)
+        return time_domain_signal
