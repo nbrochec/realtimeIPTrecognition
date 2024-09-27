@@ -12,7 +12,7 @@
 
 import torch
 from audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, Trim
-from audiomentations import LowPassFilter, Mp3Compression, ClippingDistortion, BitCrush, AirAbsorption, Aliasing
+from audiomentations import LowPassFilter, Mp3Compression, ClippingDistortion, BitCrush, AirAbsorption, Aliasing, TimeStretch
 import torch.nn.functional as F
 import numpy as np
 import librosa, random
@@ -78,6 +78,10 @@ class AudioOnlineTransforms:
     def trim(self, data):
         transform = Trim(top_db=30.0,p=1)
         return transform(data, sample_rate=self.sr)
+    
+    def timestretch(self, data):
+        transform = TimeStretch(p=1)
+        return transform(data, leave_length_unchanged=True)
 
     def pad_or_trim(self, data, original_size):
         current_size = data.shape[1]
@@ -102,12 +106,12 @@ class AudioOnlineTransforms:
             'polarityinversion': self.polarity_inversion,
             'hpf': self.highpassfilter,
             'lpf': self.lowpassfilter,
-            # 'clipping': self.clippingdisto,
-            # 'bitcrush': self.bitcrush,
-            # 'airabso': self.airabso,
+            'clipping': self.clippingdisto,
+            'bitcrush': self.bitcrush,
+            'airabso': self.airabso,
             'aliasing': self.aliasing,
-            # 'mp3comp': self.mp3comp,
-            # 'trim': self.trim
+            'mp3comp': self.mp3comp,
+            'trim': self.trim
         }
 
         for augmentation in self.online_augment:
