@@ -454,7 +454,6 @@ class v1_1d(nn.Module):
         d = torch.cat((fc1, fc2), dim=1)
         z = d.view(d.size(0), -1)
         z = self.fc3(z)
-        print(z.shape)
         return z
 
 # GOOOOD 27 09 24
