@@ -1419,27 +1419,20 @@ class v1_mi4_hpss(nn.Module):
         )
 
     def forward(self, x):
-        # HPSS pour obtenir harmonic et percussive
         harmonic, percussive = self.hpss(x)
 
-        # Transformation en Mel spectrogram
         mel_harmonic = self.logmel(harmonic)
         mel_percussive = self.logmel(percussive)
-        print(mel_harmonic.shape)
 
-        # Diviser en composants pour les CNN
         x1, x2 = torch.split(mel_harmonic, 128, dim=2)
         x3, x4 = torch.split(mel_percussive, 128, dim=2)
 
-        # CNN sur les composants
         x1 = self.cnn1(x1)
         x2 = self.cnn2(x2)
         x3 = self.cnn3(x3)
         x4 = self.cnn4(x4)
 
-        # Concatenation et passage à travers les couches fully connected
         x = torch.cat((x1, x2, x3, x4), dim=1)
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
-        
         return z
