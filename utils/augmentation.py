@@ -13,9 +13,8 @@
 import torch
 from audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, Trim
 from audiomentations import LowPassFilter, Mp3Compression, ClippingDistortion, BitCrush, AirAbsorption, Aliasing, TimeStretch
-import torch.nn.functional as F
 import numpy as np
-import librosa, random
+import librosa
 
 class AudioOnlineTransforms:
     def __init__(self, args):
