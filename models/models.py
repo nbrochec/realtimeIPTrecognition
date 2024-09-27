@@ -936,24 +936,24 @@ class v1_mi6(nn.Module):
         z = self.fc(x_flat)
         return z
     
-class v1_mi7(nn.Module):
+class v1_mi_lstm(nn.Module):
     def __init__(self, output_nbr, sr):
-        super(v1_mi7, self).__init__()
+        super(v1_mi_lstm, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=512)
-        self.temp_logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=40)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
         self.cnn3 = self._create_cnn_block()
         self.cnn4 = self._create_cnn_block()
 
-        self.temp_cnn5 = self._create_block_temp_ccn()
-        self.temp_cnn6 = self._create_block_temp_ccn()
-        self.temp_cnn7 = self._create_block_temp_ccn()
+        self.lstm1 = self._create_lstm_block()
+        self.lstm2 = self._create_lstm_block()
+        self.lstm3 = self._create_lstm_block()
+        self.lstm4 = self._create_lstm_block()
 
         self.fc = nn.Sequential(
-            nn.Linear(160 * 7, 320),
+            nn.Linear(160 * 4, 320),
             nn.ReLU(),
             nn.Linear(320, 80),
             nn.ReLU(),
@@ -968,53 +968,44 @@ class v1_mi7(nn.Module):
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 3), "same"),
             custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)),
+            nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 2)),
+            nn.MaxPool2d((4, 1)),
             nn.Dropout2d(0.25),
         )
     
-    def _create_block_temp_ccn(self):
-        return nn.Sequential(
-            custom2DCNN(40, 80, (1, 3), "same"),
-            custom2DCNN(80, 80, (1, 3), "same"),  
-            nn.MaxPool2d((2, 1)), #2
-            nn.Dropout2d(0.25),
-            custom2DCNN(80, 80, (1, 3), "same"),
-            custom2DCNN(80, 160, (1, 3), "same"),
-            nn.MaxPool2d((2, 1)), # 1
-            nn.Dropout2d(0.25),
-        )
+    def _create_lstm_block(self):
+        return nn.LSTM(160, hidden_size=160, batch_first=True)
 
     def forward(self, x):
         x1, x2, x3, x4 = torch.split(self.logmel(x), 128, dim=2)
-        x5, x6, x7 = torch.split(self.temp_logmel(x), 5, dim=3)
 
-        x1 = self.cnn1(x1)
-        x2 = self.cnn2(x2)
-        x3 = self.cnn3(x3)
-        x4 = self.cnn4(x4)
+        x1 = self.cnn1(x1).permute(0, 3, 1, 2).squeeze(2).squeeze(3)
+        x2 = self.cnn2(x2).permute(0, 3, 1, 2).squeeze(2).squeeze(3)
+        x3 = self.cnn3(x3).permute(0, 3, 1, 2).squeeze(2).squeeze(3)
+        x4 = self.cnn4(x4).permute(0, 3, 1, 2).squeeze(2).squeeze(3)
 
-        x5 = torch.permute(x5, (0, 2, 3, 1))
-        x6 = torch.permute(x6, (0, 2, 3, 1))
-        x7 = torch.permute(x7, (0, 2, 3, 1))
+        x1, _ = self.lstm1(x1)
+        x2, _ = self.lstm2(x2)
+        x3, _ = self.lstm3(x3)
+        x4, _ = self.lstm4(x4)
 
-        x5 = self.temp_cnn5(x5)
-        x6 = self.temp_cnn6(x6)
-        x7 = self.temp_cnn7(x7)
+        x1_last = x1[:, -1, :]
+        x2_last = x2[:, -1, :]
+        x3_last = x3[:, -1, :]
+        x4_last = x4[:, -1, :]
 
-        x = torch.cat((x1, x2, x3, x4, x5, x6, x7), dim=1)
-
+        x = torch.cat((x1_last, x2_last, x3_last, x4_last), dim=1)
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
