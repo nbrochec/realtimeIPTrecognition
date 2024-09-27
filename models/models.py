@@ -941,7 +941,7 @@ class v1_mi7(nn.Module):
         super(v1_mi7, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=512)
-        self.temp_logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=128)
+        self.temp_logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=64)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -986,12 +986,12 @@ class v1_mi7(nn.Module):
     
     def _create_block_temp_ccn(self):
         return nn.Sequential(
-            custom2DCNN(1, 40, (3, 2), "same"),
-            custom2DCNN(40, 40, (3, 2), "same"),
+            custom2DCNN(1, 40, (1, 3), "same"),
+            custom2DCNN(40, 40, (1, 3), "same"),
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
-            custom2DCNN(40, 80, (3, 2), "same"),
-            custom2DCNN(80, 80, (3, 2), "same"),
+            custom2DCNN(40, 80, (1, 3), "same"),
+            custom2DCNN(80, 80, (1, 3), "same"),
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
@@ -1004,7 +1004,7 @@ class v1_mi7(nn.Module):
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 2)),
+            nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
 
