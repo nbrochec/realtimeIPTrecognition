@@ -630,7 +630,197 @@ class v1_mi(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+class v1_mi4_e(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v1_mi4_e, self).__init__()
 
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=512)
+        self.energy = spectralEnergyExtractor()
+
+        self.cnn_e1 = nn.Sequential(
+            custom1DCNN(1, 40, 3, "same", 1),
+            nn.AvgPool1d(5),
+            custom1DCNN(40, 80, 3, "same", 1),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(3),
+            nn.Dropout1d(0.1),
+        )
+        
+        self.cnn_e2 = nn.Sequential(
+            custom1DCNN(1, 40, 3, "same", 1),
+            nn.AvgPool1d(5),
+            custom1DCNN(40, 80, 3, "same", 1),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(3),
+            nn.Dropout1d(0.1),
+        )
+
+        self.cnn_e3 = nn.Sequential(
+            custom1DCNN(1, 40, 3, "same", 1),
+            nn.AvgPool1d(5),
+            custom1DCNN(40, 80, 3, "same", 1),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(3),
+            nn.Dropout1d(0.1),
+        )
+
+        self.cnn_e4 = nn.Sequential(
+            custom1DCNN(1, 40, 3, "same", 1),
+            nn.AvgPool1d(5),
+            custom1DCNN(40, 80, 3, "same", 1),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(3),
+            nn.Dropout1d(0.1),
+        )
+
+        self.cnn1 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.cnn2 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.cnn3 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.cnn4 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.fcmel = nn.Sequential(
+            nn.Linear(160 * 4, 320),
+            nn.BatchNorm1d(320),
+            nn.ReLU(),
+            nn.Linear(320, 160),
+            nn.BatchNorm1d(160),
+            nn.ReLU(),
+        )
+
+        self.fce = nn.Sequential(
+            nn.Linear(160 * 4, 320),
+            nn.BatchNorm1d(320),
+            nn.ReLU(),
+            nn.Linear(320, 160),
+            nn.BatchNorm1d(160),
+            nn.ReLU(),
+        )
+
+        self.final = nn.Sequential(
+            nn.Linear(160 * 2, 240),
+            nn.ReLU(),
+            nn.Linear(240, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+
+    def forward(self, x):
+        x1, x2, x3, x4 = torch.split(self.logmel(x), 128, dim=2)
+        e1 = self.energy(x1)
+        e2 = self.energy(x2)
+        e3 = self.energy(x3)
+        e4 = self.energy(x4)
+
+        x1 = self.cnn1(x1)
+        x2 = self.cnn2(x2)
+        x3 = self.cnn3(x3)
+        x4 = self.cnn4(x4)
+
+        e1 = self.cnn_e1(e1)
+        e2 = self.cnn_e2(e2)
+        e3 = self.cnn_e3(e3)
+        e4 = self.cnn_e4(e4)
+
+        x = torch.cat((x1, x2, x3, x4), dim=1)
+        e = torch.cat((e1, e2, e3, e4), dim=1)
+
+        x_flat = x.view(x.size(0), -1)
+        e_flat = e.view(e.size(0), -1)
+
+        x = self.fcmel(x_flat)
+        e = self.fce(e_flat)
+
+        xe = torch.cat((x, e), dim=1)
+        z = self.final(xe)
+        return z
 
 class v1_mi4(nn.Module):
     def __init__(self, output_nbr, sr):
