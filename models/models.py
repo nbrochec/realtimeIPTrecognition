@@ -418,20 +418,18 @@ class v1_1d(nn.Module):
         )
 
         self.fc1 = nn.Sequential(
-            nn.Linear(160, 40),
-            nn.BatchNorm1d(40),
-            nn.ReLU(),
-            nn.Linear(40, 160),
-            nn.BatchNorm1d(160),
-            nn.ReLU(),
-            nn.Dropout1d(0.1),
-
+            nn.Linear(160, 80),
+            nn.BatchNorm1d(80),
+            nn.LeakyReLU(),
         )
 
         self.fc2 = nn.Sequential(
-            nn.Linear(160 * 2, 160),
-            nn.BatchNorm1d(160),
-            nn.ReLU(),
+            nn.Linear(160, 80),
+            nn.BatchNorm1d(80),
+            nn.LeakyReLU(),
+        )
+
+        self.fc3 = nn.Sequential(
             nn.Linear(160, 80),
             nn.BatchNorm1d(80),
             nn.ReLU(),
@@ -448,9 +446,12 @@ class v1_1d(nn.Module):
         e = self.cnn1d_energy(e)
         
         c = b.squeeze(2) + e.squeeze(2)
-        v = self.fc1(c)
+        fc1 = self.fc1(c)
 
-        d = torch.cat((v, b.squeeze(2).squeeze(2)), dim=1)
+        b = b.view(b.view(0), -1)
+        fc2 = self.fc2(b)
+
+        d = torch.cat((fc1, fc2), dim=1)
         z = d.view(d.size(0), -1)
         z = self.fc2(z)
 
