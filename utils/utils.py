@@ -289,8 +289,8 @@ class ProcessDataset:
                         self.X.append(aug2)
                         self.y.extend([label] * 2)
 
-                    # self.X.append(segment)
-                    # self.y.append(label)
+                    self.X.append(segment)
+                    self.y.append(label)
 
             elif self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length):
@@ -309,8 +309,8 @@ class ProcessDataset:
                         self.X.append(aug2)
                         self.y.extend([label] * 2)
 
-                    # self.X.append(segment)
-                    # self.y.append(label)
+                    self.X.append(segment)
+                    self.y.append(label)
 
             else:
                 for i in range(0, num_samples, self.segment_length):
