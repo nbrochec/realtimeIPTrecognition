@@ -558,6 +558,7 @@ class v1_1d(nn.Module):
 
 #         return z
 
+
 class v1_mi(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_mi, self).__init__()
@@ -628,6 +629,104 @@ class v1_mi(nn.Module):
 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
+        return z
+
+
+class v1_mi_1d(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v1_mi_1d, self).__init__()
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=256)
+        self.env = EnvelopeExtractor(sample_rate=sr)
+
+        self.cnn1d = nn.Sequential(
+            custom1DCNN(1, 40, 7, "same", 2),
+            custom1DCNN(40, 40, 6, "same", 2),
+            nn.AvgPool1d(8),
+            custom1DCNN(40, 80, 5, "same", 1),
+            custom1DCNN(80, 80, 4, "same", 1),
+            nn.AvgPool1d(4),
+            custom1DCNN(80, 160, 3, "same", 1),
+            nn.AvgPool1d(4),
+            custom1DCNN(160, 160, 2, "same", 1),
+            nn.AvgPool1d(2),
+            custom1DCNN(160, 160, 2, "same", 1),
+            nn.AvgPool1d(2),
+            custom1DCNN(160, 160, 2, "same", 1),
+            nn.AvgPool1d(2),
+            custom1DCNN(160, 160, 2, "same", 1),
+            nn.AvgPool1d(7),
+            nn.Dropout1d(0.1),
+        )
+        
+        self.cnn1 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.cnn2 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 40, (2,3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2,3), "same"),
+            custom2DCNN(80, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(160 * 3, 120),
+            nn.ReLU(),
+            nn.Linear(120, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+
+    def forward(self, x):
+        x1, x2 = torch.split(self.logmel(x), 128, dim=2)
+        x3 = self.env(x)
+
+        x1 = self.cnn1(x1)
+        x2 = self.cnn2(x2)
+        x3 = self.cnn1d(x3)
+
+        x1 = x1.view(x1.size(0), -1)
+        x2 = x2.view(x2.size(0), -1)
+        x3 = x3.view(x3.size(0), -1)
+
+        w = torch.cat((x1, x2, x3), dim=1)
+        z = self.fc(w)
         return z
 
 class v1_1d_e(nn.Module):
