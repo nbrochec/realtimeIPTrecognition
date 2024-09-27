@@ -953,7 +953,7 @@ class v1_mi7(nn.Module):
         self.temp_cnn7 = self._create_block_temp_ccn()
 
         self.fc = nn.Sequential(
-            nn.Linear(160 * 8, 320),
+            nn.Linear(160 * 7, 320),
             nn.ReLU(),
             nn.Linear(320, 80),
             nn.ReLU(),
@@ -986,12 +986,12 @@ class v1_mi7(nn.Module):
     
     def _create_block_temp_ccn(self):
         return nn.Sequential(
-            custom2DCNN(1, 40, (2, 3), "same"),
-            custom2DCNN(40, 40, (2, 3), "same"),
+            custom2DCNN(1, 40, (3, 2), "same"),
+            custom2DCNN(40, 40, (3, 2), "same"),
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
-            custom2DCNN(40, 80, (2, 3), "same"),
-            custom2DCNN(80, 80, (2, 3), "same"),
+            custom2DCNN(40, 80, (3, 2), "same"),
+            custom2DCNN(80, 80, (3, 2), "same"),
             nn.MaxPool2d((2, 1)),
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
@@ -1010,7 +1010,7 @@ class v1_mi7(nn.Module):
 
     def forward(self, x):
         x1, x2, x3, x4 = torch.split(self.logmel(x), 128, dim=2)
-        x5, x6, x7 = torch.split(self.logmel(x), 5, dim=3)
+        x5, x6, x7 = torch.split(self.temp_logmel(x), 5, dim=3)
 
         x1 = self.cnn1(x1)
         x2 = self.cnn2(x2)
