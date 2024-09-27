@@ -377,15 +377,15 @@ class v1_1d(nn.Module):
             nn.AvgPool1d(8),
             custom1DCNN(40, 80, 5, "same", 1),
             custom1DCNN(80, 80, 4, "same", 1),
-            nn.AvgPool1d(4),
+            nn.AvgPool1d(8),
             custom1DCNN(80, 160, 3, "same", 1),
             nn.AvgPool1d(4),
             custom1DCNN(160, 160, 2, "same", 1),
-            nn.AvgPool1d(2),
-            custom1DCNN(160, 160, 2, "same", 1),
-            nn.AvgPool1d(2),
-            custom1DCNN(160, 160, 2, "same", 1),
-            nn.AvgPool1d(2),
+            nn.AvgPool1d(4),
+            # custom1DCNN(160, 160, 2, "same", 1),
+            # nn.AvgPool1d(2),
+            # custom1DCNN(160, 160, 2, "same", 1),
+            # nn.AvgPool1d(2),
             custom1DCNN(160, 160, 2, "same", 1),
             nn.AvgPool1d(7),
             nn.Dropout1d(0.1),
@@ -421,14 +421,14 @@ class v1_1d(nn.Module):
             nn.Linear(160, 80),
             nn.BatchNorm1d(80),
             nn.LeakyReLU(),
-            nn.Dropout1d(0.1),
+            # nn.Dropout1d(0.1),
         )
 
         self.fc2 = nn.Sequential(
             nn.Linear(160, 80),
             nn.BatchNorm1d(80),
             nn.LeakyReLU(),
-            nn.Dropout1d(0.1),
+            # nn.Dropout1d(0.1),
         )
 
         self.fc3 = nn.Sequential(
@@ -437,7 +437,7 @@ class v1_1d(nn.Module):
             nn.ReLU(),
             nn.Linear(80, output_nbr),
         )
-# autre possibilité: env + spec )-> energie
+
     def forward(self, x):
         a = self.logmel(x)
         b = self.env(x)
