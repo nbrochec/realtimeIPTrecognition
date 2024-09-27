@@ -639,37 +639,33 @@ class v1_mi4_e(nn.Module):
         self.energy = spectralEnergyExtractor()
 
         self.cnn_e1 = nn.Sequential(
-            custom1DCNN(1, 40, 3, "same", 1),
+            custom1DCNN(1, 80, 3, "same", 1),
             nn.AvgPool1d(5),
-            custom1DCNN(40, 80, 3, "same", 1),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(80, 160, 3, "same", 1),
             nn.AvgPool1d(3),
             nn.Dropout1d(0.1),
         )
         
         self.cnn_e2 = nn.Sequential(
-            custom1DCNN(1, 40, 3, "same", 1),
+            custom1DCNN(1, 80, 3, "same", 1),
             nn.AvgPool1d(5),
-            custom1DCNN(40, 80, 3, "same", 1),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(80, 160, 3, "same", 1),
             nn.AvgPool1d(3),
             nn.Dropout1d(0.1),
         )
 
         self.cnn_e3 = nn.Sequential(
-            custom1DCNN(1, 40, 3, "same", 1),
+            custom1DCNN(1, 80, 3, "same", 1),
             nn.AvgPool1d(5),
-            custom1DCNN(40, 80, 3, "same", 1),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(80, 160, 3, "same", 1),
             nn.AvgPool1d(3),
             nn.Dropout1d(0.1),
         )
 
         self.cnn_e4 = nn.Sequential(
-            custom1DCNN(1, 40, 3, "same", 1),
+            custom1DCNN(1, 80, 3, "same", 1),
             nn.AvgPool1d(5),
-            custom1DCNN(40, 80, 3, "same", 1),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(80, 160, 3, "same", 1),
             nn.AvgPool1d(3),
             nn.Dropout1d(0.1),
         )
