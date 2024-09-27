@@ -448,13 +448,13 @@ class v1_1d(nn.Module):
         c = b.squeeze(2) + e.squeeze(2)
         fc1 = self.fc1(c)
 
-        b = b.view(b.view(0), -1)
-        fc2 = self.fc2(b)
+        w = a.view(a.size(0), -1)
+        fc2 = self.fc2(w)
 
         d = torch.cat((fc1, fc2), dim=1)
         z = d.view(d.size(0), -1)
-        z = self.fc2(z)
-
+        z = self.fc3(z)
+        print(z.shape)
         return z
 
 # GOOOOD 27 09 24
