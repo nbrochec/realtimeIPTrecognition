@@ -15,7 +15,7 @@ import humanize
 import sys
 import pandas as pd
 
-from models import v1, v2, v3, v2bis, v2_1d, v1_1d, v1_1d_e # one_residual, two_residual, transformer,
+from models import v1, v2, v3, v2bis, v2_1d, v1_1d, v1_1d_e, v1_mi # one_residual, two_residual, transformer,
 import torch.nn.init as init
 
 from tqdm import tqdm
@@ -35,6 +35,7 @@ class LoadModel:
             # 'transformer': transformer,
             'v2_1d': v2_1d,
             'v1_1d_e': v1_1d_e,
+            'v1_mi':v1_mi,
         }
     
     def get_model(self, model_name, output_nbr, sr):

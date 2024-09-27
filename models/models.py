@@ -558,6 +558,73 @@ class v1_1d(nn.Module):
 
 #         return z
 
+class v1_mi(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v1_mi, self).__init__()
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        
+        self.cnn1 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)), # 32, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), # 16, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 8, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), # 4, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)), 
+            nn.Dropout2d(0.25),
+        )
+
+        self.cnn2 = nn.Sequential(
+            custom2DCNN(1, 40, (2,3), "same"),
+            custom2DCNN(40, 80, (2,3), "same"),
+            nn.MaxPool2d((2, 3)), # 32, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), # 16, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 8, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), # 4, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)), 
+            nn.Dropout2d(0.25),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(160 * 2, 80),
+            nn.ReLU(),
+            nn.Linear(80, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+
+    def forward(self, x):
+        x1, x2 = torch.split(self.logmel(x), 64, dim=2)
+
+        x1 = self.cnn1(x1)
+        x2 = self.cnn2(x2)
+
+        x1_flat = x1.view(x1.size(0), -1)
+        x2_flat = x2.view(x2.size(0), -1)
+        # print(x1_flat.shape, x2_flat.shape)
+        x = torch.cat((x1, x2), dim=1)
+
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
+
 class v1_1d_e(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_1d_e, self).__init__()
