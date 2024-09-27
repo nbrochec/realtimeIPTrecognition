@@ -102,12 +102,12 @@ class AudioOnlineTransforms:
             'polarityinversion': self.polarity_inversion,
             'hpf': self.highpassfilter,
             'lpf': self.lowpassfilter,
-            # 'clipping': self.clippingdisto,
-            # 'bitcrush': self.bitcrush,
+            'clipping': self.clippingdisto,
+            'bitcrush': self.bitcrush,
             'airabso': self.airabso,
             'aliasing': self.aliasing,
-            # 'mp3comp': self.mp3comp,
-            # 'trim': self.trim
+            'mp3comp': self.mp3comp,
+            'trim': self.trim
         }
 
         for augmentation in self.online_augment:
