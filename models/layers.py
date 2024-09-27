@@ -91,7 +91,7 @@ class custom1DCNN(nn.Module):
         self.conv = nn.Conv1d(in_channels=input_channels, out_channels=output_channels,kernel_size=kernel_size, padding=padding, dilation=dilation)
         self.batch = nn.BatchNorm1d(output_channels)
         self.activ = nn.GELU()
-        self.avg = nn.AvgPool1d(4)
+        # self.avg = nn.AvgPool1d(4)
     
     def forward(self,x):
         x = self.conv(x)
