@@ -421,12 +421,14 @@ class v1_1d(nn.Module):
             nn.Linear(160, 80),
             nn.BatchNorm1d(80),
             nn.LeakyReLU(),
+            nn.Dropout1d(0.1),
         )
 
         self.fc2 = nn.Sequential(
             nn.Linear(160, 80),
             nn.BatchNorm1d(80),
             nn.LeakyReLU(),
+            nn.Dropout1d(0.1),
         )
 
         self.fc3 = nn.Sequential(

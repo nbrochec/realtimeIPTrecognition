@@ -261,7 +261,7 @@ class ProcessDataset:
 
             num_samples = waveform.size(1)
 
-            if num_samples < self.segment_length:
+            if num_samples <= self.segment_length:
                 extra_length = self.segment_length - num_samples
                 silence = torch.zeros((waveform.size(0), extra_length))
                 waveform = torch.cat((waveform, silence), dim=1)
@@ -289,8 +289,8 @@ class ProcessDataset:
                         self.X.append(aug2)
                         self.y.extend([label] * 2)
 
-                    self.X.append(segment)
-                    self.y.append(label)
+                    # self.X.append(segment)
+                    # self.y.append(label)
 
             elif self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length):
@@ -309,8 +309,8 @@ class ProcessDataset:
                         self.X.append(aug2)
                         self.y.extend([label] * 2)
 
-                    self.X.append(segment)
-                    self.y.append(label)
+                    # self.X.append(segment)
+                    # self.y.append(label)
 
             else:
                 for i in range(0, num_samples, self.segment_length):
