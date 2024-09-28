@@ -123,20 +123,19 @@ if __name__ == '__main__':
         if args.reduceLR:
             scheduler.step(val_loss)
         
-        if args.early_stopping:
-            if val_loss < max_val_loss:
-                max_val_loss = val_loss
-                counter = 0
-                num_epoch = epoch
-                best_state = model.state_dict()
-            else:
+        if val_loss < max_val_loss:
+            max_val_loss = val_loss
+            counter = 0
+            num_epoch = epoch
+            best_state = model.state_dict()
+        else:
+            if args.early_stopping:
                 counter += 1
                 if counter >= early_stopping_threshold:
                     print('Early stopping triggered.')
                     break
 
-    if args.early_stopping is not None:
-        model.load_state_dict(best_state)
+    model.load_state_dict(best_state)
 
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
