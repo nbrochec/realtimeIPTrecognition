@@ -283,12 +283,13 @@ class ProcessDataset:
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
                     
                     if self.offline_aug == True:
-                        aug1, aug2, aug3 = augmenter(segment)
+                        aug1, aug2, aug3, aug4 = augmenter(segment)
 
                         self.X.append(aug1)
                         self.X.append(aug2)
                         self.X.append(aug3)
-                        self.y.extend([label] * 3)
+                        self.X.append(aug4)
+                        self.y.extend([label] * 4)
 
                     self.X.append(segment)
                     self.y.append(label)
@@ -304,12 +305,13 @@ class ProcessDataset:
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
 
                     if self.offline_aug == True:
-                        aug1, aug2, aug3 = augmenter(segment)
+                        aug1, aug2, aug3, aug4 = augmenter(segment)
 
                         self.X.append(aug1)
                         self.X.append(aug2)
                         self.X.append(aug3)
-                        self.y.extend([label] * 3)
+                        self.X.append(aug4)
+                        self.y.extend([label] * 4)
 
                     self.X.append(segment)
                     self.y.append(label)

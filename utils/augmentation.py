@@ -163,22 +163,22 @@ class AudioOfflineTransforms:
             'detune': self.custom_detune,
             'gaussnoise': self.custom_gaussnoise,
             'timestretch': self.timestretch,
-            # 'shift': self.shift,
+            'shift': self.shift,
         }
 
         detuned = aug_dict['detune'](data_numpy)
         noised = aug_dict['gaussnoise'](data_numpy)
         stretched = aug_dict['timestretch'](data_numpy)
-        # shifted = aug_dict['shift'](data_numpy)
+        shifted = aug_dict['shift'](data_numpy)
 
         aug_detuned = self.pad_or_trim(detuned, original_size)
         aug_noised = self.pad_or_trim(noised, original_size)
         aug_stretched = self.pad_or_trim(stretched, original_size)
-        # aug_shifted = self.pad_or_trim(shifted, original_size)
+        aug_shifted = self.pad_or_trim(shifted, original_size)
 
         aug1 = torch.tensor(aug_detuned).to(torch.float32)
         aug2 = torch.tensor(aug_noised).to(torch.float32)
         aug3 = torch.tensor(aug_stretched).to(torch.float32)
-        # aug4 = torch.tensor(aug_shifted).to(torch.float32)
+        aug4 = torch.tensor(aug_shifted).to(torch.float32)
 
-        return aug1, aug2, aug3 #aug4
+        return aug1, aug2, aug3, aug4
