@@ -1016,7 +1016,7 @@ class v1_mi6_env2(nn.Module):
     def forward(self, x):
         x_env = self.env(x)
         x_env = x_env[:, :, :-1]
-        x_env = self.cnn_env(x_env).unsqueeze(1)
+        x_env = self.cnn_env(x_env)
 
         x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 128, dim=2)
 
@@ -1027,7 +1027,7 @@ class v1_mi6_env2(nn.Module):
         x5 = self.cnn5(x5)
         x6 = self.cnn6(x6)
 
-        x = torch.cat((x1, x2, x3, x4, x5, x6, x_env), dim=1)
+        x = torch.cat((x1, x2, x3, x4, x5, x6, x_env.unsqueeze(3)), dim=1)
 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
