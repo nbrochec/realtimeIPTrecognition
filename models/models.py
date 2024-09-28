@@ -986,7 +986,7 @@ class v1_mi6_env2(nn.Module):
             nn.AvgPool1d(8),
             custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(7),
-            nn.Droupout1d(0.1),
+            nn.Dropout1d(0.1),
         )
 
     def _create_cnn_block(self):
