@@ -124,31 +124,57 @@ class spectralEnergyExtractor(nn.Module):
         x = self.min_max_normalize(rms)
         return x
     
-class HPSLayer(nn.Module):
-    def __init__(self):
-        super(HPSLayer, self).__init__()
-        self.n_fft = 2048
-        self.hop_length = 512
-    
+class EnvelopeFollowingLayerTorchScript(nn.Module):
+    def __init__(self, n_fft=1024, hop_length=512, smoothing_factor=None):
+        super(EnvelopeFollowingLayerTorchScript, self).__init__()
+        self.n_fft = n_fft
+        self.hop_length = hop_length
+        self.smoothing_factor = smoothing_factor
+
     def forward(self, x):
-        batch_size, num_channels, sequence_length = x.shape
+        batch_size, n_channels, time = x.shape
         
-        x = x.view(batch_size * num_channels, sequence_length)
+        envelope_list = []
+        for i in range(n_channels):
+            # Effectuer la STFT (Short-Time Fourier Transform)
+            stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True)
+            
+            # Obtenir le signal analytique en annulant les parties négatives du spectre de fréquence
+            stft_analytic = stft_result.clone()
+            stft_analytic[..., self.n_fft//2+1:] = 0  # Supprimer les fréquences négatives
+            
+            # Effectuer l'iSTFT (inverse STFT) pour revenir dans le domaine temporel
+            analytic_signal = torch.istft(stft_analytic, n_fft=self.n_fft, hop_length=self.hop_length, return_complex=False)
+            
+            # Prendre le module du signal analytique pour obtenir l'enveloppe
+            envelope = torch.abs(analytic_signal)
+            envelope_list.append(envelope.unsqueeze(1))
+        
+        # Concatenation des enveloppes des différents canaux
+        envelope_output = torch.cat(envelope_list, dim=1)  # Shape: [batch, n_channels, time]
 
-        stft_result = torch.stft(x, n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True)
-        magnitude = torch.abs(stft_result)
-        
-        harmonic = nn.functional.avg_pool2d(magnitude.unsqueeze(1), (1, 31), padding=(0, 15)).squeeze(1)
-        percussive = nn.functional.avg_pool2d(magnitude.unsqueeze(1), (31, 1), padding=(15, 0)).squeeze(1)
+        # Lissage optionnel (par exemple, en appliquant une moyenne glissante ou un filtre passe-bas)
+        if self.smoothing_factor is not None:
+            envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
 
-        harmonic_time = self.inverse_stft(harmonic, stft_result.angle())
-        percussive_time = self.inverse_stft(percussive, stft_result.angle())
-        
-        return harmonic_time.view(batch_size, num_channels, -1), percussive_time.view(batch_size, num_channels, -1)
+        return envelope_output
+
+class EnvelopeMelLayer(nn.Module):
+    def __init__(self, sr):
+        super(EnvelopeMelLayer, self).__init__()  # Appel au constructeur de nn.Module
+        self.sr = sr
     
-    def inverse_stft(self, magnitude, phase):
-        magnitude_resized = nn.functional.interpolate(magnitude.unsqueeze(1), size=phase.size()[-2:], mode='bilinear').squeeze(1)
-        complex_spectrogram = magnitude_resized * torch.exp(1j * phase)
+    def forward(self, mel_spec, envelope):
+        """
+        mel_spec: Input mel spectrogram (n_batch, 1, n_mels, time_frames)
+        envelope: Envelope signal with dimensions (n_batch, n_samples) or similar to the audio length
+        """
         
-        time_domain_signal = torch.istft(complex_spectrogram, n_fft=self.n_fft, hop_length=self.hop_length)
-        return time_domain_signal
+        # Step 2: Ensure the envelope is compatible with the time frames in the mel spectrogram
+        # Reshape envelope: from (n_batch, n_samples) -> (n_batch, 1, 1, time_frames)
+        envelope = F.interpolate(envelope.unsqueeze(1).unsqueeze(1), size=mel_spec.shape[-1], mode='linear')
+        
+        # Step 3: Apply the envelope to each frame (multiply along the time axis)
+        mel_spec_enveloped = mel_spec * envelope  # Apply envelope to mel-spectrogram
+
+        return mel_spec_enveloped
