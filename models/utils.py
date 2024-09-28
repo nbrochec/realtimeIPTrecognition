@@ -45,7 +45,7 @@ class LoadModel:
             'v1_mi_lstm': v1_mi_lstm,
             'v1_mi6_env': v1_mi6_env,
             'v1_mi6_env2': v1_mi6_env2,
-            'v1_mi5': v1_mi5
+            'v1_mi5': v1_mi5,
         }
     
     def get_model(self, model_name, output_nbr, sr):
