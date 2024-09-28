@@ -17,7 +17,7 @@ import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
 class LogMelSpectrogramLayer(nn.Module):
-    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150):
+    def __init__(self, sample_rate=24000, n_fft=4096, win_length=None, hop_length=512, n_mels=128, f_min=150):
         super(LogMelSpectrogramLayer, self).__init__()
         self.sample_rate = sample_rate
         self.n_fft = n_fft
@@ -133,18 +133,17 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
 
     def forward(self, x):
         batch_size, n_channels, time = x.shape
-        
+        window = torch.hann_window(self.n_fft).to(x.device)
         envelope_list = []
         for i in range(n_channels):
-            # Effectuer la STFT (Short-Time Fourier Transform)
-            stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True)
+            stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
             
             # Obtenir le signal analytique en annulant les parties négatives du spectre de fréquence
             stft_analytic = stft_result.clone()
             stft_analytic[..., self.n_fft//2+1:] = 0  # Supprimer les fréquences négatives
             
             # Effectuer l'iSTFT (inverse STFT) pour revenir dans le domaine temporel
-            analytic_signal = torch.istft(stft_analytic, n_fft=self.n_fft, hop_length=self.hop_length, return_complex=False)
+            analytic_signal = torch.istft(stft_analytic, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=False)
             
             # Prendre le module du signal analytique pour obtenir l'enveloppe
             envelope = torch.abs(analytic_signal)
