@@ -1038,7 +1038,7 @@ class v1_mi6_env2(nn.Module):
     def _create_cnn_env_block(self):
         return nn.Sequential(
             custom1DCNN(1, 40, 7, "same", 4),
-            nn.AvgPool1d(19),
+            nn.AvgPool1d(16),
             custom1DCNN(40, 40, 5, "same", 3),
             nn.AvgPool1d(8),
             custom1DCNN(40, 80, 3, "same", 2),
