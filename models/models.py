@@ -1016,7 +1016,7 @@ class v1_mi6_env2_256(nn.Module):
         super(v1_mi6_env2_256, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_fft=2048, n_mels=768, hop_length=256)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=256, smoothing_factor=4) # essayer avec 256
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
