@@ -143,7 +143,7 @@ class AudioOfflineTransforms:
         return data
     
     def timestretch(self, data):
-        transform = TimeStretch(p=1)
+        transform = TimeStretch(min_rate=0.9, max_rate=1.1, p=1)
         return transform(data, sample_rate=self.sr)
     
     def shift(self, data):
