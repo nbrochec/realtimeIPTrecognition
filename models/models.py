@@ -1052,23 +1052,23 @@ class v1_mi6_env2_256(nn.Module):
         return nn.Sequential(
             custom2DCNN(1, 40, (2, 3), "same"),
             custom2DCNN(40, 40, (2, 3), "same"),
-            nn.MaxPool2d((2, 2)), 
+            nn.MaxPool2d((2, 1)), #29 
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 3), "same"),
             custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)),
+            nn.MaxPool2d(2), # 14
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d((2, 1)), # 14
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(2), # 7
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d(2), # 3
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 2)),
+            nn.MaxPool2d((4, 3)),
             nn.Dropout2d(0.25),
         )
 
@@ -1078,6 +1078,7 @@ class v1_mi6_env2_256(nn.Module):
         x_env = self.cnn_env(x_env)
 
         x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 128, dim=2)
+
 
         x1 = self.cnn1(x1) 
         x2 = self.cnn2(x2)
