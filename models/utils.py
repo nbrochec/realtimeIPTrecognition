@@ -16,8 +16,7 @@ import sys
 import pandas as pd
 
 from models import v1, v2, v3, v2bis, v2_1d, v1_1d, v1_1d_e, v1_mi, v1_mi_1d, v1_mi4, v1_mi4_e, v1_mi4_hpss, v1_mi6_env # one_residual, two_residual, transformer,
-from models import v1_mi6, v1_mi_lstm, v1_mi6_env2, v1_mi5
-import torch.nn.init as init
+from models import v1_mi6, v1_mi_lstm, v1_mi6_env2, v1_mi5, v1_mi6_env2_256
 
 from tqdm import tqdm
 
@@ -46,6 +45,7 @@ class LoadModel:
             'v1_mi6_env': v1_mi6_env,
             'v1_mi6_env2': v1_mi6_env2,
             'v1_mi5': v1_mi5,
+            'v1_mi6_env2_256': v1_mi6_env2_256
         }
     
     def get_model(self, model_name, output_nbr, sr):
