@@ -23,7 +23,7 @@ import string
 import datetime
 
 from torch.utils.data import DataLoader
-from torch.optim import Adam
+from torch.optim import Adam, AdamW
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     model = modelPreparator.prepare()
 
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
+    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=1e-5)
     if args.reduceLR == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)
 
