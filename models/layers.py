@@ -138,42 +138,18 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         for i in range(n_channels):
             stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
             
-            # Obtenir le signal analytique en annulant les parties négatives du spectre de fréquence
             stft_analytic = stft_result.clone()
-            stft_analytic[..., self.n_fft//2+1:] = 0  # Supprimer les fréquences négatives
+            stft_analytic[..., self.n_fft//2+1:] = 0 
             
-            # Effectuer l'iSTFT (inverse STFT) pour revenir dans le domaine temporel
             analytic_signal = torch.istft(stft_analytic, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=False)
             
-            # Prendre le module du signal analytique pour obtenir l'enveloppe
             envelope = torch.abs(analytic_signal)
             envelope_list.append(envelope.unsqueeze(1))
         
-        # Concatenation des enveloppes des différents canaux
+
         envelope_output = torch.cat(envelope_list, dim=1)  # Shape: [batch, n_channels, time]
 
-        # Lissage optionnel (par exemple, en appliquant une moyenne glissante ou un filtre passe-bas)
         if self.smoothing_factor is not None:
             envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
 
         return envelope_output
-
-class EnvelopeMelLayer(nn.Module):
-    def __init__(self, sr):
-        super(EnvelopeMelLayer, self).__init__()  # Appel au constructeur de nn.Module
-        self.sr = sr
-    
-    def forward(self, mel_spec, envelope):
-        """
-        mel_spec: Input mel spectrogram (n_batch, 1, n_mels, time_frames)
-        envelope: Envelope signal with dimensions (n_batch, n_samples) or similar to the audio length
-        """
-        
-        # Step 2: Ensure the envelope is compatible with the time frames in the mel spectrogram
-        # Reshape envelope: from (n_batch, n_samples) -> (n_batch, 1, 1, time_frames)
-        envelope = F.interpolate(envelope.unsqueeze(1).unsqueeze(1), size=mel_spec.shape[-1], mode='linear')
-        
-        # Step 3: Apply the envelope to each frame (multiply along the time axis)
-        mel_spec_enveloped = mel_spec * envelope  # Apply envelope to mel-spectrogram
-
-        return mel_spec_enveloped
