@@ -261,10 +261,11 @@ class ProcessDataset:
 
             num_samples = waveform.size(1)
 
-            if num_samples <= self.segment_length:
-                extra_length = self.segment_length - num_samples
-                silence = torch.zeros((waveform.size(0), extra_length))
-                waveform = torch.cat((waveform, silence), dim=1)
+            if self.padding == 'minimal':
+                if num_samples <= self.segment_length:
+                    extra_length = self.segment_length - num_samples
+                    silence = torch.zeros((waveform.size(0), extra_length))
+                    waveform = torch.cat((waveform, silence), dim=1)
 
                 # noise_length = waveform.size(1) 
                 # noise = torch.randn((waveform.size(0), noise_length)) * 1e-9
@@ -277,7 +278,7 @@ class ProcessDataset:
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
-                        if self.padding == True:
+                        if self.padding == 'full':
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
@@ -299,7 +300,7 @@ class ProcessDataset:
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
-                        if self.padding == True:
+                        if self.padding == 'full':
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
@@ -321,7 +322,7 @@ class ProcessDataset:
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
-                        if self.padding == True:
+                        if self.padding == 'full':
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
@@ -571,7 +572,7 @@ class SaveResultsToDisk:
             writer.writerow([
                 args.name, args.config, args.sr, args.segment_overlap,
                 args.fmin, args.lr, args.epochs, args.offline_augment, args.online_augment,
-                args.early_stopping, args.reduceLR, args.padding, 
+                args.early_stopping, args.reduce_lr, args.padding, 
                 accuracy, precision, recall, f1, loss
             ])  
 
@@ -594,7 +595,7 @@ class SaveYAML:
 
         current_config = {'Name':args.name, 'Model': args.config , 'Sampling Rate':args.sr,'Segment Overlap':args.segment_overlap,
                       'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Offline Augmentations':args.offline_augment,
-                      'Online Augmentations': args.online_augment.split(), 'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduceLR,
+                      'Online Augmentations': args.online_augment.split(), 'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduce_lr,
                       'Number of Classes':num_classes}
 
         yaml_file = os.path.join(path_to_run, f'{os.path.basename(path_to_run)}.yaml')
