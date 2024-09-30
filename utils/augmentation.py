@@ -95,7 +95,7 @@ class AudioOnlineTransforms:
         aug_data_list = []
 
         aug_dict = {
-            'none': self.none,
+            'None': self.none,
             'pitchshift': self.pitch_shift,
             'timeshift': self.shift,
             'polarityinversion': self.polarity_inversion,
@@ -111,7 +111,7 @@ class AudioOnlineTransforms:
 
         for augmentation in self.online_augment:
             if augmentation in aug_dict and np.random.rand() < 0.5:
-                if augmentation != 'none':
+                if augmentation != 'None':
                     data_numpy = aug_dict[augmentation](data_numpy)
         
         aug_data = self.pad_or_trim(data_numpy, original_size)
