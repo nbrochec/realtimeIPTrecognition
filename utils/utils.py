@@ -247,95 +247,90 @@ class ProcessDataset:
             file_path = row['file_path']
             label_name = row['label']
             label = self.label_map[label_name]
+            print(f'file {file_path}')
+            waveform, original_sr = torchaudio.load(file_path)
 
-            try:
-                waveform, original_sr = torchaudio.load(file_path)
+            if original_sr != self.target_sr:
+                waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
 
-                if original_sr != self.target_sr:
-                    waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
+            if label_name != 'silence':
+                waveform = self.remove_silence(waveform)
 
-                if label_name != 'silence':
-                    waveform = self.remove_silence(waveform)
+            if waveform.shape[0] == 2:
+                waveform = waveform[0, :].unsqueeze(0)
 
-                if waveform.shape[0] == 2:
-                    waveform = waveform[0, :].unsqueeze(0)
+            num_samples = waveform.size(1)
 
-                num_samples = waveform.size(1)
+            if num_samples <= self.segment_length:
+                extra_length = self.segment_length - num_samples
+                silence = torch.zeros((waveform.size(0), extra_length))
+                waveform = torch.cat((waveform, silence), dim=1)
 
-                if num_samples <= self.segment_length:
-                    extra_length = self.segment_length - num_samples
-                    silence = torch.zeros((waveform.size(0), extra_length))
-                    waveform = torch.cat((waveform, silence), dim=1)
+                # noise_length = waveform.size(1) 
+                # noise = torch.randn((waveform.size(0), noise_length)) * 1e-9
+                # waveform += noise
 
-                    # noise_length = waveform.size(1) 
-                    # noise = torch.randn((waveform.size(0), noise_length)) * 1e-9
-                    # waveform += noise
+            augmenter = AudioOfflineTransforms(self.args)
 
-                augmenter = AudioOfflineTransforms(self.args)
+            if self.segment_overlap == True and self.set_type == 'train':
+                for i in range(0, num_samples, self.segment_length//2):
+                    if i + self.segment_length <= num_samples:
+                        segment = waveform[:, i:i + self.segment_length]
+                    else:
+                        if self.padding == True:
+                            valid_length = num_samples - i
+                            segment = torch.zeros((waveform.size(0), self.segment_length))
+                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    
+                    if self.offline_aug == True:
+                        aug1, aug2, aug3 = augmenter(segment)
 
-                if self.segment_overlap == True and self.set_type == 'train':
-                    for i in range(0, num_samples, self.segment_length//2):
-                        if i + self.segment_length <= num_samples:
-                            segment = waveform[:, i:i + self.segment_length]
-                        else:
-                            if self.padding == True:
-                                valid_length = num_samples - i
-                                segment = torch.zeros((waveform.size(0), self.segment_length))
-                                segment[:, :valid_length] = waveform[:, i:i + valid_length]
-                        
-                        if self.offline_aug == True:
-                            aug1, aug2, aug3 = augmenter(segment)
+                        self.X.append(aug1)
+                        self.X.append(aug2)
+                        self.X.append(aug3)
+                        # self.X.append(aug4)
+                        self.y.extend([label] * 3)
 
-                            self.X.append(aug1)
-                            self.X.append(aug2)
-                            self.X.append(aug3)
-                            # self.X.append(aug4)
-                            self.y.extend([label] * 3)
+                    self.X.append(segment)
+                    self.y.append(label)
 
-                        self.X.append(segment)
-                        self.y.append(label)
+            elif self.set_type == 'train':
+                for i in range(0, num_samples, self.segment_length):
+                    if i + self.segment_length <= num_samples:
+                        segment = waveform[:, i:i + self.segment_length]
+                    else:
+                        if self.padding == True:
+                            valid_length = num_samples - i
+                            segment = torch.zeros((waveform.size(0), self.segment_length))
+                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
 
-                elif self.set_type == 'train':
-                    for i in range(0, num_samples, self.segment_length):
-                        if i + self.segment_length <= num_samples:
-                            segment = waveform[:, i:i + self.segment_length]
-                        else:
-                            if self.padding == True:
-                                valid_length = num_samples - i
-                                segment = torch.zeros((waveform.size(0), self.segment_length))
-                                segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    if self.offline_aug == True:
+                        aug1, aug2, aug3 = augmenter(segment)
 
-                        if self.offline_aug == True:
-                            aug1, aug2, aug3 = augmenter(segment)
+                        self.X.append(aug1)
+                        self.X.append(aug2)
+                        self.X.append(aug3)
+                        # self.X.append(aug4)
+                        self.y.extend([label] * 3)
 
-                            self.X.append(aug1)
-                            self.X.append(aug2)
-                            self.X.append(aug3)
-                            # self.X.append(aug4)
-                            self.y.extend([label] * 3)
+                    self.X.append(segment)
+                    self.y.append(label)
 
-                        self.X.append(segment)
-                        self.y.append(label)
+            else:
+                for i in range(0, num_samples, self.segment_length):
+                    if i + self.segment_length <= num_samples:
+                        segment = waveform[:, i:i + self.segment_length]
+                    else:
+                        if self.padding == True:
+                            valid_length = num_samples - i
+                            segment = torch.zeros((waveform.size(0), self.segment_length))
+                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    
+                    self.X.append(segment)
+                    self.y.append(label)
 
-                else:
-                    for i in range(0, num_samples, self.segment_length):
-                        if i + self.segment_length <= num_samples:
-                            segment = waveform[:, i:i + self.segment_length]
-                        else:
-                            if self.padding == True:
-                                valid_length = num_samples - i
-                                segment = torch.zeros((waveform.size(0), self.segment_length))
-                                segment[:, :valid_length] = waveform[:, i:i + valid_length]
-                        
-                        self.X.append(segment)
-                        self.y.append(label)
-
-                self.X = torch.stack(self.X)
-                self.y = torch.tensor(self.y)
-
-            except Exception as e:
-                print(f"Erreur avec le fichier : {file_path}")
-                print(e)
+        self.X = torch.stack(self.X)
+        self.y = torch.tensor(self.y)
 
     def get_data(self):
         return TensorDataset(self.X, self.y)
