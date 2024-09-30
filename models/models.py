@@ -877,11 +877,12 @@ class v1_mi4(nn.Module):
         z = self.fc(x_flat)
         return z
     
-class v1_mi5(nn.Module):
+class v1_mi5_env2(nn.Module):
     def __init__(self, output_nbr, sr):
-        super(v1_mi5, self).__init__()
+        super(v1_mi5_env2, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=640)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -890,11 +891,11 @@ class v1_mi5(nn.Module):
         self.cnn5 = self._create_cnn_block()
 
         self.fc = nn.Sequential(
-            nn.Linear(160 * 5, 240),
+            nn.Linear(160 * 6, 240),
             nn.ReLU(),
-            nn.Linear(240, 40),
+            nn.Linear(240, 60),
             nn.ReLU(),
-            nn.Linear(40, output_nbr)
+            nn.Linear(60, output_nbr)
         )
 
     def _create_cnn_block(self):
@@ -922,6 +923,10 @@ class v1_mi5(nn.Module):
         )
 
     def forward(self, x):
+        x_env = self.env(x)
+        x_env = x_env[:, :, :-1]
+        x_env = self.cnn_env(x_env)
+
         x1, x2, x3, x4, x5 = torch.split(self.logmel(x), 128, dim=2)
 
         x1 = self.cnn1(x1)
@@ -930,7 +935,7 @@ class v1_mi5(nn.Module):
         x4 = self.cnn4(x4)
         x5 = self.cnn5(x5)
 
-        x = torch.cat((x1, x2, x3, x4, x5), dim=1)
+        x = torch.cat((x1, x2, x3, x4, x5, x_env.unsqueeze(3)), dim=1)
 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
@@ -994,7 +999,7 @@ class v1_mi6_env(nn.Module):
     def forward(self, x):
         x_env = self.env(x)
         x_env = x_env[:, :, :-1]
-        x_env = self.cnn_env(x_env).unsqueeze(1)
+        x_env = self.cnn_env(x_env)
 
         x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 128, dim=2)
 
@@ -1005,7 +1010,7 @@ class v1_mi6_env(nn.Module):
         x5 = self.cnn5(x5 + x_env)
         x6 = self.cnn6(x6 + x_env)
 
-        x = torch.cat((x1, x2, x3, x4, x5, x6), dim=1)
+        x = torch.cat((x1, x2, x3, x4, x5, x6.unsqueeze(3)), dim=1)
 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
