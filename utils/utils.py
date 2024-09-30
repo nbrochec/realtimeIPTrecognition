@@ -247,7 +247,7 @@ class ProcessDataset:
             file_path = row['file_path']
             label_name = row['label']
             label = self.label_map[label_name]
-            print(f'file {file_path}')
+            # print(f'file {file_path}')
             waveform, original_sr = torchaudio.load(file_path)
 
             if original_sr != self.target_sr:
