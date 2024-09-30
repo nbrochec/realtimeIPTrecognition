@@ -136,12 +136,12 @@ python preprocess.py --name project_name
 
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|
-| `--name`             | Name of the project.                                               | String                         | `None`          |
-| `--train_dir`             | Specify train directory.                                           | String                         | `train`          |
-| `--test_dir`             | Specify test directory.                                             | String                         | `test`          |
-| `--val_dir`             | Specify val directory.                                             | String                         | `val`          |
-| `--val_split`          | Specify from which dataset the validation set will be generated.      | `train`, `test`                   | `train`      |
-| `--val_ratio`          | Amount of validation samples.                                     | 0 <= Float value < 1             | `0.2`           |
+| `--name`            | Name of the project.                                               | String                         | `None`          |
+| `--train_dir`       | Specify train directory.                                           | String                         | `train`          |
+| `--test_dir`        | Specify test directory.                                             | String                         | `test`          |
+| `--val_dir`         | Specify val directory.                                             | String                         | `val`          |
+| `--val_split`       | Specify from which dataset the validation set will be generated.      | `train`, `test`                   | `train`      |
+| `--val_ratio`       | Amount of validation samples.                                     | 0 <= Float value < 1             | `0.2`           |
 
 If `--val_dir`is not specified, the validation set will be generated from the folder specified with `--val_split`.
 
@@ -159,27 +159,29 @@ python train.py --name project_name
 You can use the following arguments if you want to test different configurations.
 | Argument            | Description                                                         | Possible Values                | Default Value   |
 |---------------------|---------------------------------------------------------------------|--------------------------------|-----------------|  
-| `--name`             | Name of the project.                                              | String                         | `None`          |
-| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`, `one-residual`, `two-residual`, `transformer` | `v2`            |
+| `--name`             | Name of the project.                                              | String                         |           |
 | `--device`          | Specify the hardware on which computation should be performed.     | `cpu`, `cuda`, `mps`           | `cpu`           |
 | `--gpu`             | Specify which GPU to use.                                          | Integer                          | `0`             |
-| `--sr`              | Sampling rate for downsampling the audio files.                    | `16000`, `22050`, `24000`, ... (Hz)| `24000`         |
-| `--segment_overlap` | Overlap between audio segments.                                    | `True`, `False`                | `False`         |
-| `--fmin`            | Minimum frequency for Mel filters.                                 | 0 < Float value (Hz) or `None` | `None`          |
+| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`, `v2_1d`, `v1_mi4`, `v1_mi5_env2`, `v1_mi6`, `v1_mi6_env2`,  | `v2`   |
+| `--sr`              | Sampling rate for downsampling the audio files.                    | Integer (Hz)                   | `24000`         |
+| `--segment_overlap` | Overlap between audio segments. Increase the data samples by a factor 2. | `True`, `False`                | `False`         |
+| `--fmin`            | Minimum frequency for Mel filters.                                 | Integer (Hz)                    | `0`          |
 | `--lr`              | Learning rate.                                                      | 0 < Float value                | `0.001`         |
+| `--batch_size`       | Specify Batch Size                                               | 0 < Integer value              | `128`         |
 | `--epochs`          | Number of training epochs.                                         | 0 < Integer value              | `100`           |
-| `--augment`         | Specify which augmentations to use.                                 | `pitchshift`, `lb_pitchshift`, `timeshift`, `addnoise`, `polarityinversion`, `gain`, `hpf`, `lpf`, `clipping`, `bitcrush`, `airabso`, `gaussnoise` or `all`| `None` |
-| `--padding`          | Pad the arrays of audio samples with zeros.                                         | `True`, `False`             | `False`           |
+| `--offline_augment` | Use offline augmentations generated from original audio files using detuning, gaussian noise and time stretching. Stored in a Pytorch Dataset. | `True`, `False` | `True` |
+| `--online_augment`  | Specify which online augmentations to use (from audiomentations library). Applied in the training loop. Each augmentation has 50% chance to be applied. | `pitchshift`, `timeshift`, `polarityinversion`, `hpf`, `lpf`, `clipping`,`bitcrush`, `airabso`, `aliasing`, `mp3comp`, `trim` | `None` |
+| `--padding`         | Pad the arrays of audio samples with zeros. `minimal` only pads when audio file length is shorter than the model input length. | `full`, `minimal`, `None`  | `minimal`           |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | 0 < Integer value or `None`   | `None`          |
-| `--reduceLR`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
-| `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `False`         |
-| `--save_logs`       | Save logs results to disk.                                               | `True`, `False`               | `True`         |
+| `--reduce_lr`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
+| `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `True`         |
+| `--save_logs`       | Save logs results to disk.                                          | `True`, `False`               | `True`         |
 
 Training your model will create a `runs` folder with the name of your project.
 Detach from current screen `ctrl`+`A`+`D`.
 Open a new screen.
 ```
-screen -S m
+screen -S monitor
 conda activate IPT
 cd realtimeIPTrecognition
 ```
