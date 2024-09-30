@@ -427,7 +427,7 @@ class v1_mi6_env2(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_mi6_env2, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=768)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420)
         self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
         
         self.cnn1 = self._create_cnn_block()
@@ -464,23 +464,23 @@ class v1_mi6_env2(nn.Module):
         return nn.Sequential(
             custom2DCNN(1, 40, (2, 3), "same"),
             custom2DCNN(40, 40, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d((2, 1)), # 35
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 3), "same"),
             custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)),
+            nn.MaxPool2d((2, 3)), # 17
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d((2, 1)), # 8
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 4
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), #2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d(2),
-            nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
-            nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 2)),
             nn.Dropout2d(0.25),
         )
 
@@ -489,7 +489,7 @@ class v1_mi6_env2(nn.Module):
         x_env = x_env[:, :, :-1]
         x_env = self.cnn_env(x_env)
 
-        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 128, dim=2)
+        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 70, dim=2)
 
         x1 = self.cnn1(x1) 
         x2 = self.cnn2(x2)
@@ -508,7 +508,7 @@ class v1_mi6(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_mi6, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=768)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -529,28 +529,28 @@ class v1_mi6(nn.Module):
         return nn.Sequential(
             custom2DCNN(1, 40, (2, 3), "same"),
             custom2DCNN(40, 40, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d((2, 1)), # 35
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 3), "same"),
             custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)),
+            nn.MaxPool2d((2, 3)), # 17
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d((2, 1)), # 8
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 4
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), #2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
-            nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 2)),
-            nn.Dropout2d(0.25),
         )
 
     def forward(self, x):
-        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 128, dim=2)
+        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 70, dim=2)
 
         x1 = self.cnn1(x1)
         x2 = self.cnn2(x2)
