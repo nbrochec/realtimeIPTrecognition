@@ -889,6 +889,7 @@ class v1_mi5_env2(nn.Module):
         self.cnn3 = self._create_cnn_block()
         self.cnn4 = self._create_cnn_block()
         self.cnn5 = self._create_cnn_block()
+        self.cnn_env = self._create_cnn_env_block()
 
         self.fc = nn.Sequential(
             nn.Linear(160 * 6, 240),
@@ -896,6 +897,19 @@ class v1_mi5_env2(nn.Module):
             nn.Linear(240, 60),
             nn.ReLU(),
             nn.Linear(60, output_nbr)
+        )
+
+    def _create_cnn_env_block(self):
+        return nn.Sequential(
+            custom1DCNN(1, 40, 7, "same", 4),
+            nn.AvgPool1d(16),
+            custom1DCNN(40, 40, 5, "same", 3),
+            nn.AvgPool1d(8),
+            custom1DCNN(40, 80, 3, "same", 2),
+            nn.AvgPool1d(8),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(7),
+            nn.Dropout1d(0.1),
         )
 
     def _create_cnn_block(self):
