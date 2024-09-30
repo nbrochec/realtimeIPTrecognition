@@ -490,7 +490,6 @@ class v1_mi6_env2(nn.Module):
         x_env = self.cnn_env(x_env)
 
         x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 128, dim=2)
-        print(x1.shape)
 
         x1 = self.cnn1(x1) 
         x2 = self.cnn2(x2)
