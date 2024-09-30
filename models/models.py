@@ -503,6 +503,93 @@ class v1_mi6_env2(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+class v1_mi6_env2_lstm(nn.Module):
+    def __init__(self, output_nbr, sr):
+        super(v1_mi6_env2_lstm, self).__init__()
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        
+        self.cnn1 = self._create_cnn_block()
+        self.cnn2 = self._create_cnn_block()
+        self.cnn3 = self._create_cnn_block()
+        self.cnn4 = self._create_cnn_block()
+        self.cnn5 = self._create_cnn_block()
+        self.cnn6 = self._create_cnn_block()
+
+        self.cnn_env = self._create_cnn_env_block()
+        self.lstm_env = self._create_lstm_env_block()
+
+        self.fc = nn.Sequential(
+            nn.Linear(112 * 7, 260),
+            nn.ReLU(),
+            nn.Linear(260, 80), 
+            nn.ReLU(),
+            nn.Linear(80, output_nbr)
+        )
+
+    def _create_cnn_env_block(self):
+        return nn.Sequential(
+            custom1DCNN(1, 40, 7, "same", 4),
+            nn.AvgPool1d(8),
+            custom1DCNN(40, 80, 5, "same", 3),
+            nn.AvgPool1d(8),
+            custom1DCNN(80, 160, 2, "same", 1),
+        )
+    
+    def _create_lstm_env_block(self):
+        return nn.LSTM(input_size=160, hidden_size=112, batch_first=True)
+
+    def _create_cnn_block(self):
+        return nn.Sequential(
+            custom2DCNN(1, 28, (2, 3), "same"),
+            custom2DCNN(28, 28, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)), # 35
+            nn.Dropout2d(0.25),
+            custom2DCNN(28, 56, (2, 3), "same"),
+            custom2DCNN(56, 56, (2, 3), "same"),
+            nn.MaxPool2d((2, 3)), # 17
+            nn.Dropout2d(0.25),
+            custom2DCNN(56, 112, 2, "same"),
+            nn.MaxPool2d((2, 1)), # 8
+            nn.Dropout2d(0.25),
+            custom2DCNN(112, 112, 2, "same"),
+            nn.MaxPool2d(2), # 4
+            nn.Dropout2d(0.25),
+            custom2DCNN(112, 112, 2, "same"),
+            nn.MaxPool2d((2, 1)), #2
+            nn.Dropout2d(0.25),
+            custom2DCNN(112, 112, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+        )
+
+    def forward(self, x):
+        x_env = self.env(x)
+        x_env = x_env[:, :, :-1]
+        x_env = self.cnn_env(x_env)
+        # print(x_env.shape)
+        x_env = x_env.permute(0, 2, 1)
+        # print(x_env.shape)
+        lstm_out = self.lstm_env(x_env)
+        lstm_out_last = lstm_out[0][:, -1, :].unsqueeze(2).unsqueeze(2)
+        # print(lstm_out_last.shape)
+
+        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 70, dim=2)
+
+        x1 = self.cnn1(x1) 
+        x2 = self.cnn2(x2)
+        x3 = self.cnn3(x3)
+        x4 = self.cnn4(x4)
+        x5 = self.cnn5(x5)
+        x6 = self.cnn6(x6)
+
+        x = torch.cat((x1, x2, x3, x4, x5, x6, lstm_out_last), dim=1)
+
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
 
 class v1_mi6(nn.Module):
     def __init__(self, output_nbr, sr):
