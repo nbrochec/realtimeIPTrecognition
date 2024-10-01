@@ -524,22 +524,22 @@ class v1_mi6_env2_lstm(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(112 * 7, 260),
             nn.ReLU(),
-            nn.Linear(260, 80), 
+            nn.Linear(260, 140), 
             nn.ReLU(),
-            nn.Linear(80, output_nbr)
+            nn.Linear(140, output_nbr)
         )
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 40, 7, "same", 4),
+            custom1DCNN(1, 64, 7, "same", 4),
             nn.AvgPool1d(8),
-            custom1DCNN(40, 80, 5, "same", 3),
+            custom1DCNN(64, 128, 5, "same", 3),
             nn.AvgPool1d(8),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(128, 256, 2, "same", 1),
         )
     
     def _create_lstm_env_block(self):
-        return nn.LSTM(input_size=160, hidden_size=112, batch_first=True)
+        return nn.LSTM(input_size=256, hidden_size=112, batch_first=True)
     
 
     def _create_cnn_block(self):
@@ -619,7 +619,7 @@ class v1_mi6_env2_lstm(nn.Module):
     
 
 
-    
+
 
 class v1_mi6(nn.Module):
     def __init__(self, output_nbr, sr):
