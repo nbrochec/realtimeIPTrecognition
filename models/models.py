@@ -531,11 +531,11 @@ class v1_mi6_env2_lstm(nn.Module):
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 40, 7, "same", 4),
+            custom1DCNN(1, 28, 7, "same", 4),
             nn.AvgPool1d(8),
-            custom1DCNN(40, 80, 5, "same", 3),
+            custom1DCNN(28, 56, 5, "same", 3),
             nn.AvgPool1d(8),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(56, 112, 2, "same", 1),
         )
     
     def _create_lstm_env_block(self):
@@ -544,24 +544,24 @@ class v1_mi6_env2_lstm(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(1, 40, (2, 3), "same"),
-            custom2DCNN(40, 40, (2, 3), "same"),
+            custom2DCNN(1, 28, (2, 3), "same"),
+            custom2DCNN(28, 28, (2, 3), "same"),
             nn.MaxPool2d((2, 1)), # 35
             nn.Dropout2d(0.25),
-            custom2DCNN(40, 80, (2, 3), "same"),
-            custom2DCNN(80, 80, (2, 3), "same"),
+            custom2DCNN(28, 56, (2, 3), "same"),
+            custom2DCNN(56, 56, (2, 3), "same"),
             nn.MaxPool2d((2, 3)), # 17
             nn.Dropout2d(0.25),
-            custom2DCNN(80, 160, 2, "same"),
+            custom2DCNN(56, 112, 2, "same"),
             nn.MaxPool2d((2, 1)), # 8
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(112, 112, 2, "same"),
             nn.MaxPool2d(2), # 4
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(112, 112, 2, "same"),
             nn.MaxPool2d((2, 1)), #2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(112, 112, 2, "same"),
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
