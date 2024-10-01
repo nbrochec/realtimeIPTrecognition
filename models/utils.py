@@ -15,7 +15,7 @@ import humanize
 import sys
 import pandas as pd
 
-from models import v1, v2, v3, v2_1d, v1_mi4, v1_mi6_env2_lstm, v1_mi6_env2_gru,v1_mi6_env2_gru2
+from models import v1, v2, v3, v2_1d, v1_mi4, v1_mi6_env2_lstm, v1_mi6_env2_gru,v1_mi6_env2_gru3
 from models import v1_mi6, v1_mi6_env2, v1_mi5_env2
 
 from tqdm import tqdm
@@ -35,7 +35,7 @@ class LoadModel:
             'v1_mi5_env2': v1_mi5_env2,
             'v1_mi6_env2_lstm': v1_mi6_env2_lstm,
             'v1_mi6_env2_gru': v1_mi6_env2_gru,
-            'v1_mi6_env2_gru2': v1_mi6_env2_gru2,
+            'v1_mi6_env2_gru2': v1_mi6_env2_gru3,
         }
     
     def get_model(self, model_name, output_nbr, sr):

@@ -706,9 +706,9 @@ class v1_mi6_env2_gru(nn.Module):
         z = self.fc(x_flat)
         return z
 
-class v1_mi6_env2_gru2(nn.Module):
+class v1_mi6_env2_gru3(nn.Module):
     def __init__(self, output_nbr, sr):
-        super(v1_mi6_env2_gru2, self).__init__()
+        super(v1_mi6_env2_gru3, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=384, hop_length=512)
         self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
@@ -724,11 +724,11 @@ class v1_mi6_env2_gru2(nn.Module):
         self.lstm_env = self._create_lstm_env_block()
 
         self.fc = nn.Sequential(
-            nn.Linear(128 * 7, 384),
+            nn.Linear(128 * 7, 128),
             nn.ReLU(),
-            nn.Linear(384, 128), 
+            nn.Linear(128, 64), 
             nn.ReLU(),
-            nn.Linear(128, output_nbr)
+            nn.Linear(64, output_nbr)
         )
 
     def _create_cnn_env_block(self):
@@ -738,6 +738,7 @@ class v1_mi6_env2_gru2(nn.Module):
             custom1DCNN(32, 64, 6, "same", 3),
             nn.AvgPool1d(7),
             custom1DCNN(64, 128, 4, "same", 2),
+            nn.Droupout(0.25),
         )
     
     def _create_lstm_env_block(self):
@@ -770,14 +771,11 @@ class v1_mi6_env2_gru2(nn.Module):
     def forward(self, x):
         x_env = self.env(x)
         x_env = x_env[:, :, :-1]
-        # print(x_env)
         x_env = self.cnn_env(x_env)
 
         x_env = x_env.permute(0, 2, 1)
-        # print(x_env.shape)
         lstm_out = self.lstm_env(x_env)
         lstm_out_last = lstm_out[0][:, -1, :].unsqueeze(2).unsqueeze(2)
-        # print(lstm_out_last.shape)
 
         x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 64, dim=2)
 

@@ -83,7 +83,7 @@ if __name__ == '__main__':
     model = modelPreparator.prepare()
 
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = AdamW(model.parameters(), lr=args.lr) #weight_decay=1e-5
+    optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     if args.reduce_lr == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=15, factor=0.1)
 
