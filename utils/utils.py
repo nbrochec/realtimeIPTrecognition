@@ -262,9 +262,11 @@ class ProcessDataset:
             num_samples = waveform.size(1)
 
             if self.padding == 'minimal':
-                extra_length = self.segment_length - num_samples
-                silence = torch.zeros((waveform.size(0), extra_length))
-                waveform = torch.cat((waveform, silence), dim=1)
+                if num_samples <= self.segment_length:
+                    extra_length = self.segment_length - num_samples
+                    silence = torch.zeros((waveform.size(0), extra_length))
+                    waveform = torch.cat((waveform, silence), dim=1)
+                    num_samples = waveform.size(1)
 
 
             augmenter = AudioOfflineTransforms(self.args)
