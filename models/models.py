@@ -738,7 +738,7 @@ class v1_mi6_env2_gru3(nn.Module):
             custom1DCNN(32, 64, 6, "same", 3),
             nn.AvgPool1d(7),
             custom1DCNN(64, 128, 4, "same", 2),
-            nn.Droupout(0.25),
+            nn.Dropout(0.25),
         )
     
     def _create_lstm_env_block(self):
