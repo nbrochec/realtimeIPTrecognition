@@ -85,7 +85,7 @@ if __name__ == '__main__':
     loss_fn = nn.CrossEntropyLoss()
     optimizer = AdamW(model.parameters(), lr=args.lr) #weight_decay=1e-5
     if args.reduce_lr == True:
-        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=20, factor=0.1)
 
     augmenter = AudioOnlineTransforms(args)
 
