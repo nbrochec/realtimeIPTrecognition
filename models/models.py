@@ -508,8 +508,8 @@ class v1_mi6_env2_lstm(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_mi6_env2_lstm, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420, hop_length=256)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=256, smoothing_factor=4)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -531,45 +531,46 @@ class v1_mi6_env2_lstm(nn.Module):
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 40, 7, "same", 4),
+            custom1DCNN(1, 28, 7, "same", 4),
             nn.AvgPool1d(8),
-            custom1DCNN(40, 80, 5, "same", 3),
+            custom1DCNN(28, 56, 5, "same", 3),
             nn.AvgPool1d(8),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(56, 112, 2, "same", 1),
         )
     
     def _create_lstm_env_block(self):
-        return nn.LSTM(input_size=160, hidden_size=112, batch_first=True)
+        return nn.LSTM(input_size=112, hidden_size=112, batch_first=True)
 
     def _create_cnn_block(self):
         return nn.Sequential(
             custom2DCNN(1, 28, (2, 3), "same"),
             custom2DCNN(28, 28, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)), # 35
+            nn.MaxPool2d(2), # 35, 14
             nn.Dropout2d(0.25),
             custom2DCNN(28, 56, (2, 3), "same"),
             custom2DCNN(56, 56, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)), # 17
+            nn.MaxPool2d(2), # 17, 7
             nn.Dropout2d(0.25),
             custom2DCNN(56, 112, 2, "same"),
-            nn.MaxPool2d((2, 1)), # 8
+            nn.MaxPool2d((2, 1)), # 8, 7
             nn.Dropout2d(0.25),
             custom2DCNN(112, 112, 2, "same"),
-            nn.MaxPool2d(2), # 4
+            nn.MaxPool2d(2), # 4, 3
             nn.Dropout2d(0.25),
             custom2DCNN(112, 112, 2, "same"),
-            nn.MaxPool2d((2, 1)), #2
+            nn.MaxPool2d((2, 1)), #2, 3
             nn.Dropout2d(0.25),
             custom2DCNN(112, 112, 2, "same"),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d((2, 3)),
             nn.Dropout2d(0.25),
         )
 
     def forward(self, x):
         x_env = self.env(x)
         x_env = x_env[:, :, :-1]
+        # print(x_env)
         x_env = self.cnn_env(x_env)
-        # print(x_env.shape)
+
         x_env = x_env.permute(0, 2, 1)
         # print(x_env.shape)
         lstm_out = self.lstm_env(x_env)
