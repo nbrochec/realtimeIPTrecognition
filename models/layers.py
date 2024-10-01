@@ -55,7 +55,7 @@ class LogMelSpectrogramLayer(nn.Module):
     def forward(self, x):
         x = self.mel_scale(x)
         x = self.amplitude_to_db(x)
-        x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
+        # x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
         x = self.min_max_normalize(x)
         return x.to(torch.float32)
 
@@ -144,5 +144,5 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         if self.smoothing_factor is not None:
             envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
 
-        norm_env = self.min_max_normalize(envelope_output)
-        return norm_env
+        # norm_env = self.min_max_normalize(envelope_output)
+        return envelope_output
