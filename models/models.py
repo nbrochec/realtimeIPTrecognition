@@ -539,7 +539,7 @@ class v1_mi6_env2_lstm(nn.Module):
         )
     
     def _create_lstm_env_block(self):
-        return nn.LSTM(input_size=160, hidden_size=112, batch_first=True)
+        return nn.LSTM(input_size=112, hidden_size=112, batch_first=True)
     
 
     def _create_cnn_block(self):
