@@ -511,7 +511,7 @@ class v1_mi6_env2_lstm(nn.Module):
         super(v1_mi6_env2_lstm, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=384, hop_length=512)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=200)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=512)
 
         self.relu = nn.ReLU()
         
