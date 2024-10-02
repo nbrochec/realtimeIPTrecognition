@@ -108,7 +108,7 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         self.hop_length = hop_length
         self.smoothing_factor = smoothing_factor
 
-    def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
+    def min_max_normalize(self, t: torch.Tensor, min: float = -1.0, max: float = 1.0) -> torch.Tensor:
         min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
         max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
         eps = 1e-5
@@ -127,6 +127,9 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         batch_size, n_channels, time = x.shape
         window = torch.hann_window(self.n_fft).to(x.device)
         envelope_list = []
+
+        x = self.min_max_normalize(x)
+
         for i in range(n_channels):
             stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
             
