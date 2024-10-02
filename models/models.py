@@ -427,8 +427,8 @@ class v1_mi6_env2(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1_mi6_env2, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420, hop_length=256)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=256)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=420, hop_length=512)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=200)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -450,7 +450,6 @@ class v1_mi6_env2(nn.Module):
     def _create_cnn_env_block(self):
         return nn.Sequential(
             nn.BatchNorm1d(1),
-            nn.LeakyReLU(),
             custom1DCNN(1, 40, 7, "same", 4),
             nn.AvgPool1d(16),
             custom1DCNN(40, 40, 5, "same", 3),
@@ -466,23 +465,23 @@ class v1_mi6_env2(nn.Module):
         return nn.Sequential(
             custom2DCNN(1, 40, (2, 3), "same"),
             custom2DCNN(40, 40, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)), # 35, 29
+            nn.MaxPool2d((2, 1)), # 35, 15
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 3), "same"),
             custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d(2), # 17, 14
+            nn.MaxPool2d((2, 3)), # 17, 5
             nn.Dropout2d(0.25),
             custom2DCNN(80, 160, 2, "same"),
-            nn.MaxPool2d(2), # 8, 7
+            nn.MaxPool2d(2), # 8, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 4, 3
+            nn.MaxPool2d((2, 1)), # 4, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2), #2, 1
+            nn.MaxPool2d((2, 1)), #2, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)), #1, 1
+            nn.MaxPool2d(2), # 
             nn.Dropout2d(0.25),
         )
 

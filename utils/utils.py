@@ -236,7 +236,7 @@ class ProcessDataset:
         Remove silence from the audio waveform.
         """
         wav = waveform.detach().cpu().numpy()
-        wav = librosa.effects.trim(wav)
+        wav = librosa.effects.trim(wav, top_db=50)
         return torch.tensor(wav[0])
     
     def process_all_files(self):
