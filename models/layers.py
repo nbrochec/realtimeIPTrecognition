@@ -128,7 +128,7 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         window = torch.hann_window(self.n_fft).to(x.device)
         envelope_list = []
 
-        x = self.min_max_normalize(x)
+        # x = self.min_max_normalize(x)
 
         for i in range(n_channels):
             stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
@@ -144,8 +144,8 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
 
         envelope_output = torch.cat(envelope_list, dim=1)  # Shape: [batch, n_channels, time]
 
-        if self.smoothing_factor is not None:
-            envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
+        # if self.smoothing_factor is not None:
+        #     envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
 
-        # norm_env = self.min_max_normalize(envelope_output)
+        # # norm_env = self.min_max_normalize(envelope_output)
         return envelope_output
