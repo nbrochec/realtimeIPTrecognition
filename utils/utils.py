@@ -477,8 +477,8 @@ class PrepareData:
         val_dataset = ProcessDataset('val', self.csv, self.args, self.seg_len)
 
         train_loader = BalancedDataLoader(train_dataset.get_data(), self.device, self.args).get_dataloader()
-        test_loader = DataLoader(test_dataset.get_data())
-        val_loader = DataLoader(val_dataset.get_data())
+        test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
+        val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
         
         print('Data successfully loaded into DataLoaders.')
 
