@@ -522,11 +522,11 @@ class v1_mi6_env2_lstm(nn.Module):
         self.lstm_env = self._create_lstm_env_block()
 
         self.fc = nn.Sequential(
-            nn.Linear(128 * 7, 384),
+            nn.Linear(128 * 7, 128),
             nn.ReLU(),
-            nn.Linear(384, 128), 
+            nn.Linear(128, 64), 
             nn.ReLU(),
-            nn.Linear(128, output_nbr)
+            nn.Linear(64, output_nbr)
         )
 
     def _create_cnn_env_block(self):
