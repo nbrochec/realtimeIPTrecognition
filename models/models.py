@@ -449,15 +449,17 @@ class v1_mi6_env2(nn.Module):
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
+            nn.BatchNorm1d(1),
+            nn.LeakyReLU(),
             custom1DCNN(1, 40, 7, "same", 4),
             nn.AvgPool1d(16),
             custom1DCNN(40, 40, 5, "same", 3),
-            nn.AvgPool1d(8),
-            custom1DCNN(40, 80, 3, "same", 2),
-            nn.AvgPool1d(8),
-            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(16),
+            custom1DCNN(40, 80, 2, "same", 1),
             nn.AvgPool1d(7),
-            nn.Dropout1d(0.1),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(4),
+            nn.Dropout1d(0.25),
         )
 
     def _create_cnn_block(self):
@@ -486,7 +488,8 @@ class v1_mi6_env2(nn.Module):
 
     def forward(self, x):
         x_env = self.env(x)
-        x_env = x_env[:, :, :-1]
+        # x_env = x_env[:, :, :-1]
+        # print(x_env.shape)
         x_env = self.cnn_env(x_env)
 
         x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 70, dim=2)
