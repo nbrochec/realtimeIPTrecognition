@@ -511,7 +511,7 @@ class v1_mi6_env2_lstm(nn.Module):
         super(v1_mi6_env2_lstm, self).__init__()
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr, n_mels=384, hop_length=512)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=200)
 
         self.relu = nn.ReLU()
         
@@ -535,6 +535,7 @@ class v1_mi6_env2_lstm(nn.Module):
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
+            nn.BatchNorm1d(1),
             custom1DCNN(1, 32, 7, "same", 4),
             nn.AvgPool1d(8),
             custom1DCNN(32, 64, 5, "same", 3),
