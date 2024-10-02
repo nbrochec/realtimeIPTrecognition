@@ -478,10 +478,10 @@ class v1_mi6_env2(nn.Module):
             nn.MaxPool2d((2, 1)), # 4, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)), #2, 2
+            nn.MaxPool2d((2, 1)), # 2, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 
+            nn.MaxPool2d(2), # 1
             nn.Dropout2d(0.25),
         )
 
