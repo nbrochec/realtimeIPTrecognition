@@ -144,19 +144,27 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
             analytic_signal = torch.istft(stft_analytic, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=False)
             
             envelope = torch.abs(analytic_signal)
-            envelope = self.rms_normalize(envelope)
+            # envelope = self.rms_normalize(envelope)
+            # different normalisation
+            envelope = envelope / envelope.amax(dim=-1, keepdim=True)
             envelope_list.append(envelope.unsqueeze(1))
 
         envelope_output = torch.cat(envelope_list, dim=1)
 
-        envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
+        if self.smoothing_factor is not None:
+            # Enhanced Smoothing
+            kernel = torch.ones(1, 1, self.smoothing_factor).to(x.device) / self.smoothing_factor
+            envelope_output = F.pad(envelope_output, (self.smoothing_factor//2, self.smoothing_factor//2), mode='reflect')
+            envelope_output = F.conv1d(envelope_output, kernel, stride=1)
 
-        # envelope = envelope_output[0, 0, :].cpu().numpy()
+        # envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
 
-        # plt.plot(envelope)
-        # plt.title('Envelope Output')
-        # plt.xlabel('Time')
-        # plt.ylabel('Amplitude')
-        # plt.show()
+        envelope = envelope_output[0, 0, :].cpu().numpy()
+
+        plt.plot(envelope)
+        plt.title('Envelope Output')
+        plt.xlabel('Time')
+        plt.ylabel('Amplitude')
+        plt.show()
 
         return envelope_output
