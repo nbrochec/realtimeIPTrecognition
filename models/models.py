@@ -539,7 +539,10 @@ class v1_mi6_env2_lstm(nn.Module):
         )
     
     def _create_lstm_env_block(self):
-        return nn.LSTM(input_size=128, hidden_size=128, batch_first=True)    
+        return nn.Sequential(
+            nn.LSTM(input_size=128, hidden_size=128, batch_first=True),
+            nn.ReLU,
+        ) 
 
     def _create_cnn_block(self):
         return nn.Sequential(
@@ -564,30 +567,6 @@ class v1_mi6_env2_lstm(nn.Module):
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
-
-    # def _create_cnn_block(self):
-    #     return nn.Sequential(
-    #         custom2DCNN(1, 28, (2, 3), "same"),
-    #         custom2DCNN(28, 28, (2, 3), "same"),
-    #         nn.MaxPool2d(2), # 35, 14
-    #         nn.Dropout2d(0.25),
-    #         custom2DCNN(28, 56, (2, 3), "same"),
-    #         custom2DCNN(56, 56, (2, 3), "same"),
-    #         nn.MaxPool2d(2), # 17, 7
-    #         nn.Dropout2d(0.25),
-    #         custom2DCNN(56, 112, 2, "same"),
-    #         nn.MaxPool2d((2, 1)), # 8, 7
-    #         nn.Dropout2d(0.25),
-    #         custom2DCNN(112, 112, 2, "same"),
-    #         nn.MaxPool2d(2), # 4, 3
-    #         nn.Dropout2d(0.25),
-    #         custom2DCNN(112, 112, 2, "same"),
-    #         nn.MaxPool2d((2, 1)), #2, 3
-    #         nn.Dropout2d(0.25),
-    #         custom2DCNN(112, 112, 2, "same"),
-    #         nn.MaxPool2d((2, 3)),
-    #         nn.Dropout2d(0.25),
-    #     )
 
     def forward(self, x):
         x_env = self.env(x)
@@ -742,7 +721,10 @@ class v1_mi6_env2_gru3(nn.Module):
         )
     
     def _create_lstm_env_block(self):
-        return nn.GRU(input_size=128, hidden_size=128, batch_first=True)    
+        return nn.Sequential(
+            nn.GRU(input_size=128, hidden_size=128, batch_first=True),
+            nn.ReLU()
+        ) 
 
     def _create_cnn_block(self):
         return nn.Sequential(
