@@ -160,6 +160,8 @@ if __name__ == '__main__':
             counter = 0
             num_epoch = epoch
             best_state = model.state_dict()
+            # Save the checkpoints each time a model version is better than the former one
+            torch.save(model.state_dict(), f'{current_run}/{args.name}_{date}_{time}.pth')
         else:
             if args.early_stopping:
                 counter += 1
