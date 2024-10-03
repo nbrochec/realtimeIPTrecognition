@@ -159,12 +159,12 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
 
         # envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
 
-        envelope = envelope_output[0, 0, :].cpu().numpy()
+        # envelope = envelope_output[0, 0, :].cpu().numpy()
 
-        plt.plot(envelope)
-        plt.title('Envelope Output')
-        plt.xlabel('Time')
-        plt.ylabel('Amplitude')
-        plt.show()
+        # plt.plot(envelope)
+        # plt.title('Envelope Output')
+        # plt.xlabel('Time')
+        # plt.ylabel('Amplitude')
+        # plt.show()
 
         return envelope_output
