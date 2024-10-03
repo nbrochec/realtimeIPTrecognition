@@ -218,7 +218,7 @@ class ProcessDataset:
         self.args = args
         self.offline_aug = args.offline_augment
 
-        self.offline_aug = True
+        #self.offline_aug = True
 
         self.data = pd.read_csv(self.csv_path)
         
