@@ -152,25 +152,41 @@ class ModelTrainer:
         self.loss_fn = loss_fn
         self.device = device
 
-    def train_epoch(self, loader, optimizer, augmenter):
+    def train_epoch(self, loader, optimizer, augmenter=None):
         """
         Perform one training epoch.
+        Parameters
+        ----------
+        loader : DataLoader
+            The data loader for the training data.
+        optimizer : torch.optim.Optimizer
+            The optimizer to use for updating model weights.
+        augmenter : callable or None
+            The augmentation function to apply to the data if provided.
         """
         self.model.train()
         running_loss = 0.0
 
+        # Check if online augmentations are applied or not
+        if augmenter is not None:
+            print("Online augmentations are being applied.")
+        else:
+            print("No online augmentations applied.")
+
         for data, targets in tqdm(loader, desc="Training", leave=False):
             data, targets = data.to(self.device), targets.to(self.device)
             optimizer.zero_grad()
-            
-            aug_data = augmenter(data)
 
-            outputs = self.model(aug_data)
+            # Apply augmenter only if it's not None
+            if augmenter is not None:
+                data = augmenter(data)
+
+            outputs = self.model(data)
             loss = self.loss_fn(outputs, targets)
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * data.size(0)
-        
+
         return running_loss / len(loader.dataset)
 
     def validate_epoch(self, loader):
@@ -188,8 +204,8 @@ class ModelTrainer:
 
         val_acc = MulticlassAccuracy(num_classes=class_nbr, average='micro').to(self.device)
         val_f1 = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
-        val_pre = MulticlassPrecision(num_classes=class_nbr).to(self.device).to(self.device)
-        val_rec = MulticlassRecall(num_classes=class_nbr).to(self.device).to(self.device)
+        val_pre = MulticlassPrecision(num_classes=class_nbr).to(self.device)
+        val_rec = MulticlassRecall(num_classes=class_nbr).to(self.device)
 
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Validation", leave=False):
@@ -206,7 +222,7 @@ class ModelTrainer:
 
         val_loss = running_loss / len(loader.dataset)
         val_loss = torch.tensor(val_loss).to(self.device)
-    
+
         val_acc = val_acc.compute().detach().cpu().item()
         val_pre = val_pre.compute().detach().cpu().item()
         val_rec = val_rec.compute().detach().cpu().item()
