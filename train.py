@@ -87,7 +87,19 @@ if __name__ == '__main__':
     if args.reduce_lr == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)
 
-    augmenter = AudioOnlineTransforms(args)
+    # Initialize online augmenter if augmentations are specified
+    augmenter = AudioOnlineTransforms(args) if args.online_augment else None
+    if augmenter:
+        print(f'Online augmentations are enabled: {args.online_augment}')
+    else:
+        print('No online augmentations applied.')
+
+    # Initialize offline augmenter if offline augment is True
+    offline_augmenter = AudioOfflineTransforms(args) if args.offline_augment else None
+    if offline_augmenter:
+        print('Offline augmentations are enabled.')
+    else:
+        print('No offline augmentations applied.')
 
     max_val_loss = np.inf
     early_stopping_threshold = args.early_stopping
@@ -100,20 +112,31 @@ if __name__ == '__main__':
     current_run = f'{get_run_dir(args.name)}_{date}_{time}'
     SaveYAML.save_to_disk(args, num_classes, current_run)
     print(f'Run {args.name}_{date}_{time}.')
-    
-    writer = SummaryWriter(log_dir= f'runs/{args.name}_{date}_{time}')
+
+    writer = SummaryWriter(log_dir=f'runs/{args.name}_{date}_{time}')
     args.num_classes = num_classes
     args_dict = vars(args)
     writer.add_text('Hyperparameters', Dict2MDTable.apply(args_dict), 1)
 
     for epoch in range(args.epochs):
-        if args.online_augment is True:
-            train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
+        # Print whether augmentations are being applied during this epoch
+        if augmenter:
+            print(f'Epoch {epoch+1}: Applying online augmentations.')
         else:
-            train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
+            print(f'Epoch {epoch+1}: No online augmentations applied.')
+
+        if offline_augmenter:
+            print(f'Epoch {epoch+1}: Offline augmentations were applied during data preparation.')
+        else:
+            print(f'Epoch {epoch+1}: No offline augmentations applied during data preparation.')
+
+        # If online augmentations are specified, use augmenter, otherwise set None
+        train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
+        
         writer.add_scalar('epoch/epoch', epoch, epoch)
         writer.add_scalar('Loss/train', train_loss, epoch)
 
+        # Validation step
         val_loss, val_acc, val_pre, val_rec, val_f1 = trainer.validate_epoch(val_loader)
         writer.add_scalar('Loss/val', val_loss, epoch)
         writer.add_scalar('Accuracy/val', val_acc, epoch)
@@ -121,9 +144,11 @@ if __name__ == '__main__':
         writer.add_scalar('Recall/val', val_rec, epoch)
         writer.add_scalar('F1/val', val_f1, epoch)
 
+        # Reduce learning rate if applicable
         if args.reduce_lr:
             scheduler.step(val_loss)
-        
+
+        # Early stopping
         if val_loss < max_val_loss:
             max_val_loss = val_loss
             counter = 0
@@ -138,6 +163,7 @@ if __name__ == '__main__':
 
     model.load_state_dict(best_state)
 
+    # Test the model and save metrics
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
     SaveResultsToTensorboard.upload(stkd_mtrs, cm, csv_file_path, writer)
@@ -146,8 +172,9 @@ if __name__ == '__main__':
     SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, csv_file_path, current_run)
     print(f'Results and Confusion Matrix have been saved in the logs/{os.path.basename(current_run)} directory.')
 
+    # Save the model checkpoint
     torch.save(model.state_dict(), f'{current_run}/{args.name}_{date}_{time}.pth')
-    print(f'Checkpoints has been saved in the {os.path.relpath(current_run)} directory.')
+    print(f'Checkpoint has been saved in the {os.path.relpath(current_run)} directory.')
 
     if args.export_ts:
         model = model.to('cpu')
