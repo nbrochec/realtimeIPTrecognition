@@ -191,21 +191,6 @@ class ProcessDataset:
     def __init__(self, set_type, csv_path, args, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
         """
         Initialize the ProcessDataset class.
-
-        Parameters
-        ----------
-        set_type : str
-            The type of dataset to process ('train', 'test', or 'val').
-        csv_path : str
-            Path to the CSV file containing file paths, labels, and set information.
-        args : Arguments
-            Arguments object containing settings for augmentations and other configurations.
-        segment_length : int
-            The length of each audio segment to be extracted.
-        silence_threshold : float
-            Threshold below which sound is considered silence.
-        min_silence_len : float
-            Minimum length of silence to remove.
         """
         self.set_type = set_type
         self.csv_path = csv_path
@@ -216,12 +201,10 @@ class ProcessDataset:
         self.segment_overlap = args.segment_overlap
         self.padding = args.padding
         self.args = args
-        self.offline_aug = args.offline_augment
+        self.offline_aug = args.offline_augment  # Get from command-line arguments
 
-        #self.offline_aug = True
-
+        # Load CSV data
         self.data = pd.read_csv(self.csv_path)
-        
         self.data = self.data[self.data['set'] == self.set_type]
         
         self.label_map = {label: idx for idx, label in enumerate(sorted(self.data['label'].unique()))}
@@ -232,9 +215,7 @@ class ProcessDataset:
         self.process_all_files()
 
     def remove_silence(self, waveform):
-        """
-        Remove silence from the audio waveform.
-        """
+        """Remove silence from the audio waveform."""
         wav = waveform.detach().cpu().numpy()
         wav = librosa.effects.trim(wav)
         return torch.tensor(wav[0])
@@ -247,7 +228,6 @@ class ProcessDataset:
             file_path = row['file_path']
             label_name = row['label']
             label = self.label_map[label_name]
-            # print(f'file {file_path}')
             waveform, original_sr = torchaudio.load(file_path)
 
             if original_sr != self.target_sr:
@@ -261,6 +241,7 @@ class ProcessDataset:
 
             num_samples = waveform.size(1)
 
+            # Minimal padding logic
             if self.padding == 'minimal':
                 if num_samples <= self.segment_length:
                     extra_length = self.segment_length - num_samples
@@ -268,11 +249,11 @@ class ProcessDataset:
                     waveform = torch.cat((waveform, silence), dim=1)
                     num_samples = waveform.size(1)
 
-
             augmenter = AudioOfflineTransforms(self.args)
 
-            if self.segment_overlap == True and self.set_type == 'train':
-                for i in range(0, num_samples, self.segment_length//2):
+            # Segment overlap logic for training set
+            if self.segment_overlap and self.set_type == 'train':
+                for i in range(0, num_samples, self.segment_length // 2):
                     if i + self.segment_length <= num_samples:
                         segment = waveform[:, i:i + self.segment_length]
                     else:
@@ -281,18 +262,21 @@ class ProcessDataset:
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
                     
-                    if self.offline_aug == True:
+                    # Apply offline augmentations only if enabled
+                    if self.offline_aug:
+                        print("Applying offline augmentations...")
                         aug1, aug2, aug3 = augmenter(segment)
-
                         self.X.append(aug1)
                         self.X.append(aug2)
                         self.X.append(aug3)
-                        # self.X.append(aug4)
                         self.y.extend([label] * 3)
+                    else:
+                        print("No offline augmentations applied.")
 
                     self.X.append(segment)
                     self.y.append(label)
 
+            # Standard segment logic for training set without overlap
             elif self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length):
                     if i + self.segment_length <= num_samples:
@@ -303,18 +287,21 @@ class ProcessDataset:
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
 
-                    if self.offline_aug == True:
+                    # Apply offline augmentations only if enabled
+                    if self.offline_aug:
+                        print("Applying offline augmentations...")
                         aug1, aug2, aug3 = augmenter(segment)
-
                         self.X.append(aug1)
                         self.X.append(aug2)
                         self.X.append(aug3)
-                        # self.X.append(aug4)
                         self.y.extend([label] * 3)
+                    else:
+                        print("No offline augmentations applied.")
 
                     self.X.append(segment)
                     self.y.append(label)
 
+            # For validation and test sets
             else:
                 for i in range(0, num_samples, self.segment_length):
                     if i + self.segment_length <= num_samples:
