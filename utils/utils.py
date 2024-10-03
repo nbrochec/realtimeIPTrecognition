@@ -268,8 +268,8 @@ class ProcessDataset:
                     waveform = torch.cat((waveform, silence), dim=1)
                     num_samples = waveform.size(1)
 
-
-            augmenter = AudioOfflineTransforms(self.args)
+            if self.offline_aug == True:
+                augmenter = AudioOfflineTransforms(self.args)
 
             if self.segment_overlap == True and self.set_type == 'train':
                 for i in range(0, num_samples, self.segment_length//2):
