@@ -32,6 +32,7 @@ from models import *
 from utils import *
 
 def parse_arguments():
+
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description='This script launches the training process.')
     parser.add_argument('--name', type=str, help='Name of the project.', required=True)
@@ -39,19 +40,49 @@ def parse_arguments():
     parser.add_argument('--gpu', type=int, default=0, help='Specify which GPU to use.')
     parser.add_argument('--config', type=str, default='v2', help='Model version.')
     parser.add_argument('--sr', type=int, default=24000, help='Sampling rate for downsampling the audio files.')
-    parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap between audio segments. Increase the data samples by a factor 2.')
+    parser.add_argument('--segment_overlap', type=str, default='False', help='Overlap between audio segments. Increase the data samples by a factor 2.')
     parser.add_argument('--fmin', type=int, default=0, help='Minimum frequency for logmelspec analysis.')
     parser.add_argument('--online_augment', type=str, default='', help='Specify which online augmentations to use.')
-    parser.add_argument('--offline_augment', type=bool, default=True, help='Use offline augmentations.')
+    parser.add_argument('--offline_augment', type=str, default='True', help='Use offline augmentations. True or False.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs.')
     parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
-    parser.add_argument('--reduce_lr', type=bool, default=False, help='Reduce learning rate if validation plateaus.')
-    parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
+    parser.add_argument('--reduce_lr', type=str, default='False', help='Reduce learning rate if validation plateaus. True or False.')
+    parser.add_argument('--export_ts', type=str, default='True', help='Export TorchScript file of the model. True or False.')
     parser.add_argument('--padding', type=str, default='minimal', help='Pad the arrays with zeros.')
-    parser.add_argument('--save_logs', type=bool, default=True, help='Save results and confusion matrix to disk.')
+    parser.add_argument('--save_logs', type=str, default='True', help='Save results and confusion matrix to disk. True or False.')
     parser.add_argument('--batch_size', type=int, default=128, help='Specify batch size.')
-    return parser.parse_args()
+    
+    args = parser.parse_args()
+    
+    # Convert string to boolean
+    args.segment_overlap = args.segment_overlap.lower() in ['true', '1']
+    args.offline_augment = args.offline_augment.lower() in ['true', '1']
+    args.reduce_lr = args.reduce_lr.lower() in ['true', '1']
+    args.export_ts = args.export_ts.lower() in ['true', '1']
+    args.save_logs = args.save_logs.lower() in ['true', '1']
+
+    return args
+    # """Parse command-line arguments."""
+    # parser = argparse.ArgumentParser(description='This script launches the training process.')
+    # parser.add_argument('--name', type=str, help='Name of the project.', required=True)
+    # parser.add_argument('--device', type=str, default='cpu', help='Specify the hardware on which computation should be performed.')
+    # parser.add_argument('--gpu', type=int, default=0, help='Specify which GPU to use.')
+    # parser.add_argument('--config', type=str, default='v2', help='Model version.')
+    # parser.add_argument('--sr', type=int, default=24000, help='Sampling rate for downsampling the audio files.')
+    # parser.add_argument('--segment_overlap', type=bool, default=False, help='Overlap between audio segments. Increase the data samples by a factor 2.')
+    # parser.add_argument('--fmin', type=int, default=0, help='Minimum frequency for logmelspec analysis.')
+    # parser.add_argument('--online_augment', type=str, default='', help='Specify which online augmentations to use.')
+    # parser.add_argument('--offline_augment', type=bool, default=True, help='Use offline augmentations.')
+    # parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
+    # parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs.')
+    # parser.add_argument('--early_stopping', type=int, default=None, help='Number of epochs without improvement before early stopping.')
+    # parser.add_argument('--reduce_lr', type=bool, default=False, help='Reduce learning rate if validation plateaus.')
+    # parser.add_argument('--export_ts', type=bool, default=True, help='Export TorchScript file of the model.')
+    # parser.add_argument('--padding', type=str, default='minimal', help='Pad the arrays with zeros.')
+    # parser.add_argument('--save_logs', type=bool, default=True, help='Save results and confusion matrix to disk.')
+    # parser.add_argument('--batch_size', type=int, default=128, help='Specify batch size.')
+    # return parser.parse_args()
     
 def get_run_dir(run_name):
     """Create runs and the current run directories."""

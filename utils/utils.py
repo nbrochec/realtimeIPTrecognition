@@ -217,7 +217,7 @@ class ProcessDataset:
         self.padding = args.padding
         self.args = args
         self.offline_aug = args.offline_augment
-        print(f'file {self.offline_aug}')
+        print(f'self offline augmentations: {self.offline_aug}')
         #self.offline_aug = True
 
         self.data = pd.read_csv(self.csv_path)
