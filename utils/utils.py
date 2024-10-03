@@ -203,6 +203,8 @@ class ProcessDataset:
         self.args = args
         self.offline_aug = args.offline_augment  # Get from command-line arguments
 
+        print(f"Offline Augmentation Enabled: {self.offline_aug}")  # Debugging statement
+
         # Load CSV data
         self.data = pd.read_csv(self.csv_path)
         self.data = self.data[self.data['set'] == self.set_type]
@@ -262,6 +264,9 @@ class ProcessDataset:
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
                     
+                    # Debugging: Print segment shape and augmentation status
+                    print(f"Processing segment of shape: {segment.shape} (i={i})")
+
                     # Apply offline augmentations only if enabled
                     if self.offline_aug:
                         print("Applying offline augmentations...")
@@ -286,6 +291,9 @@ class ProcessDataset:
                             valid_length = num_samples - i
                             segment = torch.zeros((waveform.size(0), self.segment_length))
                             segment[:, :valid_length] = waveform[:, i:i + valid_length]
+
+                    # Debugging: Print segment shape and augmentation status
+                    print(f"Processing segment of shape: {segment.shape} (i={i})")
 
                     # Apply offline augmentations only if enabled
                     if self.offline_aug:
