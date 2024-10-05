@@ -25,9 +25,11 @@ source activate base
 conda activate IPT
 ```
 Make sure that `portaudio`is installed on your computer.
+On Linux:
 ```
 sudo apt-get install portaudio19-dev
 ```
+On MacOS using Homebrew:
 ```
 brew install portaudio
 ```
