@@ -22,7 +22,7 @@ from utils.constants import SEGMENT_LENGTH
 class v1(nn.Module):
     def __init__(self, output_nbr, sr):
         super(v1, self).__init__()
-
+        self.sr = sr
         self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
         
         self.cnn = nn.Sequential(
@@ -53,6 +53,10 @@ class v1(nn.Module):
             nn.Linear(80, 40),
             nn.Linear(40, output_nbr)
         )
+
+    @torch.jit.export
+    def get_attributes(self):
+        return self.sr
 
     def forward(self, x):
         x = self.logmel(x)
