@@ -30,9 +30,7 @@ from sklearn.model_selection import train_test_split
 class DirectoryManager:
     @staticmethod
     def ensure_dir_exists(directory):
-        """
-        Ensures that the directory exists. If not, creates it.
-        """
+        """Ensures that the directory exists. If not, creates it."""
         if not os.path.exists(directory):
             os.makedirs(directory)
             print(f'{directory} has been created.')
@@ -188,7 +186,7 @@ class DatasetValidator:
 
 
 class ProcessDataset:
-    def __init__(self, set_type, csv_path, args, segment_length, silence_threshold=1e-4, min_silence_len=0.1):
+    def __init__(self, set_type, csv_path, args, segment_length):
         """
         Initialize the ProcessDataset class.
 
@@ -202,22 +200,18 @@ class ProcessDataset:
             Arguments object containing settings for augmentations and other configurations.
         segment_length : int
             The length of each audio segment to be extracted.
-        silence_threshold : float
-            Threshold below which sound is considered silence.
-        min_silence_len : float
-            Minimum length of silence to remove.
         """
         self.set_type = set_type
         self.csv_path = csv_path
         self.target_sr = args.sr
         self.segment_length = segment_length
-        self.silence_threshold = silence_threshold
-        self.min_silence_len = min_silence_len
+        # self.silence_threshold = silence_threshold
+        # self.min_silence_len = min_silence_len
         self.segment_overlap = args.segment_overlap
         self.padding = args.padding
         self.args = args
         self.offline_aug = args.offline_augment
-        print(f'self offline augmentations: {self.offline_aug}')
+        
         #self.offline_aug = True
 
         self.data = pd.read_csv(self.csv_path)
@@ -232,22 +226,46 @@ class ProcessDataset:
         self.process_all_files()
 
     def remove_silence(self, waveform):
-        """
-        Remove silence from the audio waveform.
-        """
+        """Remove silence from the audio waveform."""
         wav = waveform.detach().cpu().numpy()
         wav = librosa.effects.trim(wav)
         return torch.tensor(wav[0])
     
+    def pad_waveform(self, waveform, target_length):
+        """Add silence to the waveform to match the target length."""
+        extra_length = target_length - waveform.size(1)
+        if extra_length > 0:
+            silence = torch.zeros((waveform.size(0), extra_length))
+            waveform = torch.cat((waveform, silence), dim=1)
+        return waveform
+    
+    def process_segment(self, waveform):
+        """Process the waveform by dividing it into segments with or without overlap."""
+        segments = []
+        num_samples = waveform.size(1)
+
+        for i in range(0, num_samples, self.segment_length if not self.segment_overlap else self.segment_length // 2):
+            if i + self.segment_length <= num_samples:
+                segment = waveform[:, i:i + self.segment_length]
+            else:
+                if self.padding == 'full':
+                    valid_length = num_samples - i
+                    segment = torch.zeros((waveform.size(0), self.segment_length))
+                    segment[:, :valid_length] = waveform[:, i:i + valid_length]
+            segments.append(segment)
+
+        return segments
+    
     def process_all_files(self):
-        """
-        Process all audio files and store them in X and y.
-        """
+        """Process all audio files and store them in X and y."""
+        augmenter = AudioOfflineTransforms(self.args) if self.offline_aug else None
+        if self.offline_aug and self.set_type == 'train':
+            print(f'self offline augmentations: {self.offline_aug}')  
+
         for _, row in tqdm(self.data.iterrows()):
-            file_path = row['file_path']
-            label_name = row['label']
+            file_path, label_name = row['file_path'], row['label']
             label = self.label_map[label_name]
-            # print(f'file {file_path}')
+
             waveform, original_sr = torchaudio.load(file_path)
 
             if original_sr != self.target_sr:
@@ -259,98 +277,133 @@ class ProcessDataset:
             if waveform.shape[0] == 2:
                 waveform = waveform[0, :].unsqueeze(0)
 
-            num_samples = waveform.size(1)
+            if self.padding == 'minimal' and waveform.size(1) < self.segment_length:
+                waveform = self.pad_waveform(waveform, self.segment_length)
 
-            if self.padding == 'minimal':
-                if num_samples <= self.segment_length:
-                    extra_length = self.segment_length - num_samples
-                    silence = torch.zeros((waveform.size(0), extra_length))
-                    waveform = torch.cat((waveform, silence), dim=1)
-                    num_samples = waveform.size(1)
+            segments = self.process_segment(waveform)
 
-            if self.offline_aug == True:
-                augmenter = AudioOfflineTransforms(self.args)
+            for segment in segments:
+                if augmenter and self.set_type == 'train':
+                    aug1, aug2, aug3 = augmenter(segment)
+                    self.X.extend([aug1, aug2, aug3])
+                    self.y.extend([label] * 3)
 
-            if self.segment_overlap == True and self.set_type == 'train':
-                for i in range(0, num_samples, self.segment_length//2):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        if self.padding == 'full':
-                            valid_length = num_samples - i
-                            segment = torch.zeros((waveform.size(0), self.segment_length))
-                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
-                    
-                    if self.offline_aug == True:
-                        aug1, aug2, aug3 = augmenter(segment)
-
-                        self.X.append(aug1)
-                        self.X.append(aug2)
-                        self.X.append(aug3)
-                        # self.X.append(aug4)
-                        self.y.extend([label] * 3)
-
-                    self.X.append(segment)
-                    self.y.append(label)
-
-            elif self.set_type == 'train':
-                for i in range(0, num_samples, self.segment_length):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        if self.padding == 'full':
-                            valid_length = num_samples - i
-                            segment = torch.zeros((waveform.size(0), self.segment_length))
-                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
-
-                    if self.offline_aug == True:
-                        aug1, aug2, aug3 = augmenter(segment)
-
-                        self.X.append(aug1)
-                        self.X.append(aug2)
-                        self.X.append(aug3)
-                        # self.X.append(aug4)
-                        self.y.extend([label] * 3)
-
-                    self.X.append(segment)
-                    self.y.append(label)
-
-            else:
-                for i in range(0, num_samples, self.segment_length):
-                    if i + self.segment_length <= num_samples:
-                        segment = waveform[:, i:i + self.segment_length]
-                    else:
-                        if self.padding == 'full':
-                            valid_length = num_samples - i
-                            segment = torch.zeros((waveform.size(0), self.segment_length))
-                            segment[:, :valid_length] = waveform[:, i:i + valid_length]
-                    
-                    self.X.append(segment)
-                    self.y.append(label)
+                self.X.append(segment)
+                self.y.append(label)
 
         self.X = torch.stack(self.X)
         self.y = torch.tensor(self.y)
+    
+    # def process_all_files(self):
+    #     """
+    #     Process all audio files and store them in X and y.
+    #     """
+    #     for _, row in tqdm(self.data.iterrows()):
+    #         file_path = row['file_path']
+    #         label_name = row['label']
+    #         label = self.label_map[label_name]
+    #         # print(f'file {file_path}')
+    #         waveform, original_sr = torchaudio.load(file_path)
+
+    #         if original_sr != self.target_sr:
+    #             waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
+
+    #         if label_name != 'silence':
+    #             waveform = self.remove_silence(waveform)
+
+    #         if waveform.shape[0] == 2:
+    #             waveform = waveform[0, :].unsqueeze(0)
+
+    #         num_samples = waveform.size(1)
+
+    #         if self.padding == 'minimal':
+    #             if num_samples <= self.segment_length:
+    #                 extra_length = self.segment_length - num_samples
+    #                 silence = torch.zeros((waveform.size(0), extra_length))
+    #                 waveform = torch.cat((waveform, silence), dim=1)
+    #                 num_samples = waveform.size(1)
+
+    #         if self.offline_aug == True:
+    #             augmenter = AudioOfflineTransforms(self.args)
+
+    #         if self.segment_overlap == True and self.set_type == 'train':
+    #             for i in range(0, num_samples, self.segment_length//2):
+    #                 if i + self.segment_length <= num_samples:
+    #                     segment = waveform[:, i:i + self.segment_length]
+    #                 else:
+    #                     if self.padding == 'full':
+    #                         valid_length = num_samples - i
+    #                         segment = torch.zeros((waveform.size(0), self.segment_length))
+    #                         segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    
+    #                 if self.offline_aug == True:
+    #                     aug1, aug2, aug3 = augmenter(segment)
+
+    #                     self.X.append(aug1)
+    #                     self.X.append(aug2)
+    #                     self.X.append(aug3)
+    #                     # self.X.append(aug4)
+    #                     self.y.extend([label] * 3)
+
+    #                 self.X.append(segment)
+    #                 self.y.append(label)
+
+    #         elif self.set_type == 'train':
+    #             for i in range(0, num_samples, self.segment_length):
+    #                 if i + self.segment_length <= num_samples:
+    #                     segment = waveform[:, i:i + self.segment_length]
+    #                 else:
+    #                     if self.padding == 'full':
+    #                         valid_length = num_samples - i
+    #                         segment = torch.zeros((waveform.size(0), self.segment_length))
+    #                         segment[:, :valid_length] = waveform[:, i:i + valid_length]
+
+    #                 if self.offline_aug == True:
+    #                     aug1, aug2, aug3 = augmenter(segment)
+
+    #                     self.X.append(aug1)
+    #                     self.X.append(aug2)
+    #                     self.X.append(aug3)
+    #                     # self.X.append(aug4)
+    #                     self.y.extend([label] * 3)
+
+    #                 self.X.append(segment)
+    #                 self.y.append(label)
+
+    #         else:
+    #             for i in range(0, num_samples, self.segment_length):
+    #                 if i + self.segment_length <= num_samples:
+    #                     segment = waveform[:, i:i + self.segment_length]
+    #                 else:
+    #                     if self.padding == 'full':
+    #                         valid_length = num_samples - i
+    #                         segment = torch.zeros((waveform.size(0), self.segment_length))
+    #                         segment[:, :valid_length] = waveform[:, i:i + valid_length]
+                    
+    #                 self.X.append(segment)
+    #                 self.y.append(label)
+
+    #     self.X = torch.stack(self.X)
+    #     self.y = torch.tensor(self.y)
 
     def get_data(self):
         return TensorDataset(self.X, self.y)
 
 class BalancedDataLoader:
     """
-    A class for creating a balanced DataLoader from a PyTorch dataset with augmentations.
+    A class for creating a balanced DataLoader from a PyTorch dataset.
 
     Parameters
     ----------
     dataset : Dataset
         The PyTorch dataset.
-    device : torch.device
-        The device to load the data onto.
     args : Arguments
-        Arguments object containing settings for augmentations and other configurations.
+        Arguments object containing settings and other configurations.
     """
-    def __init__(self, dataset, device, args):
+    def __init__(self, dataset, args):
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
-        self.device = device
+        # self.device = device
         self.args = args
         # self.batch_size = args.batch_size
         self.batch_size = self.args.batch_size
@@ -462,9 +515,7 @@ class BalancedDataLoader:
         )
     
 class PrepareData:
-    """
-    Prepare datasets.
-    """
+    """Prepare datasets in processing the audio samples from train, val, test dirs."""
     def __init__(self, args, csv_file_path, seg_len):
         self.args = args
         self.csv = csv_file_path
@@ -477,7 +528,7 @@ class PrepareData:
         test_dataset = ProcessDataset('test', self.csv, self.args, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args, self.seg_len)
 
-        train_loader = BalancedDataLoader(train_dataset.get_data(), self.device, self.args).get_dataloader()
+        train_loader = BalancedDataLoader(train_dataset.get_data(), self.args).get_dataloader()
         test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
         val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
         
@@ -496,10 +547,7 @@ class SaveResultsToTensorboard:
 
     @staticmethod
     def upload(stacked_metrics, cm, csv_file_path, writerTensorboard):
-        """
-        Save the results to tensorboard.
-        """
-
+        """Upload the results to tensorboard."""
         label_map = SaveResultsToTensorboard.get_class_names(csv_file_path)
         labels = sorted(label_map.keys())
 
@@ -524,17 +572,15 @@ class SaveResultsToTensorboard:
 class SaveResultsToDisk:
     @staticmethod
     def get_class_names(csv_file_path):
+        """Retrives class names from dataset_split.csv file."""
         data = pd.read_csv(csv_file_path)
         data = data[data['set'] == 'train']
         label_map = {label: idx for idx, label in enumerate(sorted(data['label'].unique()))}
-
         return label_map
 
     @staticmethod
     def save_to_disk(args, stacked_metrics, cm, csv_file_path, current_run):
-        """
-        Save the results to disk as a CSV file.
-        """
+        """Save the results to disk as a CSV file."""
         label_map = SaveResultsToDisk.get_class_names(csv_file_path)
         labels = sorted(label_map.keys())
 
@@ -580,6 +626,7 @@ class SaveResultsToDisk:
         df_cm.to_csv(cm_path)
         
 class SaveYAML:
+    """Save Hyperparameters to disk as YAML file."""
     @staticmethod
     def save_to_disk(args, num_classes, current_run):
         cwd = os.getcwd()
