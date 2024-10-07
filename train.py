@@ -138,10 +138,7 @@ if __name__ == '__main__':
     writer.add_text('Hyperparameters', Dict2MDTable.apply(args_dict), 1)
 
     for epoch in range(args.epochs):
-        if args.online_augment is True:
-            train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
-        else:
-            train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
+        train_loss = trainer.train_epoch(train_loader, optimizer, augmenter)
         writer.add_scalar('epoch/epoch', epoch, epoch)
         writer.add_scalar('Loss/train', train_loss, epoch)
 
@@ -169,7 +166,8 @@ if __name__ == '__main__':
                     print('Early stopping triggered.')
                     break
 
-    model.load_state_dict(best_state)
+    if args.early_stopping:
+        model.load_state_dict(best_state)
 
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
