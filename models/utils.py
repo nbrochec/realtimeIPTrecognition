@@ -15,7 +15,7 @@ import humanize
 import sys
 import pandas as pd
 
-from models import v1, v2, v3, v2_1d, v1_mi4, v1_mi6_env2_lstm
+from models import v1, v2, v3, v2_1d, v1_mi4, v1_mi6_env2_lstm, v1_mi6_env2_rdc
 from models import v1_mi6, v1_mi6_env2, v1_mi5_env2
 
 from tqdm import tqdm
@@ -23,6 +23,20 @@ from tqdm import tqdm
 from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score, MulticlassConfusionMatrix
 
 class LoadModel:
+    """
+    A class for loading different model architectures based on a provided model name.
+
+    Attributes:
+    ----------
+    models : dict
+        Maps model names to their respective constructors.
+
+    Methods:
+    -------
+    get_model(model_name, output_nbr, sr):
+        Returns the model corresponding to `model_name` with the given `output_nbr` and `sr`.
+        Raises a ValueError if the model name is not found.
+    """
     def __init__(self):
         self.models = {
             'v1': v1,
@@ -34,11 +48,12 @@ class LoadModel:
             'v1_mi6_env2': v1_mi6_env2,
             'v1_mi5_env2': v1_mi5_env2,
             'v1_mi6_env2_lstm': v1_mi6_env2_lstm,
+            'v1_mi6_env2_rdc': v1_mi6_env2_rdc,
         }
     
-    def get_model(self, model_name, output_nbr, sr):
+    def get_model(self, model_name, output_nbr, args):
         if model_name in self.models:
-            return self.models[model_name](output_nbr, sr)
+            return self.models[model_name](output_nbr, args)
         else:
             raise ValueError(f"Model {model_name} is not recognized.")
 
@@ -277,7 +292,7 @@ class PrepareModel:
         self.device = args.device
 
     def prepare(self):
-        model = LoadModel().get_model(self.args.config, self.num_classes, self.args.sr).to(self.device)
+        model = LoadModel().get_model(self.args.config, self.num_classes, self.args).to(self.device)
 
         tester = ModelTester(model, input_shape=(1, 1, self.seg_len), device=self.device)
         output = tester.test()
