@@ -506,9 +506,9 @@ class v1_mi6_env2(nn.Module):
         z = self.fc(x_flat)
         return z
     
-class v1_mi6_env2_rdc(nn.Module):
+class v1_mi6_env2_new(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_rdc, self).__init__()
+        super(v1_mi6_env2_new, self).__init__()
 
         self.sr = args.sr
 
@@ -589,6 +589,7 @@ class v1_mi6_env2_rdc(nn.Module):
         z = self.fc(x_flat)
         return z
     
+# old
 class v1_mi6_env2_lstm(nn.Module):
     def __init__(self, output_nbr, args):
         super(v1_mi6_env2_lstm, self).__init__()
@@ -681,9 +682,9 @@ class v1_mi6_env2_lstm(nn.Module):
         return z
     
 
-class v1_mi6_env2_lstm_rdc(nn.Module):
+class v1_mi6_env2_lstm_new(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_lstm_rdc, self).__init__()
+        super(v1_mi6_env2_lstm_new, self).__init__()
 
         self.sr = args.sr
 
@@ -710,15 +711,15 @@ class v1_mi6_env2_lstm_rdc(nn.Module):
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 32, 7, "same", 4),
+            custom1DCNN(1, 64, 7, "same", 4),
             nn.AvgPool1d(8),
-            custom1DCNN(32, 64, 5, "same", 3),
+            custom1DCNN(64, 128, 5, "same", 3),
             nn.AvgPool1d(7),
-            custom1DCNN(64, 128, 2, "same", 1),
+            custom1DCNN(128, 256, 2, "same", 1),
         )
-    
+
     def _create_lstm_env_block(self):
-        return nn.LSTM(input_size=128, hidden_size=128, batch_first=True)
+        return nn.LSTM(input_size=256, hidden_size=128, batch_first=True)
     
 
     def _create_cnn_block(self):
