@@ -168,13 +168,14 @@ if __name__ == '__main__':
                 if counter >= early_stopping_threshold:
                     print('Early stopping triggered.')
                     break
-
-    model.load_state_dict(best_state)
+    
+    if args.early_stopping:
+        model.load_state_dict(best_state)
 
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
     SaveResultsToTensorboard.upload(stkd_mtrs, cm, csv_file_path, writer)
-    print(f'Results have been uploaded to tensorboard.')
+    print(f'Results and Confusion Matrix have been uploaded to tensorboard.')
 
     SaveResultsToDisk.save_to_disk(args, stkd_mtrs, cm, csv_file_path, current_run)
     print(f'Results and Confusion Matrix have been saved in the logs/{os.path.basename(current_run)} directory.')
