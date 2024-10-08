@@ -16,6 +16,10 @@ import torchaudio.transforms as Taudio
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
+import numpy as np
+
+from typing import Tuple, Union, Dict
+
 import matplotlib.pyplot as plt
 
 class LogMelSpectrogramLayer(nn.Module):
@@ -168,3 +172,195 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         # plt.show()
 
         return envelope_output
+
+# class HPSS(nn.Module):
+#     def __init__(self, n_fft=2048, hop_length=512):
+#         super(HPSS, self).__init__()
+#         self.n_fft = n_fft
+#         self.hop_length = hop_length
+    
+#     def harmonic_filter(self, spectrogram):
+#         # Apply a median filter across the time axis (harmonic content is stable over time)
+#         harmonic = torch.median(spectrogram, dim=-2, keepdim=True)[0]
+#         return harmonic
+    
+#     def percussive_filter(self, spectrogram):
+#         # Apply a median filter across the frequency axis (percussive content is spread across frequencies)
+#         percussive = torch.median(spectrogram, dim=-1, keepdim=True)[0]
+#         return percussive
+    
+#     def forward(self, x):
+#         # Convertir les samples en spectrogramme
+#         window = torch.hann_window(self.n_fft)
+#         spectrogram = Faudio.spectrogram(
+#             x,
+#             n_fft=self.n_fft,
+#             hop_length=self.hop_length,
+#             pad=0,
+#             window=window,
+#             win_length=self.n_fft,
+#             power=2,
+#             normalized=False
+#         )
+        
+#         # Appliquer les filtres harmoniques et percussifs
+#         harmonic = self.harmonic_filter(spectrogram)
+#         percussive = self.percussive_filter(spectrogram)
+        
+#         # Composantes résiduelles
+#         percussive_res = torch.clamp(spectrogram - harmonic, min=0)
+#         harmonic_res = torch.clamp(spectrogram - percussive, min=0)
+        
+#         # Reconstruire les formes d'onde
+#         waveform_harmonic = Faudio.istft(harmonic_res, hop_length=self.hop_length)
+#         waveform_percussive = Faudio.istft(percussive_res, hop_length=self.hop_length)
+        
+#         return waveform_harmonic, waveform_percussive
+
+from typing import Tuple
+
+def softmask(X: torch.Tensor, X_ref: torch.Tensor, power: float = 1, split_zeros: bool = False) -> torch.Tensor:
+    if X.shape != X_ref.shape:
+        raise ValueError(f'Shape mismatch: {X.shape}!={X_ref.shape}')
+    if torch.any(X < 0) or torch.any(X_ref < 0):
+        raise ValueError('X and X_ref must be non-negative')
+    if power <= 0:
+        raise ValueError('power must be strictly positive')
+
+    dtype = X.dtype
+    if dtype not in [torch.float16, torch.float32, torch.float64]:
+        raise ValueError('data type error')
+
+    Z = torch.max(X, X_ref)
+    bad_idx = (Z < torch.finfo(dtype).tiny)
+    if bad_idx.sum() > 0: 
+        Z[bad_idx] = 1
+
+    if torch.isfinite(torch.tensor(power)):
+        mask = (X / Z) ** power
+        ref_mask = (X_ref / Z) ** power
+        mask /= mask + ref_mask
+    else:
+        mask = X > X_ref
+
+    return mask
+
+
+class MedianBlur(nn.Module):
+    def __init__(self, kernel_size: Tuple[int, int], channel: int, reduce_method: str = 'median'):
+        super(MedianBlur, self).__init__()
+        self.kernel = self.get_binary_kernel2d(kernel_size).repeat(channel, 1, 1, 1)
+        self.padding = self._compute_zero_padding(kernel_size)
+        self.reduce_method = reduce_method
+
+    @staticmethod
+    def get_binary_kernel2d(window_size: Tuple[int, int]) -> torch.Tensor:
+        window_range = window_size[0] * window_size[1]
+        kernel = torch.zeros(window_range, window_range)
+        for i in range(window_range):
+            kernel[i, i] += 1.0
+        return kernel.view(window_range, 1, window_size[0], window_size[1])
+
+    @staticmethod
+    def _compute_zero_padding(kernel_size: Tuple[int, int]) -> Tuple[int, int]:
+        return (kernel_size[0] - 1) // 2, (kernel_size[1] - 1) // 2
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        if not torch.is_tensor(input):
+            raise TypeError(f"Input type is not a torch.Tensor. Got {type(input)}")
+        if input.ndim != 4:
+            raise ValueError(f"Invalid input shape, we expect BxCxHxW. Got: {input.shape}")
+
+        b, c, h, w = input.shape
+        features = F.conv2d(input, self.kernel, padding=self.padding, stride=1, groups=c)
+        features = features.view(b, c, -1, h, w)
+
+        if self.reduce_method == 'median':
+            res = torch.median(features, dim=2)[0]
+        elif self.reduce_method == 'mean':
+            res = torch.mean(features, dim=2)
+        else:
+            raise ValueError(f"Unknown reduce method: {self.reduce_method}")
+        return res
+
+class HPSS(nn.Module):
+    def __init__(self, kernel_size: int, channel: int = 1, power: float = 2.0, mask: bool = False, margin: float = 1.0, reduce_method: str = 'mean', n_fft: int = 2048, hop_length: int = 512):
+        super(HPSS, self).__init__()
+        self.harm_median_filter = MedianBlur(kernel_size=(1, kernel_size), channel=channel, reduce_method=reduce_method)
+        self.perc_median_filter = MedianBlur(kernel_size=(kernel_size, 1), channel=channel, reduce_method=reduce_method)
+        self.hop_length = hop_length
+        self.n_fft = n_fft
+
+    def forward(self, x: torch.Tensor, power: float = 2.0, mask: bool = False, margin: float = 1.0) -> dict:
+        window = torch.hann_window(self.n_fft)
+
+        if isinstance(margin, (float, int)):
+            margin_harm = margin
+            margin_perc = margin
+        else:
+            margin_harm = margin[0]
+            margin_perc = margin[1]
+
+        if margin_harm < 1 or margin_perc < 1:
+            raise ValueError("Margins must be >= 1.0.")
+
+        
+        D = torch.stft(x.squeeze(1), n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True, window=window)
+        # print(D.shape)
+        S = torch.abs(D).unsqueeze(1)
+        phase = torch.angle(D).unsqueeze(1)
+
+        harm = self.harm_median_filter(S)
+        perc = self.perc_median_filter(S)
+
+        split_zeros = (margin_harm == 1 and margin_perc == 1)
+        mask_harm = softmask(harm, perc * margin_harm, power=power, split_zeros=split_zeros)
+        mask_perc = softmask(perc, harm * margin_perc, power=power, split_zeros=split_zeros)
+
+        # print(mask_harm, mask_perc)
+
+        if mask:
+            return mask_harm, mask_perc
+        
+        harm = S * mask_harm
+        perc = S * mask_perc
+
+        complex_harm = harm * torch.exp(1j * phase)
+        complex_perc = perc * torch.exp(1j * phase)
+
+        # self.plot_spectra(complex_harm, complex_perc)
+        
+        # Inversion du spectre
+        harm_signal = torch.istft(complex_harm.squeeze(1), n_fft=self.n_fft, hop_length=self.hop_length, window=window).unsqueeze(1)
+        perc_signal = torch.istft(complex_perc.squeeze(1), n_fft=self.n_fft, hop_length=self.hop_length, window=window).unsqueeze(1)
+
+        return harm_signal, perc_signal
+
+    # def plot_spectra(self, complex_harm, complex_perc):
+    #     # Sélectionner le premier élément du batch
+    #     complex_harm_first = complex_harm[0].squeeze().cpu().detach().numpy()  # Si complex_harm est de la forme (n_batch, ...)
+    #     complex_perc_first = complex_perc[0].squeeze().cpu().detach().numpy()  # Assurez-vous que la dimension est correcte
+
+    #     # Calculer les magnitudes pour l'affichage
+    #     magnitude_harm = np.abs(complex_harm_first)
+    #     magnitude_perc = np.abs(complex_perc_first)
+
+    #     # Créer la figure
+    #     plt.figure(figsize=(12, 6))
+
+    #     # Afficher le spectre harmonique
+    #     plt.subplot(1, 2, 1)
+    #     plt.imshow(magnitude_harm, aspect='auto', origin='lower', cmap='viridis')
+    #     plt.title('Spectre Harmonique')
+    #     plt.xlabel('Temps')
+    #     plt.ylabel('Fréquence')
+
+    #     # Afficher le spectre percussif
+    #     plt.subplot(1, 2, 2)
+    #     plt.imshow(magnitude_perc, aspect='auto', origin='lower', cmap='viridis')
+    #     plt.title('Spectre Percussif')
+    #     plt.xlabel('Temps')
+    #     plt.ylabel('Fréquence')
+
+    #     plt.tight_layout()
+    #     plt.show()
