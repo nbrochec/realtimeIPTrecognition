@@ -292,7 +292,7 @@ class HPSS(nn.Module):
         self.n_fft = n_fft
 
     def forward(self, x: torch.Tensor, power: float = 2.0, mask: bool = False, margin: float = 1.0) -> dict:
-        window = torch.hann_window(self.n_fft)
+        window = torch.hann_window(self.n_fft).to(x.device)
 
         if isinstance(margin, (float, int)):
             margin_harm = margin
