@@ -247,12 +247,13 @@ def softmask(X: torch.Tensor, X_ref: torch.Tensor, power: float = 1, split_zeros
 
 
 class MedianBlur(nn.Module):
-    def __init__(self, kernel_size: Tuple[int, int], channel: int, reduce_method: str = 'median'):
+    def __init__(self, kernel_size: Tuple[int, int], channel: int, reduce_method: str = 'median', device: str = 'cpu'):
         super(MedianBlur, self).__init__()
-        self.kernel = self.get_binary_kernel2d(kernel_size).repeat(channel, 1, 1, 1)
+        self.device = device
+        self.kernel = self.get_binary_kernel2d(kernel_size).repeat(channel, 1, 1, 1).to(self.device)
         self.padding = self._compute_zero_padding(kernel_size)
         self.reduce_method = reduce_method
-
+        
     @staticmethod
     def get_binary_kernel2d(window_size: Tuple[int, int]) -> torch.Tensor:
         window_range = window_size[0] * window_size[1]
@@ -284,10 +285,10 @@ class MedianBlur(nn.Module):
         return res
 
 class HPSS(nn.Module):
-    def __init__(self, kernel_size: int, channel: int = 1, power: float = 2.0, mask: bool = False, margin: float = 1.0, reduce_method: str = 'mean', n_fft: int = 2048, hop_length: int = 512):
+    def __init__(self, kernel_size: int, channel: int = 1, power: float = 2.0, mask: bool = False, margin: float = 1.0, reduce_method: str = 'mean', n_fft: int = 2048, hop_length: int = 512, device: str = 'cpu'):
         super(HPSS, self).__init__()
-        self.harm_median_filter = MedianBlur(kernel_size=(1, kernel_size), channel=channel, reduce_method=reduce_method)
-        self.perc_median_filter = MedianBlur(kernel_size=(kernel_size, 1), channel=channel, reduce_method=reduce_method)
+        self.harm_median_filter = MedianBlur(kernel_size=(1, kernel_size), channel=channel, reduce_method=reduce_method, device=device)
+        self.perc_median_filter = MedianBlur(kernel_size=(kernel_size, 1), channel=channel, reduce_method=reduce_method, device=device)
         self.hop_length = hop_length
         self.n_fft = n_fft
 
