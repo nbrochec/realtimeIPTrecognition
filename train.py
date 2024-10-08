@@ -166,8 +166,8 @@ if __name__ == '__main__':
                     print('Early stopping triggered.')
                     break
 
-    if args.early_stopping:
-        model.load_state_dict(best_state)
+    # if args.early_stopping:
+    model.load_state_dict(best_state)
 
     stkd_mtrs, cm = trainer.test_model(test_loader)
 
