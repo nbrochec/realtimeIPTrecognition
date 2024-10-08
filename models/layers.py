@@ -365,3 +365,90 @@ class HPSS(nn.Module):
 
     #     plt.tight_layout()
     #     plt.show()
+
+class LogMelScale(nn.Module):
+    def __init__(self, sample_rate=24000, n_stft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150):
+        super(LogMelScale, self).__init__()
+        self.sample_rate = sample_rate
+        self.n_stft = n_stft
+        self.win_length = win_length if win_length is not None else n_stft
+        self.hop_length = hop_length
+        self.n_mels = n_mels
+        self.f_min = f_min
+        
+        self.mel_scale = Taudio.MelScale(
+            sample_rate=self.sample_rate,
+            n_stft=self.n_stft,
+            n_mels=self.n_mels,
+            f_min=self.f_min
+        )
+
+        self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power')
+
+    def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
+        min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
+        max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
+        eps = 1e-5
+        t_min = torch.min(t)
+        t_max = torch.max(t)
+
+        if (t_max - t_min) == 0:
+            t_std = (t - t_min) / ((t_max - t_min) + eps)
+        else:
+            t_std = (t - t_min) / (t_max - t_min)
+        
+        t_scaled = t_std * (max_tensor - min_tensor) + min_tensor
+        return t_scaled
+
+    def forward(self, x):
+        x = self.mel_scale(x)
+        x = self.amplitude_to_db(x)
+        # x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
+        x = self.min_max_normalize(x)
+        return x.to(torch.float32)
+
+# Computer la hpss sans revenir en raw sample
+class HPSSMel(nn.Module):
+    def __init__(self, kernel_size: int, channel: int = 1, power: float = 2.0, mask: bool = False, margin: float = 1.0, reduce_method: str = 'mean', n_fft: int = 2048, hop_length: int = 512, device: str = 'cpu'):
+        super(HPSSMel, self).__init__()
+        self.harm_median_filter = MedianBlur(kernel_size=(1, kernel_size), channel=channel, reduce_method=reduce_method, device=device)
+        self.perc_median_filter = MedianBlur(kernel_size=(kernel_size, 1), channel=channel, reduce_method=reduce_method, device=device)
+        self.hop_length = hop_length
+        self.n_fft = n_fft
+
+
+    def forward(self, x: torch.Tensor, power: float = 2.0, mask: bool = False, margin: float = 1.0) -> dict:
+        window = torch.hann_window(self.n_fft).to(x.device)
+
+        if isinstance(margin, (float, int)):
+            margin_harm = margin
+            margin_perc = margin
+        else:
+            margin_harm = margin[0]
+            margin_perc = margin[1]
+
+        if margin_harm < 1 or margin_perc < 1:
+            raise ValueError("Margins must be >= 1.0.")
+
+        
+        D = torch.stft(x.squeeze(1), n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True, window=window)
+        # print(D.shape)
+        S = torch.abs(D).unsqueeze(1)
+        # phase = torch.angle(D).unsqueeze(1)
+
+        harm = self.harm_median_filter(S)
+        perc = self.perc_median_filter(S)
+
+        split_zeros = (margin_harm == 1 and margin_perc == 1)
+        mask_harm = softmask(harm, perc * margin_harm, power=power, split_zeros=split_zeros)
+        mask_perc = softmask(perc, harm * margin_perc, power=power, split_zeros=split_zeros)
+
+        # print(mask_harm, mask_perc)
+
+        if mask:
+            return mask_harm, mask_perc
+        
+        harm = S * mask_harm
+        perc = S * mask_perc
+
+        return harm, perc

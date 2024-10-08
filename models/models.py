@@ -16,7 +16,7 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
-from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeFollowingLayerTorchScript, HPSS
+from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeFollowingLayerTorchScript, HPSS, LogMelScale, HPSSMel
 from utils.constants import SEGMENT_LENGTH
 
 class v1(nn.Module):
@@ -840,9 +840,9 @@ class v1_mi6_hpss(nn.Module):
         self.sr = args.sr
         self.device = args.device
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=128)
+        self.logmel = LogMelScale(sample_rate=self.sr, n_mels=128, n_stft=1025)
         self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
-        self.hpss = HPSS(n_fft=2048, hop_length=512, kernel_size=31, device=self.device)
+        self.hpss = HPSSMel(n_fft=2048, hop_length=512, kernel_size=31, device=self.device)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
