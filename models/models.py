@@ -430,7 +430,7 @@ class v1_mi6_env2(nn.Module):
         self.sr = args.sr
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=512)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -597,7 +597,7 @@ class v1_mi6_env2_lstm(nn.Module):
         self.sr = args.sr
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, hop_length=512)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=512)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -714,12 +714,12 @@ class v1_mi6_env2_lstm_new(nn.Module):
             custom1DCNN(1, 64, 7, "same", 4),
             nn.AvgPool1d(8),
             custom1DCNN(64, 128, 5, "same", 3),
-            nn.AvgPool1d(7),
+            nn.AvgPool1d(8),
             custom1DCNN(128, 256, 2, "same", 1),
         )
 
     def _create_lstm_env_block(self):
-        return nn.LSTM(input_size=256, hidden_size=128, batch_first=True)
+        return nn.LSTM(input_size=256, hidden_size=112, batch_first=True)
     
 
     def _create_cnn_block(self):
