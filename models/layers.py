@@ -416,7 +416,6 @@ class HPSSMel(nn.Module):
         self.hop_length = hop_length
         self.n_fft = n_fft
 
-
     def forward(self, x: torch.Tensor, power: float = 2.0, mask: bool = False, margin: float = 1.0) -> dict:
         window = torch.hann_window(self.n_fft).to(x.device)
 
@@ -430,7 +429,6 @@ class HPSSMel(nn.Module):
         if margin_harm < 1 or margin_perc < 1:
             raise ValueError("Margins must be >= 1.0.")
 
-        
         D = torch.stft(x.squeeze(1), n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True, window=window)
         # print(D.shape)
         S = torch.abs(D).unsqueeze(1)
