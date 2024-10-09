@@ -267,7 +267,7 @@ class MedianBlur(nn.Module):
         return (kernel_size[0] - 1) // 2, (kernel_size[1] - 1) // 2
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        if not torch.is_tensor(input):
+        if not isinstance(input, torch.Tensor):
             raise TypeError(f"Input type is not a torch.Tensor. Got {type(input)}")
         if input.ndim != 4:
             raise ValueError(f"Invalid input shape, we expect BxCxHxW. Got: {input.shape}")
