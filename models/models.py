@@ -952,19 +952,36 @@ class v1_mi6_hpss(nn.Module):
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 40, 7, "same", 4),
+            custom1DCNN(1, 20, 7, "same", 4),
             nn.AvgPool1d(16),
-            nn.Dropout1d(0.1),
-            custom1DCNN(40, 40, 5, "same", 3),
+            nn.Dropout1d(0.25),
+            custom1DCNN(20, 40, 5, "same", 3),
             nn.AvgPool1d(8), 
-            nn.Dropout1d(0.1),
+            nn.Dropout1d(0.25),
             custom1DCNN(40, 80, 3, "same", 2),
             nn.AvgPool1d(8),
-            nn.Dropout1d(0.1),
+            nn.Dropout1d(0.25),
             custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(7), 
-            nn.Dropout1d(0.1),
+            nn.Dropout1d(0.25),
         )
+
+
+    # def _create_cnn_env_block(self):
+    #     return nn.Sequential(
+    #         custom1DCNN(1, 40, 7, "same", 4),
+    #         nn.AvgPool1d(16),
+    #         nn.Dropout1d(0.1),
+    #         custom1DCNN(40, 40, 5, "same", 3),
+    #         nn.AvgPool1d(8), 
+    #         nn.Dropout1d(0.1),
+    #         custom1DCNN(40, 80, 3, "same", 2),
+    #         nn.AvgPool1d(8),
+    #         nn.Dropout1d(0.1),
+    #         custom1DCNN(80, 160, 2, "same", 1),
+    #         nn.AvgPool1d(7), 
+    #         nn.Dropout1d(0.1),
+    #     )
 
     def _create_cnn_block(self):
         return nn.Sequential(
