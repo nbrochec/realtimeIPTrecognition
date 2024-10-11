@@ -519,9 +519,9 @@ class v1_mi6_env2(nn.Module):
         z = self.fc(x_flat)
         return z
 
-class v1_mi6_env2_large(nn.Module):
+class v1_mi6_env2_mod(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_large, self).__init__()
+        super(v1_mi6_env2_mod, self).__init__()
 
         self.sr = args.sr
 
@@ -537,60 +537,38 @@ class v1_mi6_env2_large(nn.Module):
 
         self.cnn_env = self._create_cnn_env_block()
 
-        # self.fc = nn.Sequential(
-        #     nn.Linear(160 * 7, 320),
-        #     nn.BatchNorm1d(320),
-        #     nn.ReLU(),
-        #     nn.Dropout1d(0.25),
-        #     nn.Linear(320, 80),
-        #     nn.BatchNorm1d(80),
-        #     nn.ReLU(),
-        #     nn.Dropout1d(0.25),
-        #     nn.Linear(80, output_nbr)
-        # )
-
-        # self.fc = nn.Sequential(
-        #         nn.Linear(160 * 7, 560),
-        #         nn.ReLU(),
-        #         nn.Linear(560, 280),
-        #         nn.ReLU(),
-        #         nn.Linear(280, output_nbr)
-        #     )
-        
-        # LARGE
         self.fc = nn.Sequential(
-                nn.Linear(160 * 7, 560),
-                nn.BatchNorm1d(560),
+                nn.Linear(160 * 7, 320),
+                nn.BatchNorm1d(320),
                 nn.ReLU(),
-                nn.Linear(560, 280),
-                nn.BatchNorm1d(280),
+                nn.Dropout1d(0.25),
+                nn.Linear(320, 80),
+                nn.BatchNorm1d(80),
                 nn.ReLU(),
-                nn.Linear(280, 140),
-                nn.BatchNorm1d(140),
-                nn.ReLU(),
-                nn.Linear(140, 70),
-                nn.BatchNorm1d(70),
-                nn.ReLU(),
-                nn.Linear(70, output_nbr)
+                nn.Dropout1d(0.25),
+                nn.Linear(80, output_nbr)
             )
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
             custom1DCNN(1, 40, 7, "same", 4),
             nn.AvgPool1d(16),
+            nn.Dropout1d(0.25),
             custom1DCNN(40, 40, 5, "same", 3),
             nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
             custom1DCNN(40, 80, 3, "same", 2),
             nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
             custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(7),
-            nn.Dropout1d(0.1),
+            nn.Dropout1d(0.25),
         )
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(1, 40, (2, 3), "same"),
-            custom2DCNN(40, 40, (2, 3), "same"),
+            custom2DCNN(1, 40, (2, 5), "same"),
+            custom2DCNN(40, 40, (2, 5), "same"),
             nn.MaxPool2d((2, 1)), # 35
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 3), "same"),
@@ -631,13 +609,15 @@ class v1_mi6_env2_large(nn.Module):
         z = self.fc(x_flat)
         return z
     
-class v1_mi6_env2_new(nn.Module):
+class v1_mi6_env2_stack(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_new, self).__init__()
+        super(v1_mi6_env2_stack, self).__init__()
 
         self.sr = args.sr
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420)
+        self.logmel1 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=512)
+        self.logmel2 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=4096, hop_length=512)
+        self.logmel3 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=1024, hop_length=512)
         self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
         
         self.cnn1 = self._create_cnn_block()
@@ -650,46 +630,53 @@ class v1_mi6_env2_new(nn.Module):
         self.cnn_env = self._create_cnn_env_block()
 
         self.fc = nn.Sequential(
-            nn.Linear(128 * 7, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, output_nbr)
-        )
+                nn.Linear(160 * 7, 320),
+                nn.BatchNorm1d(320),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(320, 80),
+                nn.BatchNorm1d(80),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(80, output_nbr)
+            )
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 32, 7, "same", 4),
+            custom1DCNN(1, 40, 7, "same", 4),
             nn.AvgPool1d(16),
-            custom1DCNN(32, 32, 5, "same", 3),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 40, 5, "same", 3),
             nn.AvgPool1d(8),
-            custom1DCNN(32, 64, 3, "same", 2),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 80, 3, "same", 2),
             nn.AvgPool1d(8),
-            custom1DCNN(64, 128, 2, "same", 1),
+            nn.Dropout1d(0.25),
+            custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(7),
-            nn.Dropout1d(0.1),
+            nn.Dropout1d(0.25),
         )
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(1, 32, (2, 3), "same"),
-            custom2DCNN(32, 32, (2, 3), "same"),
+            custom2DCNN(3, 40, (2, 3), "same"),
+            custom2DCNN(40, 40, (2, 3), "same"),
             nn.MaxPool2d((2, 1)), # 35
             nn.Dropout2d(0.25),
-            custom2DCNN(32, 64, (2, 3), "same"),
-            custom2DCNN(64, 64, (2, 3), "same"),
+            custom2DCNN(40, 80, (2, 3), "same"),
+            custom2DCNN(80, 80, (2, 3), "same"),
             nn.MaxPool2d((2, 3)), # 17
             nn.Dropout2d(0.25),
-            custom2DCNN(64, 128, 2, "same"),
+            custom2DCNN(80, 160, 2, "same"),
             nn.MaxPool2d((2, 1)), # 8
             nn.Dropout2d(0.25),
-            custom2DCNN(128, 128, 2, "same"),
+            custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d(2), # 4
             nn.Dropout2d(0.25),
-            custom2DCNN(128, 128, 2, "same"),
+            custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d((2, 1)), #2
             nn.Dropout2d(0.25),
-            custom2DCNN(128, 128, 2, "same"),
+            custom2DCNN(160, 160, 2, "same"),
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
@@ -699,14 +686,23 @@ class v1_mi6_env2_new(nn.Module):
         x_env = x_env[:, :, :-1]
         x_env = self.cnn_env(x_env)
 
-        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 70, dim=2)
+        x1_1, x1_2, x1_3, x1_4, x1_5, x1_6 = torch.split(self.logmel1(x), 70, dim=2)
+        x2_1, x2_2, x2_3, x2_4, x2_5, x2_6 = torch.split(self.logmel2(x), 70, dim=2)
+        x3_1, x3_2, x3_3, x3_4, x3_5, x3_6 = torch.split(self.logmel3(x), 70, dim=2)
 
-        x1 = self.cnn1(x1) 
-        x2 = self.cnn2(x2)
-        x3 = self.cnn3(x3)
-        x4 = self.cnn4(x4)
-        x5 = self.cnn5(x5)
-        x6 = self.cnn6(x6)
+        rx1_s = torch.cat((x1_1, x2_1, x3_1), dim=1)
+        rx2_s = torch.cat((x1_2, x2_2, x3_2), dim=1)
+        rx3_s = torch.cat((x1_3, x2_3, x3_3), dim=1)
+        rx4_s = torch.cat((x1_4, x2_4, x3_4), dim=1)
+        rx5_s = torch.cat((x1_5, x2_5, x3_5), dim=1)
+        rx6_s = torch.cat((x1_6, x2_6, x3_6), dim=1)
+
+        x1 = self.cnn1(rx1_s) 
+        x2 = self.cnn2(rx2_s)
+        x3 = self.cnn3(rx3_s)
+        x4 = self.cnn4(rx4_s)
+        x5 = self.cnn5(rx5_s)
+        x6 = self.cnn6(rx6_s)
 
         x = torch.cat((x1, x2, x3, x4, x5, x6, x_env.unsqueeze(3)), dim=1)
 
