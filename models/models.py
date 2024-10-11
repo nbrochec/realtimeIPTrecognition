@@ -20,10 +20,12 @@ from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, Enve
 from utils.constants import SEGMENT_LENGTH
 
 class v1(nn.Module):
-    def __init__(self, output_nbr, sr):
+    def __init__(self, output_nbr, args):
         super(v1, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        self.sr = args.sr
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 40, (2,3), "same"),
@@ -53,6 +55,10 @@ class v1(nn.Module):
             nn.Linear(80, 40),
             nn.Linear(40, output_nbr)
         )
+
+    @torch.jit.export
+    def get_attributes(self):
+        return self.sr
 
     def forward(self, x):
         x = self.logmel(x)
@@ -1042,6 +1048,67 @@ class v1_mi6_hpss(nn.Module):
         # x6 = self.cnn6(x6)
 
         x = torch.cat((x1, x2, x_env.unsqueeze(3)), dim=1)
+
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
+    
+class v1_mi6_hpss_only(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(v1_mi6_hpss_only, self).__init__()
+
+        self.sr = args.sr
+        self.device = args.device
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=128, n_fft=2048, hop_length=512)
+        self.hpss = HPSS(n_fft=2048, hop_length=512, kernel_size=31, device=self.device)
+        
+        self.cnn1 = self._create_cnn_block()
+        self.cnn2 = self._create_cnn_block()
+
+        self.cnn_env = self._create_cnn_env_block()
+
+        self.fc = nn.Sequential(
+            nn.Linear(160 * 2, 160),
+            nn.ReLU(),
+            nn.Linear(160, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+
+    def _create_cnn_block(self):
+        return nn.Sequential(
+            custom2DCNN(1, 40, (2, 3), "same"),
+            custom2DCNN(40, 40, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)), # 64, 15
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2, 3), "same"),
+            custom2DCNN(80, 80, (2, 3), "same"),
+            nn.MaxPool2d((2, 3)), # 32, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), # 16, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 8, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)), #4, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+    def forward(self, x):
+        x_harm, x_perc = self.hpss(x)
+        x1 = self.logmel(x_harm)
+        x2 = self.logmel(x_perc)
+
+        x1 = self.cnn1(x1) 
+        x2 = self.cnn2(x2)
+
+        x = torch.cat((x1, x2), dim=1)
 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
