@@ -456,11 +456,11 @@ class v1_mi6_env2(nn.Module):
         # )
 
         self.fc = nn.Sequential(
-                nn.Linear(160 * 7, 160),
+                nn.Linear(160 * 7, 560),
                 nn.ReLU(),
-                nn.Linear(160, 80),
+                nn.Linear(560, 280),
                 nn.ReLU(),
-                nn.Linear(80, output_nbr)
+                nn.Linear(280, output_nbr)
             )
 
     def _create_cnn_env_block(self):
