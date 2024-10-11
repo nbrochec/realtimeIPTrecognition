@@ -436,7 +436,7 @@ class v1_mi6_env2(nn.Module):
         self.sr = args.sr
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=1024)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -447,13 +447,21 @@ class v1_mi6_env2(nn.Module):
 
         self.cnn_env = self._create_cnn_env_block()
 
+        # self.fc = nn.Sequential(
+        #     nn.Linear(160 * 7, 320),
+        #     nn.ReLU(),
+        #     nn.Linear(320, 80),
+        #     nn.ReLU(),
+        #     nn.Linear(80, output_nbr)
+        # )
+
         self.fc = nn.Sequential(
-            nn.Linear(160 * 7, 320),
-            nn.ReLU(),
-            nn.Linear(320, 80),
-            nn.ReLU(),
-            nn.Linear(80, output_nbr)
-        )
+                nn.Linear(160 * 7, 160),
+                nn.ReLU(),
+                nn.Linear(160, 80),
+                nn.ReLU(),
+                nn.Linear(80, output_nbr)
+            )
 
     def _create_cnn_env_block(self):
         return nn.Sequential(
