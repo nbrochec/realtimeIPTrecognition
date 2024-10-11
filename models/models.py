@@ -449,9 +449,13 @@ class v1_mi6_env2(nn.Module):
 
         self.fc = nn.Sequential(
                 nn.Linear(160 * 7, 320),
+                nn.BatchNorm1d(320),
                 nn.ReLU(),
+                nn.Dropout1d(0.25),
                 nn.Linear(320, 80),
+                nn.BatchNorm1d(80),
                 nn.ReLU(),
+                nn.Dropout1d(0.25),
                 nn.Linear(80, output_nbr)
             )
 
@@ -459,13 +463,16 @@ class v1_mi6_env2(nn.Module):
         return nn.Sequential(
             custom1DCNN(1, 40, 7, "same", 4),
             nn.AvgPool1d(16),
+            nn.Dropout1d(0.25),
             custom1DCNN(40, 40, 5, "same", 3),
             nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
             custom1DCNN(40, 80, 3, "same", 2),
             nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
             custom1DCNN(80, 160, 2, "same", 1),
             nn.AvgPool1d(7),
-            nn.Dropout1d(0.1),
+            nn.Dropout1d(0.25),
         )
 
     def _create_cnn_block(self):
