@@ -1066,8 +1066,6 @@ class v1_mi6_hpss_only(nn.Module):
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
 
-        self.cnn_env = self._create_cnn_env_block()
-
         self.fc = nn.Sequential(
             nn.Linear(160 * 2, 160),
             nn.ReLU(),
