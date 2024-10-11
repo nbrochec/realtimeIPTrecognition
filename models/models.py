@@ -930,7 +930,7 @@ class v1_mi6_hpss(nn.Module):
         self.device = args.device
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=128, n_fft=2048, hop_length=512)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=512)
         self.hpss = HPSS(n_fft=2048, hop_length=512, kernel_size=31, device=self.device)
         
         self.cnn1 = self._create_cnn_block()
