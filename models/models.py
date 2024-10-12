@@ -759,7 +759,7 @@ class v1_mi6_env2_stacks(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(2, 40, (2, 3), "same"),
+            custom2DCNN(3, 40, (2, 3), "same"),
             custom2DCNN(40, 40, (2, 3), "same"),
             nn.MaxPool2d((2, 1)), # 35
             nn.Dropout2d(0.25),
@@ -787,15 +787,15 @@ class v1_mi6_env2_stacks(nn.Module):
         x_env = self.cnn_env(x_env)
 
         x1_1, x1_2, x1_3, x1_4, x1_5, x1_6 = torch.split(self.logmel1(x), 70, dim=2)
-        x2_1, x2_2, x2_3, _, _, _ = torch.split(self.logmel2(x)[:,:,:,:15], 70, dim=2)
-        x2_4, x2_5, x2_6, _, _, _ = torch.split(self.logmel2(x)[:,:,:, 14:], 70, dim=2)
+        x2_1, x2_2, x2_3, x2_4, x2_5, x2_6 = torch.split(self.logmel2(x)[:,:,:,:15], 70, dim=2)
+        x3_1, x3_2, x3_3, x3_4, x3_5, x3_6 = torch.split(self.logmel2(x)[:,:,:, 14:], 70, dim=2)
 
-        rx1_s = torch.cat((x1_1, x2_1), dim=1)
-        rx2_s = torch.cat((x1_2, x2_2), dim=1)
-        rx3_s = torch.cat((x1_3, x2_3), dim=1)
-        rx4_s = torch.cat((x1_4, x2_4), dim=1)
-        rx5_s = torch.cat((x1_5, x2_5), dim=1)
-        rx6_s = torch.cat((x1_6, x2_6), dim=1)
+        rx1_s = torch.cat((x1_1, x2_1, x3_1), dim=1)
+        rx2_s = torch.cat((x1_2, x2_2, x3_2), dim=1)
+        rx3_s = torch.cat((x1_3, x2_3, x3_3), dim=1)
+        rx4_s = torch.cat((x1_4, x2_4, x3_4), dim=1)
+        rx5_s = torch.cat((x1_5, x2_5, x3_5), dim=1)
+        rx6_s = torch.cat((x1_6, x2_6, x3_6), dim=1)
 
         x1 = self.cnn1(rx1_s) 
         x2 = self.cnn2(rx2_s)
