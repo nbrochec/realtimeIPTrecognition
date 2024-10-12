@@ -148,7 +148,7 @@ class AudioOfflineTransforms:
     
     def shift(self, data):
         transform = Shift(rollover=False, p=1)
-        return transform(data, sample_rate= self.sr)
+        return transform(data, sample_rate=self.sr)
     
     def pad_or_trim(self, data, original_size):
         current_size = data.shape[1]

@@ -16,7 +16,7 @@ import sys
 import pandas as pd
 
 from models import v1, v2, v3, v2_1d, v1_mi4, v1_mi6_env2_lstm, v1_mi6_env2_mod, v1_mi6_env2_lstm_new, v1_mi6_hpss, v1_mi6_hpss_only, v1_mi6_env2_stack, v1_mi6_env2_stacks, v1_mi6_env2_stacks7, v1_mi6_env2_mod_stacks7
-from models import v1_mi6, v1_mi6_env2, v1_mi5_env2, v1_mi6_mod_stacks7
+from models import v1_mi6, v1_mi6_env2, v1_mi5_env2, v1_mi6_mod_stacks7, v1_mi6_env2_mod_full_stack
 
 from tqdm import tqdm
 
@@ -56,7 +56,8 @@ class LoadModel:
             'v1_mi6_env2_stacks': v1_mi6_env2_stacks,
             'v1_mi6_env2_stacks7': v1_mi6_env2_stacks7,
             'v1_mi6_env2_mod_stacks7': v1_mi6_env2_mod_stacks7,
-            'v1_mi6_mod_stacks7': v1_mi6_mod_stacks7
+            'v1_mi6_mod_stacks7': v1_mi6_mod_stacks7,
+            'v1_mi6_env2_mod_full_stack': v1_mi6_env2_mod_full_stack
         }
     
     def get_model(self, model_name, output_nbr, args):
