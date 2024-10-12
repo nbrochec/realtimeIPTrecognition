@@ -541,11 +541,11 @@ class v1_mi6_env2_mod(nn.Module):
                 nn.Linear(160 * 7, 320),
                 nn.BatchNorm1d(320),
                 nn.ReLU(),
-                nn.Dropout1d(0.25),
+                nn.Dropout1d(0.2),
                 nn.Linear(320, 80),
                 nn.BatchNorm1d(80),
                 nn.ReLU(),
-                nn.Dropout1d(0.25),
+                nn.Dropout1d(0.2),
                 nn.Linear(80, output_nbr)
             )
 
@@ -567,27 +567,51 @@ class v1_mi6_env2_mod(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(1, 40, (2, 5), "same"),
-            custom2DCNN(40, 40, (2, 5), "same"),
-            nn.MaxPool2d((2, 1)), # 35
+            custom2DCNN(1, 40, (2, 7), "same"),
+            custom2DCNN(40, 40, (2, 7), "same"),
+            nn.MaxPool2d((2, 1)), # 35, 15
             nn.Dropout2d(0.25),
-            custom2DCNN(40, 80, (2, 3), "same"),
-            custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)), # 17
+            custom2DCNN(40, 80, (2, 5), "same"),
+            custom2DCNN(80, 80, (2, 5), "same"),
+            nn.MaxPool2d((2, 3)), # 17, 5
             nn.Dropout2d(0.25),
-            custom2DCNN(80, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)), # 8
+            custom2DCNN(80, 160, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)), # 8, 5
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 4
+            custom2DCNN(160, 160, (2, 3), "same"),
+            nn.MaxPool2d(2), # 4, 2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)), #2
+            custom2DCNN(160, 160, (1, 2), "same"),
+            nn.MaxPool2d((2, 1)), #2, 2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(160, 160, (1, 2), "same"),
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
+
+    # def _create_cnn_block(self):
+    #     return nn.Sequential(
+    #         custom2DCNN(1, 40, (2, 5), "same"),
+    #         custom2DCNN(40, 40, (2, 5), "same"),
+    #         nn.MaxPool2d((2, 1)), # 35
+    #         nn.Dropout2d(0.25),
+    #         custom2DCNN(40, 80, (2, 3), "same"),
+    #         custom2DCNN(80, 80, (2, 3), "same"),
+    #         nn.MaxPool2d((2, 3)), # 17
+    #         nn.Dropout2d(0.25),
+    #         custom2DCNN(80, 160, 2, "same"),
+    #         nn.MaxPool2d((2, 1)), # 8
+    #         nn.Dropout2d(0.25),
+    #         custom2DCNN(160, 160, 2, "same"),
+    #         nn.MaxPool2d(2), # 4
+    #         nn.Dropout2d(0.25),
+    #         custom2DCNN(160, 160, 2, "same"),
+    #         nn.MaxPool2d((2, 1)), #2
+    #         nn.Dropout2d(0.25),
+    #         custom2DCNN(160, 160, 2, "same"),
+    #         nn.MaxPool2d(2),
+    #         nn.Dropout2d(0.25),
+    #     )
 
     def forward(self, x):
         x_env = self.env(x)
