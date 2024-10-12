@@ -1557,3 +1557,110 @@ class v1_mi6_env2_perc(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+
+class v1_mi6_env2_mod_stacks7(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(v1_mi6_env2_mod_stacks7, self).__init__()
+
+        self.sr = args.sr
+
+        self.logmel1 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=512)
+        self.logmel2 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=256)
+        self.logmel3 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=128)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        
+        self.cnn1 = self._create_cnn_block()
+        self.cnn2 = self._create_cnn_block()
+        self.cnn3 = self._create_cnn_block()
+        self.cnn4 = self._create_cnn_block()
+        self.cnn5 = self._create_cnn_block()
+        self.cnn6 = self._create_cnn_block()
+
+        self.cnn_env = self._create_cnn_env_block()
+
+        self.fc = nn.Sequential(
+                nn.Linear(160 * 7, 320),
+                nn.BatchNorm1d(320),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(320, 80),
+                nn.BatchNorm1d(80),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(80, output_nbr)
+            )
+
+    def _create_cnn_env_block(self):
+        return nn.Sequential(
+            custom1DCNN(1, 40, 7, "same", 4),
+            nn.AvgPool1d(16),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 40, 5, "same", 3),
+            nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 80, 3, "same", 2),
+            nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
+            custom1DCNN(80, 160, 2, "same", 1),
+            nn.AvgPool1d(7),
+            nn.Dropout1d(0.25),
+        )
+
+    def _create_cnn_block(self):
+        return nn.Sequential(
+            custom2DCNN(7, 40, (2, 7), "same"),
+            custom2DCNN(40, 40, (2, 7), "same"),
+            nn.MaxPool2d((2, 1)), # 35, 15
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2, 5), "same"),
+            custom2DCNN(80, 80, (2, 5), "same"),
+            nn.MaxPool2d((2, 3)), # 17, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)), # 8, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, (2, 3), "same"),
+            nn.MaxPool2d(2), # 4, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, (1, 2), "same"),
+            nn.MaxPool2d((2, 1)), #2, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+        )
+
+    def forward(self, x):
+        x_env = self.env(x)
+        x_env = x_env[:, :, :-1]
+        x_env = self.cnn_env(x_env)
+
+        x1_1, x1_2, x1_3, x1_4, x1_5, x1_6 = torch.split(self.logmel1(x), 70, dim=2)
+        x2_1, x2_2, x2_3, x2_4, x2_5, x2_6 = torch.split(self.logmel2(x)[:,:,:, :15], 70, dim=2)
+        x3_1, x3_2, x3_3, x3_4, x3_5, x3_6 = torch.split(self.logmel2(x)[:,:,:, 14:], 70, dim=2)
+
+        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :15], 70, dim=2)
+        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 14:29], 70, dim=2)
+        x6_1, x6_2, x6_3, x6_4, x6_5, x6_6 = torch.split(self.logmel3(x)[:,:,:, 28:43], 70, dim=2)
+        x7_1, x7_2, x7_3, x7_4, x7_5, x7_6 = torch.split(self.logmel3(x)[:,:,:, 42:], 70, dim=2)
+        
+        rx1_s = torch.cat((x1_1, x2_1, x3_1, x4_1, x5_1, x6_1, x7_1), dim=1)
+        rx2_s = torch.cat((x1_2, x2_2, x3_2, x4_2, x5_2, x6_2, x7_2), dim=1)
+        rx3_s = torch.cat((x1_3, x2_3, x3_3, x4_3, x5_3, x6_3, x7_3), dim=1)
+        rx4_s = torch.cat((x1_4, x2_4, x3_4, x4_4, x5_4, x6_4, x7_4), dim=1)
+        rx5_s = torch.cat((x1_5, x2_5, x3_5, x4_5, x5_5, x6_5, x7_5), dim=1)
+        rx6_s = torch.cat((x1_6, x2_6, x3_6, x4_6, x5_6, x6_6, x7_6), dim=1)
+
+        x1 = self.cnn1(rx1_s) 
+        x2 = self.cnn2(rx2_s)
+        x3 = self.cnn3(rx3_s)
+        x4 = self.cnn4(rx4_s)
+        x5 = self.cnn5(rx5_s)
+        x6 = self.cnn6(rx6_s)
+
+        x = torch.cat((x1, x2, x3, x4, x5, x6, x_env.unsqueeze(3)), dim=1)
+
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
