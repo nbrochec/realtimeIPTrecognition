@@ -1667,7 +1667,7 @@ class v1_mi6_env2_mod_stacks7(nn.Module):
     
 class v1_mi6_mod_stacks7(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_stacks7, self).__init__()
+        super(v1_mi6_mod_stacks7, self).__init__()
 
         self.sr = args.sr
 
