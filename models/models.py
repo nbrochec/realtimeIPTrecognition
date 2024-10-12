@@ -1609,8 +1609,8 @@ class v1_mi6_env2_mod_stacks7(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(7, 40, (2, 7), "same"),
-            custom2DCNN(40, 40, (2, 7), "same"),
+            custom2DCNN(7, 40, (3, 7), "same"), # old (2, 7)
+            custom2DCNN(40, 40, (3, 7), "same"), # old (2, 7)
             nn.MaxPool2d((2, 1)), # 35, 15
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 5), "same"),
@@ -1626,7 +1626,7 @@ class v1_mi6_env2_mod_stacks7(nn.Module):
             custom2DCNN(160, 160, (1, 2), "same"),
             nn.MaxPool2d((2, 1)), #2, 2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(160, 160, (1, 2), "same"), # old 2
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
@@ -1707,13 +1707,14 @@ class v1_mi6_mod_stacks7(nn.Module):
             custom2DCNN(80, 160, (2, 3), "same"),
             nn.MaxPool2d((2, 1)), # 8, 5
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, (2, 3), "same"),
+            custom2DCNN(160, 160, (1, 3), "same"),
             nn.MaxPool2d(2), # 4, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, (1, 2), "same"),
             nn.MaxPool2d((2, 1)), #2, 2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            # custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(160, 160, (1, 2), "same"),
             nn.MaxPool2d(2),
             nn.Dropout2d(0.25),
         )
