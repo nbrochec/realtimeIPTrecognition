@@ -1592,25 +1592,26 @@ class v1_mi6_env2_mod_stacks7(nn.Module):
             )
 
     def _create_cnn_env_block(self):
+        # change dilation
         return nn.Sequential(
-            custom1DCNN(1, 40, 7, "same", 4),
+            custom1DCNN(1, 40, 7, "same", 2),
             nn.AvgPool1d(16),
             nn.Dropout1d(0.25),
             custom1DCNN(40, 40, 5, "same", 3),
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
-            custom1DCNN(40, 80, 3, "same", 2),
+            custom1DCNN(40, 80, 3, "same", 4),
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(80, 160, 2, "same", 5),
             nn.AvgPool1d(7),
             nn.Dropout1d(0.25),
         )
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(7, 40, (3, 7), "same"), # old (2, 7)
-            custom2DCNN(40, 40, (3, 7), "same"), # old (2, 7)
+            custom2DCNN(7, 40, (2, 7), "same"), # old (2, 7)
+            custom2DCNN(40, 40, (2, 7), "same"), # old (2, 7)
             nn.MaxPool2d((2, 1)), # 35, 15
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 5), "same"),
