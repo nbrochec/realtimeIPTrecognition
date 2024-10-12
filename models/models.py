@@ -1683,15 +1683,11 @@ class v1_mi6_mod_stacks7(nn.Module):
         self.cnn6 = self._create_cnn_block()
 
         self.fc = nn.Sequential(
-                nn.Linear(160 * 7, 320),
+                nn.Linear(160 * 6, 320),
                 nn.BatchNorm1d(320),
                 nn.ReLU(),
                 nn.Dropout1d(0.25),
-                nn.Linear(320, 160),
-                nn.BatchNorm1d(160),
-                nn.ReLU(),
-                nn.Dropout1d(0.25),
-                nn.Linear(160, 80),
+                nn.Linear(320, 80),
                 nn.BatchNorm1d(80),
                 nn.ReLU(),
                 nn.Dropout1d(0.25),
