@@ -1723,9 +1723,6 @@ class v1_mi6_mod_stacks7(nn.Module):
         )
 
     def forward(self, x):
-        x_env = self.env(x)
-        x_env = x_env[:, :, :-1]
-        x_env = self.cnn_env(x_env)
 
         x1_1, x1_2, x1_3, x1_4, x1_5, x1_6 = torch.split(self.logmel1(x), 70, dim=2)
 
@@ -1751,7 +1748,7 @@ class v1_mi6_mod_stacks7(nn.Module):
         x5 = self.cnn5(rx5_s)
         x6 = self.cnn6(rx6_s)
 
-        x = torch.cat((x1, x2, x3, x4, x5, x6, x_env.unsqueeze(3)), dim=1)
+        x = torch.cat((x1, x2, x3, x4, x5, x6), dim=1)
 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
