@@ -1664,7 +1664,7 @@ class v1_mi6_env2_mod_new_stack(nn.Module):
         # self.logmel1 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=512)
         # self.logmel2 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=256)
         self.logmel3 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=128)
-        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=128, smoothing_factor=128)
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=128, smoothing_factor=4)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
