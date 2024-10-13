@@ -284,9 +284,9 @@ class ProcessDataset:
 
             for segment in segments:
                 if augmenter and self.set_type == 'train':
-                    aug1, aug2, aug3 = augmenter(segment)
-                    self.X.extend([aug1, aug2, aug3])
-                    self.y.extend([label] * 3)
+                    aug1, aug2, aug3, aug4 = augmenter(segment)
+                    self.X.extend([aug1, aug2, aug3, aug4])
+                    self.y.extend([label] * 4)
 
                 self.X.append(segment)
                 self.y.append(label)

@@ -734,9 +734,9 @@ class v1_mi6_env2_stack(nn.Module):
         z = self.fc(x_flat)
         return z
     
-class v1_mi6_env2_stacks(nn.Module):
+class v1_mi6_env2_mod_stacks(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_stacks, self).__init__()
+        super(v1_mi6_env2_mod_stacks, self).__init__()
 
         self.sr = args.sr
 
@@ -765,44 +765,43 @@ class v1_mi6_env2_stacks(nn.Module):
                 nn.Linear(80, output_nbr)
             )
 
-    def _create_cnn_env_block(self):
         return nn.Sequential(
-            custom1DCNN(1, 40, 7, "same", 4),
+            custom1DCNN(1, 40, 7, "same", 1),
             nn.AvgPool1d(16),
             nn.Dropout1d(0.25),
-            custom1DCNN(40, 40, 5, "same", 3),
+            custom1DCNN(40, 40, 5, "same", 2),
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
-            custom1DCNN(40, 80, 3, "same", 2),
+            custom1DCNN(40, 80, 3, "same", 3),
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
-            custom1DCNN(80, 160, 2, "same", 1),
+            custom1DCNN(80, 160, 2, "same", 4),
             nn.AvgPool1d(7),
             nn.Dropout1d(0.25),
         )
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(3, 40, (2, 3), "same"),
-            custom2DCNN(40, 40, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)), # 35
+            custom2DCNN(7, 40, (3, 7), "same"),
+            custom2DCNN(40, 40, (3, 7), "same"),
+            nn.MaxPool2d((2, 1)), # 35, 15
             nn.Dropout2d(0.25),
-            custom2DCNN(40, 80, (2, 3), "same"),
-            custom2DCNN(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)), # 17
+            custom2DCNN(40, 80, (2, 5), "same"),
+            custom2DCNN(80, 80, (2, 5), "same"),
+            nn.MaxPool2d((2, 3)), # 17, 5
             nn.Dropout2d(0.25),
-            custom2DCNN(80, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)), # 8
+            custom2DCNN(80, 160, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)), # 8, 5
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 4
+            custom2DCNN(160, 160, (1, 3), "same"),
+            nn.MaxPool2d(2), # 4, 2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)), #2
+            custom2DCNN(160, 160, (1, 2), "same"),
+            nn.MaxPool2d((2, 1)), #2, 2
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, 2, "same"),
+            custom2DCNN(160, 160, (1, 2), "same"),
             nn.MaxPool2d(2),
-            nn.Dropout2d(0.25),
+            nn.Dropout2d(0.25)
         )
 
     def forward(self, x):
@@ -1808,8 +1807,8 @@ class v1_mi6_env2_mod_full_stack(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(7, 40, (2, 7), "same"), # old (2, 7)
-            custom2DCNN(40, 40, (2, 7), "same"), # old (2, 7)
+            custom2DCNN(7, 40, (2, 7), "same"), # old (2,7) -> revenir à 3, 7
+            custom2DCNN(40, 40, (2, 7), "same"), # old (2, 7) -> revenir à 3, 7
             nn.MaxPool2d((2, 1)), # 35, 15
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 5), "same"),
