@@ -1864,3 +1864,135 @@ class v1_mi6_env2_mod_full_stack(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+class context_net(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(context_net, self).__init__()
+
+        self.sr = args.sr
+
+        self.logmel1 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=512)
+        self.logmel2 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=128)
+
+        self.env = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=512, smoothing_factor=4)
+        
+        self.cnn1_context = self._create_cnn_block()
+        self.cnn2_context = self._create_cnn_block()
+        self.cnn3_context = self._create_cnn_block()
+        self.cnn4_context = self._create_cnn_block()
+
+        self.cnn5_local = self._create_cnn_block()
+        self.cnn6_local = self._create_cnn_block()
+        self.cnn7_local = self._create_cnn_block()
+        self.cnn8_local = self._create_cnn_block()
+        self.cnn9_local = self._create_cnn_block()
+        self.cnn10_local = self._create_cnn_block()
+        self.cnn11_local = self._create_cnn_block()
+        self.cnn12_local = self._create_cnn_block()
+
+        self.merge1 = self._create_merge_block()
+        self.merge2 = self._create_merge_block()
+        self.merge3 = self._create_merge_block()
+        self.merge4 = self._create_merge_block()
+
+        self.cnn_env = self._create_cnn_env_block()
+
+        self.fc = nn.Sequential(
+                nn.Linear(80 * 5, 160),
+                nn.BatchNorm1d(160),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(160, 80),
+                nn.BatchNorm1d(80),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(80, output_nbr)
+            )
+        
+    def _create_merge_block(self):
+        return nn.Sequential(
+            nn.Linear(80 * 3, 80),
+            nn.BatchNorm1d(80),
+            nn.ReLU(),
+        )
+
+    def _create_cnn_env_block(self):
+        # change dilation
+        return nn.Sequential(
+            custom1DCNN(1, 40, 7, "same", 2),
+            nn.AvgPool1d(16),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 40, 5, "same", 3),
+            nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 80, 3, "same", 4),
+            nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
+            custom1DCNN(80, 80, 2, "same", 5),
+            nn.AvgPool1d(7),
+            nn.Dropout1d(0.25),
+        )
+
+    def _create_cnn_block(self):
+        return nn.Sequential(
+            custom2DCNN(1, 20, (3, 7), "same"), # old (2,7) -> revenir à 3, 7
+            custom2DCNN(20, 20, (3, 7), "same"), # old (2, 7) -> revenir à 3, 7
+            nn.MaxPool2d((2, 1)), # 35, 15
+            nn.Dropout2d(0.25),
+            custom2DCNN(20, 40, (2, 5), "same"),
+            custom2DCNN(40, 40, (2, 5), "same"),
+            nn.MaxPool2d((2, 3)), # 17, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)), # 8, 5
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 80, (2, 3), "same"),
+            nn.MaxPool2d(2), # 4, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 80, (1, 2), "same"),
+            nn.MaxPool2d((2, 1)), #2, 2
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 80, (1, 2), "same"), # old 2
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+        )
+
+    def forward(self, x):
+        x_env = self.env(x)[:, :, :-1]
+        x_env = self.cnn_env(x_env)
+
+        x1_1, x1_2, x1_3, x1_4 = torch.split(self.logmel1(x), 105, dim=2)
+
+        x2_1, x2_2, x2_3, x2_4 = torch.split(self.logmel2(x)[:,:,:, :15], 105, dim=2)
+        x3_1, x3_2, x3_3, x3_4 = torch.split(self.logmel2(x)[:,:,:, 14:], 105, dim=2)
+        
+        c1 = self.cnn1_context(x1_1)
+        c2 = self.cnn2_context(x1_2)
+        c3 = self.cnn3_context(x1_3)
+        c4 = self.cnn4_context(x1_4)
+        
+        l1 = self.cnn5_local(x2_1)
+        l2 = self.cnn6_local(x2_2)
+        l3 = self.cnn7_local(x2_3)
+        l4 = self.cnn8_local(x2_4)
+
+        l5 = self.cnn9_local(x3_1)
+        l6 = self.cnn10_local(x3_2)
+        l7 = self.cnn11_local(x3_3)
+        l8 = self.cnn12_local(x3_4)
+
+        x1 = torch.cat((c1, l1, l5), dim=1)
+        x2 = torch.cat((c2, l2, l6), dim=1)
+        x3 = torch.cat((c3, l3, l7), dim=1)
+        x4 = torch.cat((c4, l4, l8), dim=1)
+
+        m1 = self.merge1(x1)
+        m2 = self.merge2(x2)
+        m3 = self.merge3(x3)
+        m4 = self.merge4(x4)
+
+        x = torch.cat((m1, m2, m3, m4, x_env.unsqueeze(3)), dim=1)
+
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
