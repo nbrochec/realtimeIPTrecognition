@@ -1717,15 +1717,15 @@ class v1_mi6_env2_mod_new_stack(nn.Module):
             custom2DCNN(80, 160, (2, 3), "same"),
             nn.MaxPool2d((2, 1)), # 8, 5
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, (2, 3), "same"),
+            custom2DCNN(160, 160, 2, "same"), # old 2, 3
             nn.MaxPool2d(2), # 4, 2
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, (1, 2), "same"),
-            nn.MaxPool2d((2, 1)), #2, 2
+            nn.MaxPool2d((4, 2)), #2, 2 #old 2,1
             nn.Dropout2d(0.25),
-            custom2DCNN(160, 160, (1, 2), "same"), # old 2
-            nn.MaxPool2d(2),
-            nn.Dropout2d(0.25),
+            # custom2DCNN(160, 160, (1, 2), "same"), # old 2
+            # nn.MaxPool2d(2),
+            # nn.Dropout2d(0.25),
         )
 
     def forward(self, x):
