@@ -1,9 +1,9 @@
-from .models import v1, v2, v3, v2_1d, v1_mi4, v1_mi6, v1_mi6_env2, v1_mi5_env2, v1_mi6_env2_lstm, v1_mi6_env2_rdc, v1_mi6_env2_lstm_rdc
-from .layers import custom1DCNN, custom2DCNN, LogMelSpectrogramLayer, EnvelopeFollowingLayerTorchScript
+from .models import v1, v2, v3
+from .layers import custom2DCNN, LogMelSpectrogramLayer
 from .utils import LoadModel, ModelSummary, ModelTester, ModelInit, ModelTrainer, PrepareModel
 
 __all__=[
-    'v1', 'v2', 'v3', 'v2_1d', 'v1_mi4', 'v1_mi6', 'v1_mi6_env2', 'v1_mi5_env2', 'v1_mi6_env2_lstm', 'v1_mi6_env2_rdc', 'v1_mi6_env2_lstm_rdc',
-    'custom1DCNN', 'custom2DCNN', 'LogMelSpectrogramLayer', 'EnvelopeFollowingLayerTorchScript',
+    'v1', 'v2', 'v3',
+    'custom2DCNN', 'LogMelSpectrogramLayer',
     'LoadModel', 'ModelSummary', 'ModelTester', 'ModelInit', 'ModelTrainer', 'PrepareModel'
 ]
