@@ -58,19 +58,7 @@ class LogMelSpectrogramLayer(nn.Module):
         # x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
         x = self.min_max_normalize(x)
         return x.to(torch.float32)
-
-class EnvelopeExtractor(nn.Module):
-    def __init__(self, sample_rate=24000, cutoff_freq=10, Q=0.707):
-        super(EnvelopeExtractor, self).__init__()
-        self.sr = sample_rate
-        self.cutoff = cutoff_freq
-        self.Q = Q
-
-    def forward(self, x):
-        x = torch.abs(x)
-        x = Faudio.highpass_biquad(x, sample_rate=self.sr, cutoff_freq=float(self.cutoff), Q=self.Q)
-        return x
-
+    
 class custom2DCNN(nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, padding):
         super(custom2DCNN, self).__init__()
@@ -85,64 +73,3 @@ class custom2DCNN(nn.Module):
         x = self.activ(x)
         # x = self.drop(x)
         return x
-
-class custom1DCNN(nn.Module):
-    def __init__(self, input_channels, output_channels, kernel_size, padding, dilation):
-        super(custom1DCNN, self).__init__()
-        self.conv = nn.Conv1d(in_channels=input_channels, out_channels=output_channels,kernel_size=kernel_size, padding=padding, dilation=dilation)
-        self.batch = nn.BatchNorm1d(output_channels)
-        self.activ = nn.GELU()
-        # self.avg = nn.AvgPool1d(4)
-    
-    def forward(self,x):
-        x = self.conv(x)
-        x = self.batch(x)
-        x = self.activ(x)
-        # x = self.drop(x)
-        return x
-    
-class EnvelopeFollowingLayerTorchScript(nn.Module):
-    def __init__(self, n_fft=1024, hop_length=512, smoothing_factor=None):
-        super(EnvelopeFollowingLayerTorchScript, self).__init__()
-        self.n_fft = n_fft
-        self.hop_length = hop_length
-        self.smoothing_factor = smoothing_factor
-
-    def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
-        min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
-        max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
-        eps = 1e-5
-        t_min = torch.min(t)
-        t_max = torch.max(t)
-
-        if (t_max - t_min) == 0:
-            t_std = (t - t_min) / ((t_max - t_min) + eps)
-        else:
-            t_std = (t - t_min) / (t_max - t_min)
-        
-        t_scaled = t_std * (max_tensor - min_tensor) + min_tensor
-        return t_scaled
-
-    def forward(self, x):
-        batch_size, n_channels, time = x.shape
-        window = torch.hann_window(self.n_fft).to(x.device)
-        envelope_list = []
-        for i in range(n_channels):
-            stft_result = torch.stft(x[:, i, :], n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
-            
-            stft_analytic = stft_result.clone()
-            stft_analytic[..., self.n_fft//2+1:] = 0 
-            
-            analytic_signal = torch.istft(stft_analytic, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=False)
-            
-            envelope = torch.abs(analytic_signal)
-            envelope_list.append(envelope.unsqueeze(1))
-        
-
-        envelope_output = torch.cat(envelope_list, dim=1)  # Shape: [batch, n_channels, time]
-
-        if self.smoothing_factor is not None:
-            envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
-
-        # norm_env = self.min_max_normalize(envelope_output)
-        return envelope_output
