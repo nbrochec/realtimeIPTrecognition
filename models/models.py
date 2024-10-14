@@ -1691,14 +1691,17 @@ class v1_mi6_env2_mod_new_stack(nn.Module):
         # change dilation
         # augment kernel
         return nn.Sequential(
-            custom1DCNN(1, 40, 40, "same", 1), #old 7 puis 15 puis 20
-            nn.AvgPool1d(16),
-            nn.Dropout1d(0.25),
-            custom1DCNN(40, 40, 20, "same", 2), #old 5 puis 10 puis 15
+            custom1DCNN(1, 40, 20, "same", 1), 
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
-            custom1DCNN(40, 80, 7, "same", 3), #old 3 puis 5
+            custom1DCNN(40, 40, 15, "same", 2), 
             nn.AvgPool1d(8),
+            nn.Dropout1d(0.25),
+            custom1DCNN(40, 80, 10, "same", 2),  #new
+            nn.AvgPool1d(8), #new
+            nn.Dropout1d(0.25), #new
+            custom1DCNN(80, 80, 7, "same", 3), 
+            nn.AvgPool1d(2),
             nn.Dropout1d(0.25),
             custom1DCNN(80, 160, 2, "same", 4),
             nn.AvgPool1d(7),
