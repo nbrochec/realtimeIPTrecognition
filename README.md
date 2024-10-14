@@ -164,7 +164,7 @@ You can use the following arguments if you want to test different configurations
 | `--name`             | Name of the project.                                              | String                         |           |
 | `--device`          | Specify the hardware on which computation should be performed.     | `cpu`, `cuda`, `mps`           | `cpu`           |
 | `--gpu`             | Specify which GPU to use.                                          | Integer                          | `0`             |
-| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`, `v2_1d`, `v1_mi4`, `v1_mi5_env2`, `v1_mi6`, `v1_mi6_env2`,  | `v2`   |
+| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`  | `v2`   |
 | `--sr`              | Sampling rate for downsampling the audio files.                    | Integer (Hz)                   | `24000`         |
 | `--segment_overlap` | Overlap between audio segments. Increase the data samples by a factor 2. | `True`, `False`                | `False`         |
 | `--fmin`            | Minimum frequency for Mel filters.                                 | Integer (Hz)                    | `0`          |
@@ -292,7 +292,7 @@ If you use this code in your research, please cite the following papers.
 • Nicolas Brochec and Tsubasa Tanaka. [Toward Real-Time Recognition of Instrumental Playing Techniques for Mixed Music: A Preliminary Analysis](https://hal.science/hal-04263718). International Computer Music Conference (ICMC 2023), Oct 2023, Shenzhen, China.
 
 ### Datasets
-• Nicolas Brochec and Will Howie. [GFDatabase: A Database of Flute Playing Techniques](https://doi.org/10.5281/zenodo.10932398) (version 1.0.1). Zenodo, 2024.
+• Nicolas Brochec and Will Howie. [GFDatabase: A Database of Flute Playing Techniques](https://zenodo.org/records/13898549) (version 1.1). Zenodo, 2024.
 
 ## Acknowledgments
 This project uses code from the [pytorch_balanced_sampler](https://github.com/khornlund/pytorch-balanced-sampler) repository created by Karl Hornlund.
