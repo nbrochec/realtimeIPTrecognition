@@ -16,7 +16,7 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
-from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeFollowingLayerTorchScript, HPSS, LogMelScale, HPSSMel
+from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeFollowingLayerTorchScript, HPSS, ARB, LogMelSpectrogramLayerERANN
 from utils.constants import SEGMENT_LENGTH
 
 class v1(nn.Module):
@@ -2469,3 +2469,57 @@ class context_net(nn.Module):
         z = self.fc(z)
 
         return z
+    
+class ARBModel(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(ARBModel, self).__init__()
+        self.sr = args.sr
+        self.logmel = LogMelSpectrogramLayerERANN(n_fft=2048, hop_length=128, sample_rate=self.sr, n_mels=420)
+        self.output_nbr = output_nbr
+
+        self.arb1 = self._create_ARB_net()
+        self.arb2 = self._create_ARB_net()
+        self.arb3 = self._create_ARB_net()
+        self.arb4 = self._create_ARB_net()
+        self.arb5 = self._create_ARB_net()
+        self.arb6 = self._create_ARB_net()
+
+        self.fc = self._create_fc_block()
+
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
+
+    def _create_fc_block(self):
+        return nn.Sequential(
+            nn.Linear(160 * 6, 160),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(160, 80),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(80, self.output_nbr)
+        )
+
+    def _create_ARB_net(self):
+        return nn.Sequential(
+            ARB(1, 40, 2, 2),
+            ARB(40, 80, 2, 2),
+            ARB(80, 160, 2, 2),
+        )
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5, x6 = torch.split(self.logmel(x), 70, dim=2)
+
+        x1 = self.arb1(x1)
+        x2 = self.arb2(x2)
+        x3 = self.arb3(x3)
+        x4 = self.arb4(x4)
+        x5 = self.arb5(x5)
+        x6 = self.arb6(x6)
+        
+        x = torch.cat((x1, x2, x3, x4, x5, x6), dim=1)
+
+        x = self.global_pool(x)  # Output size: (batch, 160, 1, 1)
+        
+        x = torch.flatten(x, 1)  # Output size: (batch, 160)
+        
+        x = self.fc(x)  # Output size: (batch, 11)
+        
+        return x

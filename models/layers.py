@@ -64,6 +64,32 @@ class LogMelSpectrogramLayer(nn.Module):
         # x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
         x = self.min_max_normalize(x)
         return x.to(torch.float32)
+    
+class LogMelSpectrogramLayerERANN(nn.Module):
+    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150):
+        super(LogMelSpectrogramLayerERANN, self).__init__()
+        self.sample_rate = sample_rate
+        self.n_fft = n_fft
+        self.win_length = win_length if win_length is not None else n_fft
+        self.hop_length = hop_length
+        self.n_mels = n_mels
+        self.f_min = f_min
+        
+        self.mel_scale = Taudio.MelSpectrogram(
+            sample_rate=self.sample_rate,
+            n_fft=self.n_fft,
+            win_length=self.win_length,
+            hop_length=self.hop_length,
+            n_mels=self.n_mels,
+            f_min=self.f_min
+        )
+
+        self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power')
+
+    def forward(self, x):
+        x = self.mel_scale(x)
+        x = self.amplitude_to_db(x)
+        return x.to(torch.float32)
 
 class EnvelopeExtractor(nn.Module):
     def __init__(self, sample_rate=24000, cutoff_freq=10, Q=0.707):
@@ -450,3 +476,54 @@ class HPSSMel(nn.Module):
         perc = S * mask_perc
 
         return harm, perc
+    
+class ARB(nn.Module):
+    def __init__(self, cin, cout, x, y):
+        super(ARB, self).__init__()
+        
+        K1, K2, P = self.get_kernels_and_padding(x)
+        
+        self.use_residual = (cin == cout and x == y == 1)
+
+        self.batchnorm1 = nn.BatchNorm2d(cin)
+        self.leaky_relu1 = nn.LeakyReLU(negative_slope=0.01)
+
+        self.conv1 = nn.Conv2d(cin, cout, kernel_size=K1, stride=(x, y), padding=P)
+        self.batchnorm2 = nn.BatchNorm2d(cout)
+        self.leaky_relu2 = nn.LeakyReLU(negative_slope=0.01)
+
+        self.conv2 = nn.Conv2d(cout, cout, kernel_size=K2, stride=(1, 1), padding=P)
+        
+        if not self.use_residual:
+            self.conv_res = nn.Conv2d(cin, cout, kernel_size=(1, 1), stride=(x, y), padding=(0, 0))
+
+    def get_kernels_and_padding(self, z):
+        if z == 1 or z == 2:
+            K1 = K2 = (3, 3)
+            P = (1, 1)
+        elif z == 4:
+            K1 = K2 = (6, 5)
+            P = (2, 2)
+        else:
+            raise ValueError("Unsupported stride size")
+        return K1, K2, P
+
+    def forward(self, x):
+        identity = x
+        
+        out = self.batchnorm1(x)
+        out = self.leaky_relu1(out)
+        out = self.conv1(out)
+        out = self.batchnorm2(out)
+        out = self.leaky_relu2(out)
+        out = self.conv2(out)
+        
+        if not self.use_residual:
+            identity = self.conv_res(identity)
+        
+        out += identity
+        return out
+
+
+
+
