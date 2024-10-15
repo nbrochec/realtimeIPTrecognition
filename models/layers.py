@@ -581,9 +581,7 @@ class customARB(nn.Module):
         x = self.batchnorm(x)
         x = self.leaky_relu(x)
         out = self.conv2d_2(x)
-        print(out.shape)
         res = self.conv_res(res)
-        print(res.shape)
         out += res
         # out = self.maxpool(out)
         return out
