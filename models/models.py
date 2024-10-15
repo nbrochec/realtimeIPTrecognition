@@ -2505,13 +2505,11 @@ class ARNModel_env2_stack(nn.Module):
 
     def _create_ARB_net(self):
         return nn.Sequential(
-            customARB(8, 40),
-            nn.MaxPool2d((2,1)),
-            customARB(40, 40),
-            nn.MaxPool2d((2,1)),
-            customARB(40, 80),
-            nn.MaxPool2d(2),
-            customARB(80, 160),
+            ARB(8, 40, 2, 2),
+            ARB(40, 40, 1, 1),
+            ARB(40, 80, 2, 2),
+            ARB(80, 160, 1, 1),
+            ARB(160, 160, 2, 2),
         )
     
     def _create_env_block(self):
@@ -2527,7 +2525,7 @@ class ARNModel_env2_stack(nn.Module):
         )
 
     def forward(self, x):
-        x_env = self.env1(x)[:, :, :-1]
+        x_env = x
         x_env = self.cnn_env(x_env)
 
         x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x)[:,:,:, :15], 70, dim=2)
@@ -2584,6 +2582,8 @@ class ARBModel_stack(nn.Module):
 
         self.global_pool = nn.AdaptiveAvgPool2d(1)
 
+        self.cnn_raw = self._create_env_block()
+
     def _create_fc_block(self):
         return nn.Sequential(
             nn.Linear(160 * 6, 160),
@@ -2592,15 +2592,32 @@ class ARBModel_stack(nn.Module):
             nn.LeakyReLU(negative_slope=0.01),
             nn.Linear(80, self.output_nbr)
         )
+    
+    def _create_env_block(self):
+        return nn.Sequential(
+            ARB1d(1, 40, 20, 1),
+            nn.AvgPool1d(8),
+            ARB1d(40, 40, 10, 2),
+            nn.AvgPool1d(8),
+            ARB1d(40, 80, 5, 3),
+            nn.AvgPool1d(8),
+            ARB1d(80, 160, 2, 4),
+            nn.AvgPool1d(8),
+        )
 
     def _create_ARB_net(self):
         return nn.Sequential(
             ARB(4, 40, 2, 2),
             ARB(40, 80, 2, 2),
             ARB(80, 160, 2, 2),
+
         )
 
     def forward(self, x):
+        # x_raw = x
+        # print(x_raw.shape)
+        # x_raw = self.cnn_raw(x_raw)
+
         x1_1, x2_1, x3_1, x4_1, x5_1, x6_1 = torch.split(self.logmel(x)[:,:,:, :15], 70, dim=2)
         x1_2, x2_2, x3_2, x4_2, x5_2, x6_2 = torch.split(self.logmel(x)[:,:,:, 14:29], 70, dim=2)
         x1_3, x2_3, x3_3, x4_3, x5_3, x6_3 = torch.split(self.logmel(x)[:,:,:, 28:43], 70, dim=2)

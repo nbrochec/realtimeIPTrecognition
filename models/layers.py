@@ -108,7 +108,7 @@ class custom2DCNN(nn.Module):
         super(custom2DCNN, self).__init__()
         self.conv = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=kernel_size, stride=1, padding=padding)
         self.batch = nn.BatchNorm2d(output_channels)
-        self.activ = nn.LeakyReLU()
+        self.activ = nn.LeakyReLU(negative_slope=0.01)
         # self.drop = nn.Dropout2d(0.25)
 
     def forward(self, x):
