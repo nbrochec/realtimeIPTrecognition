@@ -1804,7 +1804,7 @@ class v1_mi6_env2_mod_new_stack8(nn.Module):
             custom1DCNN(40, 40, 15, "same", 2), 
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
-            custom1DCNN(80, 80, 7, "same", 3), 
+            custom1DCNN(40, 80, 7, "same", 3), 
             nn.AvgPool1d(2),
             nn.Dropout1d(0.25),
             custom1DCNN(80, 160, 2, "same", 4),
