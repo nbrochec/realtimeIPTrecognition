@@ -523,7 +523,40 @@ class ARB(nn.Module):
         
         out += identity
         return out
+    
 
+
+class ARB1d(nn.Module):
+    def __init__(self, cin, cout, k, d):
+        super(ARB1d, self).__init__()
+        
+        self.use_residual = (cin == cout)
+
+        P = (k - 1) // 2
+        self.conv1 = nn.Conv1d(cin, cout, kernel_size=k, padding=P, dilation=d)
+        self.batchnorm = nn.BatchNorm1d(cout)
+        self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)
+
+        if not self.use_residual:
+            self.conv_res = nn.Conv1d(cin, cout, kernel_size=1, padding=0)
+
+    def forward(self, x):
+        identity = x
+        
+        out = self.batchnorm(self.conv1(x))
+        out = self.leaky_relu(out)
+        
+        if not self.use_residual:
+            identity = self.conv_res(identity)
+
+        if out.shape != identity.shape:
+            min_length = min(out.shape[2], identity.shape[2])
+            out = out[:, :, :min_length]
+            identity = identity[:, :, :min_length]
+
+        out += identity
+        print(out.shape)
+        return out
 
 class ResidualBlock(nn.Module):
     def __init__(self, cin, cout):
