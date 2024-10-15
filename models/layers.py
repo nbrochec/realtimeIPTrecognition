@@ -538,6 +538,8 @@ class ResidualBlock(nn.Module):
         self.batchnorm = nn.BatchNorm2d(cout)
         self.batchnorm_in = nn.BatchNorm2d(cin)
 
+        self.maxpool = nn.MaxPool2d((3,2))
+
     def forward(self, x):
         res = x
 
@@ -547,6 +549,9 @@ class ResidualBlock(nn.Module):
         x = self.batchnorm(x)
         x = self.leaky_relu(x)
         out = self.conv2d_2(x)
+        print(out.shape)
         res = self.conv_res(res)
+        print(res.shape)
         out += res
+        out = self.maxpool(out)
         return out
