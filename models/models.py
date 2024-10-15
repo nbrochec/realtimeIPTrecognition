@@ -2523,3 +2523,68 @@ class ARBModel(nn.Module):
         x = self.fc(x)  # Output size: (batch, 11)
         
         return x
+    
+
+class ARBModel_stack(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(ARBModel_stack, self).__init__()
+        self.sr = args.sr
+        self.logmel = LogMelSpectrogramLayerERANN(n_fft=2048, hop_length=128, sample_rate=self.sr, n_mels=420)
+        self.output_nbr = output_nbr
+
+        self.arb1 = self._create_ARB_net()
+        self.arb2 = self._create_ARB_net()
+        self.arb3 = self._create_ARB_net()
+        self.arb4 = self._create_ARB_net()
+        self.arb5 = self._create_ARB_net()
+        self.arb6 = self._create_ARB_net()
+
+        self.fc = self._create_fc_block()
+
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
+
+    def _create_fc_block(self):
+        return nn.Sequential(
+            nn.Linear(160 * 6, 160),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(160, 80),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(80, self.output_nbr)
+        )
+
+    def _create_ARB_net(self):
+        return nn.Sequential(
+            ARB(4, 40, 2, 2),
+            ARB(40, 80, 2, 2),
+            ARB(80, 160, 2, 2),
+        )
+
+    def forward(self, x):
+        x1_1, x2_1, x3_1, x4_1, x5_1, x6_1 = torch.split(self.logmel(x)[:,:,:, :15], 70, dim=2)
+        x1_2, x2_2, x3_2, x4_2, x5_2, x6_2 = torch.split(self.logmel(x)[:,:,:, 14:29], 70, dim=2)
+        x1_3, x2_3, x3_3, x4_3, x5_3, x6_3 = torch.split(self.logmel(x)[:,:,:, 28:43], 70, dim=2)
+        x1_4, x2_4, x3_4, x4_4, x5_4, x6_4 = torch.split(self.logmel(x)[:,:,:, 42:], 70, dim=2)
+
+        x1 = torch.cat((x1_1, x1_2, x1_3, x1_4), dim=1)
+        x2 = torch.cat((x2_1, x2_2, x2_3, x2_4), dim=1)
+        x3 = torch.cat((x3_1, x3_2, x3_3, x3_4), dim=1)
+        x4 = torch.cat((x4_1, x4_2, x4_3, x4_4), dim=1)
+        x5 = torch.cat((x5_1, x5_2, x5_3, x5_4), dim=1)
+        x6 = torch.cat((x6_1, x6_2, x6_3, x6_4), dim=1)
+
+        x1 = self.arb1(x1)
+        x2 = self.arb2(x2)
+        x3 = self.arb3(x3)
+        x4 = self.arb4(x4)
+        x5 = self.arb5(x5)
+        x6 = self.arb6(x6)
+        
+        x = torch.cat((x1, x2, x3, x4, x5, x6), dim=1)
+
+        x = self.global_pool(x)  # Output size: (batch, 160, 1, 1)
+        
+        x = torch.flatten(x, 1)  # Output size: (batch, 160)
+        
+        x = self.fc(x)  # Output size: (batch, 11)
+        
+        return x
