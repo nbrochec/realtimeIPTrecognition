@@ -2547,16 +2547,21 @@ class ARBModel_stack(nn.Module):
         return nn.Sequential(
             nn.Linear(160 * 6, 160),
             nn.LeakyReLU(negative_slope=0.01),
+            nn.Dropout(0.25),
             nn.Linear(160, 80),
             nn.LeakyReLU(negative_slope=0.01),
+            nn.Dropout(0.25),
             nn.Linear(80, self.output_nbr)
         )
 
     def _create_ARB_net(self):
         return nn.Sequential(
             ARB(4, 40, 2, 2),
+            nn.Dropout(0.25),
             ARB(40, 80, 2, 2),
+            nn.Dropout(0.25),
             ARB(80, 160, 2, 2),
+            nn.Dropout(0.25),
         )
 
     def forward(self, x):
