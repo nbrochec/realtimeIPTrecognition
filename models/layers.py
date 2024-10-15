@@ -557,9 +557,9 @@ class ARB1d(nn.Module):
         out += identity
         return out
 
-class ResidualBlock(nn.Module):
+class customARB(nn.Module):
     def __init__(self, cin, cout):
-        super(ResidualBlock, self).__init__()
+        super(customARB, self).__init__()
 
         self.conv2d_1 = nn.Conv2d(cin, cout, kernel_size=(2,7), padding=(1, 3))
         self.conv2d_2 = nn.Conv2d(cout, cout, kernel_size=(2,5), padding=(0, 2))
@@ -570,7 +570,7 @@ class ResidualBlock(nn.Module):
         self.batchnorm = nn.BatchNorm2d(cout)
         self.batchnorm_in = nn.BatchNorm2d(cin)
 
-        self.maxpool = nn.MaxPool2d((3,2))
+        # self.maxpool = nn.MaxPool2d(2)
 
     def forward(self, x):
         res = x
@@ -585,5 +585,5 @@ class ResidualBlock(nn.Module):
         res = self.conv_res(res)
         print(res.shape)
         out += res
-        out = self.maxpool(out)
+        # out = self.maxpool(out)
         return out

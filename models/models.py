@@ -16,7 +16,7 @@ import torchaudio.transforms as T
 import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
-from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeFollowingLayerTorchScript, HPSS, ARB, LogMelSpectrogramLayerERANN, ResidualBlock, ARB1d
+from models.layers import LogMelSpectrogramLayer, custom2DCNN, custom1DCNN, EnvelopeFollowingLayerTorchScript, HPSS, ARB, LogMelSpectrogramLayerERANN, customARB, ARB1d
 from utils.constants import SEGMENT_LENGTH
 
 class v1(nn.Module):
@@ -2470,9 +2470,9 @@ class context_net(nn.Module):
 
         return z
     
-class ARBModel_env2_stack(nn.Module):
+class ARNModel_env2_stack(nn.Module):
     def __init__(self, output_nbr, args):
-        super(ARBModel_env2_stack, self).__init__()
+        super(ARNModel_env2_stack, self).__init__()
         self.sr = args.sr
         self.logmel = LogMelSpectrogramLayerERANN(n_fft=2048, hop_length=64, sample_rate=self.sr, n_mels=420)
         self.output_nbr = output_nbr
@@ -2488,7 +2488,7 @@ class ARBModel_env2_stack(nn.Module):
 
         self.fc = self._create_fc_block()
 
-        self.global_pool = nn.AdaptiveAvgPool2d(1)
+        self.global_pool = nn.AdaptiveMaxPool2d(1)
 
         self.cnn_env = self._create_env_block()
 
@@ -2505,10 +2505,13 @@ class ARBModel_env2_stack(nn.Module):
 
     def _create_ARB_net(self):
         return nn.Sequential(
-            ARB(8, 40, 2, 2),
-            ARB(40, 40, 1, 1),
-            ARB(40, 80, 2, 2),
-            ARB(80, 160, 2, 2),
+            customARB(8, 40),
+            nn.MaxPool2d((2,1)),
+            customARB(40, 40),
+            nn.MaxPool2d((2,1)),
+            customARB(40, 80),
+            nn.MaxPool2d(2),
+            customARB(80, 160),
         )
     
     def _create_env_block(self):
