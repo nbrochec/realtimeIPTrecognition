@@ -2508,8 +2508,8 @@ class ARNModel_env2_stack(nn.Module):
             ARB(8, 40, 2, 2),
             ARB(40, 40, 1, 1),
             ARB(40, 80, 2, 2),
-            ARB(80, 160, 1, 1),
-            ARB(160, 160, 2, 2),
+            ARB(80, 160, 2, 2),
+            ARB(160, 160, 1, 1),
         )
     
     def _create_env_block(self):
