@@ -529,23 +529,24 @@ class ResidualBlock(nn.Module):
     def __init__(self, cin, cout):
         super(ResidualBlock, self).__init__()
 
-        self.conv2d_1 = nn.Conv2d(cin, cout, kernel_size=(3,7))
-        self.conv2d_2 = nn.Conv2d(cout, cout, kernel_size=(2,5))
+        self.conv2d_1 = nn.Conv2d(cin, cout, kernel_size=(2,7), padding=(1, 3))
+        self.conv2d_2 = nn.Conv2d(cout, cout, kernel_size=(2,5), padding=(0, 2))
+
+        self.conv_res = nn.Conv2d(cin, cout, kernel_size=(1, 1), padding=(0, 0))
 
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)
         self.batchnorm = nn.BatchNorm2d(cout)
+        self.batchnorm_in = nn.BatchNorm2d(cin)
 
     def forward(self, x):
-        identity = x
+        res = x
 
+        x = self.batchnorm_in(x)
+        x = self.leaky_relu(x)
         x = self.conv2d_1(x)
         x = self.batchnorm(x)
         x = self.leaky_relu(x)
-        x = self.conv2d_2(x)
-
-        x += identity
-
-        x = self.batchnorm(x)
-        x = self.leaky_relu(x)
-
-        return x
+        out = self.conv2d_2(x)
+        res = self.conv_res(res)
+        out += res
+        return out

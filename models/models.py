@@ -2609,7 +2609,7 @@ class ARN(nn.Module):
 
     def _create_residual_block(self):
         return nn.Sequential(
-            ResidualBlock(8, 40),
+            ResidualBlock(4, 40),
             ResidualBlock(40, 80),
             ResidualBlock(80, 160),
         )
