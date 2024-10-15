@@ -555,7 +555,6 @@ class ARB1d(nn.Module):
             identity = identity[:, :, :min_length]
 
         out += identity
-        print(out.shape)
         return out
 
 class ResidualBlock(nn.Module):
