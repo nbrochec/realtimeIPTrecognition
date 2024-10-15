@@ -62,7 +62,7 @@ class LoadModel:
             'v1_mi6_env2_mod_new_stack': v1_mi6_env2_mod_new_stack,
             'v1_mi6_env2_mod_new_stack_onset': v1_mi6_env2_mod_new_stack_onset,
             'v1_mi6_env2_mod_new_stack8': v1_mi6_env2_mod_new_stack8,
-            'ARBModel': ARBModel_env2_stack,
+            'ARBModel_env2_stack': ARBModel_env2_stack,
             'ARBModel_stack': ARBModel_stack,
             'ARN': ARN
         }
