@@ -10,3 +10,5 @@ logs/
 data/raw_data/HB-bridge
 data/raw_data/HB-couple
 data/raw_data/HB-neck
+models/trash_models.py
+models/trash_layers.py
