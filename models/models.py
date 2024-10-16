@@ -460,15 +460,21 @@ class v1_mi6_env2_mod_new_stack(nn.Module):
         # augment kernel
         return nn.Sequential(
             custom1DCNN(1, 40, 20, "same", 1), 
-            nn.AvgPool1d(8),
+            nn.AvgPool1d(4),
             nn.Dropout1d(0.25),
+            custom1DCNN(40, 40, 17, "same", 1),  #new
+            nn.AvgPool1d(2), #new
+            nn.Dropout1d(0.25), #new
             custom1DCNN(40, 40, 15, "same", 2), 
             nn.AvgPool1d(8),
             nn.Dropout1d(0.25),
             custom1DCNN(40, 80, 10, "same", 2),  #new
-            nn.AvgPool1d(8), #new
+            nn.AvgPool1d(4), #new
             nn.Dropout1d(0.25), #new
-            custom1DCNN(80, 80, 7, "same", 3), 
+            custom1DCNN(80, 80, 8, "same", 3), #new
+            nn.AvgPool1d(2), #new
+            nn.Dropout1d(0.25), #new
+            custom1DCNN(80, 80, 5, "same", 3), 
             nn.AvgPool1d(2),
             nn.Dropout1d(0.25),
             custom1DCNN(80, 160, 2, "same", 4),
@@ -495,9 +501,6 @@ class v1_mi6_env2_mod_new_stack(nn.Module):
             custom2DCNN(160, 160, (1, 2), "same"),
             nn.MaxPool2d((4, 2)), #2, 2 #old 2,1
             nn.Dropout2d(0.25),
-            # custom2DCNN(160, 160, (1, 2), "same"), # old 2
-            # nn.MaxPool2d(2),
-            # nn.Dropout2d(0.25),
         )
 
     def forward(self, x):
