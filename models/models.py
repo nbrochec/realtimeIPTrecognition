@@ -836,3 +836,90 @@ class ARNModel_new(nn.Module):
         x = self.fc(x)
         return x
     
+
+class ARNModel_mod_new(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(ARNModel_mod_new, self).__init__()
+        
+        self.sr = args.sr
+        self.logmel = LogMelSpectrogramLayer(n_fft=2048, hop_length=64, sample_rate=self.sr, n_mels=420)
+        self.output_nbr = output_nbr
+
+        self.env1 = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=64, smoothing_factor=4)
+
+        self.arb1 = self._create_ARB_net()
+        self.arb2 = self._create_ARB_net()
+        self.arb3 = self._create_ARB_net()
+        self.arb4 = self._create_ARB_net()
+        self.arb5 = self._create_ARB_net()
+        self.arb6 = self._create_ARB_net()
+
+        self.fc = self._create_fc_block()
+
+        self.cnn_env = self._create_env_block()
+
+    def _create_fc_block(self):
+        return nn.Sequential(
+            nn.Linear(160 * 7, 320),
+            nn.BatchNorm1d(320),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(320, 80),
+            nn.BatchNorm1d(80),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(80, self.output_nbr)
+        )
+
+    def _create_ARB_net(self):
+        return nn.Sequential(
+            customARB(8, 40, (2, 6), first=True),
+            customARB(40, 40, (2, 6), (2, 1)),
+
+            customARB(40, 80, (2, 4)),
+            customARB(80, 80, (2, 4), (2, 3)),
+
+            customARB(80, 160, 2, (2, 1)),
+            customARB(160, 160, 2, 2),
+            customARB(160, 160, (1, 2), (4, 2))
+
+        )
+    
+    def _create_env_block(self):
+        return nn.Sequential(
+            customARB1D(1, 40, 20, 1, 16, first=True),
+            customARB1D(40, 40, 15, 2, 8),
+            customARB1D(40, 80, 7, 3, 8),
+            customARB1D(80, 160, 2, 4, 7)
+        )
+
+    def forward(self, x):
+        x_env = self.env1(x)[:, :, :-1]
+        x_env = self.cnn_env(x_env)
+
+        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x)[:,:,:, :15], 70, dim=2)
+        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel(x)[:,:,:, 14:29], 70, dim=2)
+        x6_1, x6_2, x6_3, x6_4, x6_5, x6_6 = torch.split(self.logmel(x)[:,:,:, 28:43], 70, dim=2)
+        x7_1, x7_2, x7_3, x7_4, x7_5, x7_6 = torch.split(self.logmel(x)[:,:,:, 42:57], 70, dim=2)
+        x8_1, x8_2, x8_3, x8_4, x8_5, x8_6 = torch.split(self.logmel(x)[:,:,:, 56:71], 70, dim=2)
+        x9_1, x9_2, x9_3, x9_4, x9_5, x9_6 = torch.split(self.logmel(x)[:,:,:, 70:85], 70, dim=2)
+        x10_1, x10_2, x10_3, x10_4, x10_5, x10_6 = torch.split(self.logmel(x)[:,:,:, 84:99], 70, dim=2)
+        x11_1, x11_2, x11_3, x11_4, x11_5, x11_6 = torch.split(self.logmel(x)[:,:,:, 98:113], 70, dim=2)
+
+        c1 = torch.cat((x4_1, x5_1, x6_1, x7_1, x8_1, x9_1, x10_1, x11_1), dim=1)
+        c2 = torch.cat((x4_2, x5_2, x6_2, x7_2, x8_2, x9_2, x10_2, x11_2), dim=1)
+        c3 = torch.cat((x4_3, x5_3, x6_3, x7_3, x8_3, x9_3, x10_3, x11_3), dim=1)
+        c4 = torch.cat((x4_4, x5_4, x6_4, x7_4, x8_4, x9_4, x10_4, x11_4), dim=1)
+        c5 = torch.cat((x4_5, x5_5, x6_5, x7_5, x8_5, x9_5, x10_5, x11_5), dim=1)
+        c6 = torch.cat((x4_6, x5_6, x6_6, x7_6, x8_6, x9_6, x10_6, x11_6), dim=1)
+
+        x1 = self.arb1(c1) 
+        x2 = self.arb2(c2)
+        x3 = self.arb3(c3)
+        x4 = self.arb4(c4)
+        x5 = self.arb5(c5)
+        x6 = self.arb6(c6)
+
+        x_cat = torch.cat((x1, x2, x3, x4, x5, x6, x_env.unsqueeze(2)), dim=1)
+        x = torch.flatten(x_cat, 1) 
+        x = self.fc(x)
+        return x
+    

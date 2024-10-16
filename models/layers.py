@@ -276,10 +276,10 @@ class customARB1D(nn.Module):
 
         self.use_residual = (cin == cout)
 
-        self.conv2d_1 = nn.Conv1d(cin, cout, kernel_size=k, padding="same", dilation=dilation, groups=cin)
+        self.conv2d_1 = nn.Conv1d(cin, cout, kernel_size=k, padding="same", dilation=dilation)
 
         if not self.use_residual:
-            self.conv_res = nn.Conv1d(cin, cout, kernel_size=1, padding="same", dilation=dilation, groups=cin)
+            self.conv_res = nn.Conv1d(cin, cout, kernel_size=1, padding="same", dilation=dilation)
         else:
             self.conv_res = nn.Identity()
 
@@ -325,10 +325,10 @@ class customARB(nn.Module):
 
         self.use_residual = (cin == cout)
 
-        self.conv2d_1 = nn.Conv2d(cin, cout, kernel_size=k, padding="same", groups=cin)
+        self.conv2d_1 = nn.Conv2d(cin, cout, kernel_size=k, padding="same")
 
         if not self.use_residual:
-            self.conv_res = nn.Conv2d(cin, cout, kernel_size=1, padding="same", groups=cin)
+            self.conv_res = nn.Conv2d(cin, cout, kernel_size=1, padding="same")
         else:
             self.conv_res = nn.Identity()
 
