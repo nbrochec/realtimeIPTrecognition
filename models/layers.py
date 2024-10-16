@@ -294,11 +294,11 @@ class customARB1D(nn.Module):
         self.avgpool = nn.AvgPool1d(avgpool) if avgpool is not None else None
 
     def forward(self, x):
-        res = x
-
         if self.first is False:
             x = self.batchnorm_in(x)
             x = self.gelu(x)
+
+        res = x
 
         # Conv, batchnorm et activation
         x = self.conv2d_1(x)
@@ -343,11 +343,12 @@ class customARB(nn.Module):
         self.maxpool = nn.MaxPool2d(maxpool) if maxpool is not None else None
 
     def forward(self, x):
-        res = x
 
         if self.first is False:
             x = self.batchnorm_in(x)
             x = self.leaky_relu(x)
+
+        res = x
 
         # Conv, batchnorm et activation
         x = self.conv2d_1(x)
