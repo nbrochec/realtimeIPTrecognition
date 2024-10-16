@@ -874,7 +874,7 @@ class ARNModel_mod_new(nn.Module):
 
     def _create_ARB_net(self):
         return nn.Sequential(
-            customARB(8, 40, (2, 7), first=True), # 2, 7
+            customARB(4, 40, (2, 7), first=True), # 2, 7
             customARB(40, 80, (2, 5), (2, 1)),
             customARB(80, 160, (2, 3), (2, 3)),
             customARB(160, 160, (1, 2), (2, 1)),
