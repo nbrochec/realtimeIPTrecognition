@@ -25,7 +25,7 @@ import datetime
 from torch.utils.data import DataLoader
 from torch.optim import Adam, AdamW
 import torch.nn as nn
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.tensorboard import SummaryWriter
 
 from models import *
@@ -52,6 +52,7 @@ def parse_arguments():
     parser.add_argument('--padding', type=str, default='minimal', help='Pad the arrays with zeros.')
     parser.add_argument('--save_logs', type=str, default='True', help='Save results and confusion matrix to disk. True or False.')
     parser.add_argument('--batch_size', type=int, default=128, help='Specify batch size.')
+    parser.add_argument('--step_lr', type=str, default='False', help='Decays learning rate every 10 epochs.')
     
     args = parser.parse_args()
     
@@ -61,6 +62,7 @@ def parse_arguments():
     args.reduce_lr = args.reduce_lr.lower() in ['true', '1']
     args.export_ts = args.export_ts.lower() in ['true', '1']
     args.save_logs = args.save_logs.lower() in ['true', '1']
+    args.step_lr = args.step_lr.lower() in ['true', '1']
 
     return args
     # """Parse command-line arguments."""
@@ -117,6 +119,8 @@ if __name__ == '__main__':
     optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     if args.reduce_lr == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)
+    if args.step_lr == True:
+        scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
     augmenter = AudioOnlineTransforms(args)
 
