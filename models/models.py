@@ -755,7 +755,7 @@ class ARNModel_new(nn.Module):
         super(ARNModel_new, self).__init__()
         
         self.sr = args.sr
-        self.logmel = LogMelSpectrogramLayerERANN(n_fft=2048, hop_length=64, sample_rate=self.sr, n_mels=420)
+        self.logmel = LogMelSpectrogramLayer(n_fft=2048, hop_length=64, sample_rate=self.sr, n_mels=420)
         self.output_nbr = output_nbr
 
         self.env1 = EnvelopeFollowingLayerTorchScript(n_fft=2048, hop_length=64, smoothing_factor=4)
