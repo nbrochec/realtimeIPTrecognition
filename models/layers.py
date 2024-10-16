@@ -271,7 +271,7 @@ class ARB1d(nn.Module):
 
 
 class customARB1D(nn.Module):
-    def __init__(self, cin, cout, k, dilation=1, avgpool=None, dropout=0.25):
+    def __init__(self, cin, cout, k, dilation=1, avgpool=None, dropout=0.25, first=False):
         super(customARB1D, self).__init__()
 
         self.use_residual = (cin == cout)
@@ -285,13 +285,20 @@ class customARB1D(nn.Module):
 
         self.gelu = nn.GELU()
         self.batchnorm = nn.BatchNorm1d(cout)
+        self.batchnorm_in = nn.BatchNorm1d(cin)
 
         self.dropout = nn.Dropout1d(dropout)
+
+        self.first = first
 
         self.avgpool = nn.AvgPool1d(avgpool) if avgpool is not None else None
 
     def forward(self, x):
         res = x
+
+        if self.first is False:
+            x = self.batchnorm_in(x)
+            x = self.gelu(x)
 
         # Conv, batchnorm et activation
         x = self.conv2d_1(x)
@@ -313,7 +320,7 @@ class customARB1D(nn.Module):
 
 
 class customARB(nn.Module):
-    def __init__(self, cin, cout, k, maxpool=None, dropout=0.25):
+    def __init__(self, cin, cout, k, maxpool=None, dropout=0.25, first=False):
         super(customARB, self).__init__()
 
         self.use_residual = (cin == cout)
@@ -325,8 +332,11 @@ class customARB(nn.Module):
         else:
             self.conv_res = nn.Identity()
 
+        self.first = first
+
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)
         self.batchnorm = nn.BatchNorm2d(cout)
+        self.batchnorm_in = nn.BatchNorm2d(cin)
 
         self.dropout = nn.Dropout2d(dropout)
 
@@ -334,6 +344,10 @@ class customARB(nn.Module):
 
     def forward(self, x):
         res = x
+
+        if self.first is False:
+            x = self.batchnorm_in(x)
+            x = self.leaky_relu(x)
 
         # Conv, batchnorm et activation
         x = self.conv2d_1(x)
