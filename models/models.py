@@ -871,23 +871,34 @@ class ARNModel_mod_new(nn.Module):
 
     def _create_ARB_net(self):
         return nn.Sequential(
-            customARB(8, 40, (2, 6), first=True),
-            customARB(40, 40, (2, 6), (2, 1)),
+            customARB(8, 40, (2, 7), first=True), # 2, 7
+            customARB(40, 40, (2, 7)), # new
+            customARB(40, 40, (2, 7)), # new
 
-            customARB(40, 80, (2, 4)),
-            customARB(80, 80, (2, 4), (2, 3)),
+            customARB(40, 80, (2, 5), (2, 1)),
+            customARB(80, 80, (2, 5)), # 2, 5
+            customARB(80, 80, (2, 5)), # new
 
-            customARB(80, 160, 2, (2, 1)),
-            customARB(160, 160, 2, 2),
+            customARB(80, 160, (2, 3), (2, 3)),
+            customARB(160, 160, (1, 2), (2, 1)),
+            customARB(160, 160, (1, 2), 2),
             customARB(160, 160, (1, 2), (4, 2))
-
         )
     
     def _create_env_block(self):
         return nn.Sequential(
             customARB1D(1, 40, 20, 1, 16, first=True),
+            customARB1D(40, 40, 20, 1), # new
+            customARB1D(40, 40, 20, 1), # new
+
             customARB1D(40, 40, 15, 2, 8),
+            customARB1D(40, 40, 15, 2), # new
+            customARB1D(40, 40, 15, 2), # new
+
             customARB1D(40, 80, 7, 3, 8),
+            customARB1D(80, 80, 7, 3), #new
+            customARB1D(80, 80, 7, 3), #new
+
             customARB1D(80, 160, 2, 4, 7)
         )
 
