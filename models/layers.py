@@ -277,7 +277,7 @@ class customARB1D(nn.Module):
         self.use_residual = (cin == cout)
 
         self.conv2d_1 = nn.Conv1d(cin, cout, kernel_size=k, padding="same", dilation=dilation)
-
+        self.conv2d_2 = nn.Conv1d(cout, cout, kernel_size=k, padding="same", dilation=dilation)
         if not self.use_residual:
             self.conv_res = nn.Conv1d(cin, cout, kernel_size=1, padding="same", dilation=dilation)
         else:
@@ -304,6 +304,9 @@ class customARB1D(nn.Module):
         x = self.conv2d_1(x)
         x = self.batchnorm(x)
         x = self.gelu(x)
+        x = self.conv2d_2(x)
+        x = self.batchnorm(x)
+        x = self.gelu(x)
 
         # Résidu
         res = self.conv_res(res)
@@ -326,7 +329,7 @@ class customARB(nn.Module):
         self.use_residual = (cin == cout)
 
         self.conv2d_1 = nn.Conv2d(cin, cout, kernel_size=k, padding="same")
-
+        self.conv2d_2 = nn.Conv2d(cout, cout, kernel_size=k, padding="same")
         if not self.use_residual:
             self.conv_res = nn.Conv2d(cin, cout, kernel_size=1, padding="same")
         else:
@@ -352,6 +355,10 @@ class customARB(nn.Module):
 
         # Conv, batchnorm et activation
         x = self.conv2d_1(x)
+        x = self.batchnorm(x)
+        x = self.leaky_relu(x)
+
+        x = self.conv2d_2(x)
         x = self.batchnorm(x)
         x = self.leaky_relu(x)
 
