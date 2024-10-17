@@ -622,9 +622,9 @@ class v1_mi6_env2_mod_new_stack_solo(nn.Module):
         z = self.fc(x_flat)
         return z
     
-class v1_mi6_env2_mod_new_stack20(nn.Module):
+class v1_mi6_env2_mod_new_stack2(nn.Module):
     def __init__(self, output_nbr, args):
-        super(v1_mi6_env2_mod_new_stack20, self).__init__()
+        super(v1_mi6_env2_mod_new_stack2, self).__init__()
 
         self.sr = args.sr
 
