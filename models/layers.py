@@ -44,8 +44,8 @@ class LogMelSpectrogramLayer(nn.Module):
         self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power')
 
     def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
-        min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
-        max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
+        min_tensor = torch.as_tensor(min, dtype=t.dtype, device=t.device)
+        max_tensor = torch.as_tensor(max, dtype=t.dtype, device=t.device)
         eps = 1e-5
         t_min = torch.min(t)
         t_max = torch.max(t)
@@ -132,8 +132,8 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         self.n_channels = 1
 
     def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
-        min_tensor = torch.tensor(min, dtype=t.dtype, device=t.device)
-        max_tensor = torch.tensor(max, dtype=t.dtype, device=t.device)
+        min_tensor = torch.as_tensor(min, dtype=t.dtype, device=t.device)
+        max_tensor = torch.as_tensor(max, dtype=t.dtype, device=t.device)
         t_min = torch.min(t)
         t_max = torch.max(t)
 
@@ -167,6 +167,9 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
             # different normalisation
             envelope = envelope / envelope.amax(dim=-1, keepdim=True)
             envelope_list.append(envelope.unsqueeze(1))
+
+            #envelope_max = envelope.max(dim=-1, keepdim=True)[0]
+            #envelope = envelope / (envelope_max + self.eps)
 
         envelope_output = torch.cat(envelope_list, dim=1)
 
