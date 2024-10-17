@@ -571,22 +571,22 @@ class v1_mi6_env2_mod_new_stack20(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(4, 40, (3, 7), "same"), 
+            custom2DCNN(2, 40, (3, 7), "same"), 
             custom2DCNN(40, 40, (3, 7), "same"),
-            nn.MaxPool2d((2, 1)), # 35, 20
+            nn.MaxPool2d((2, 1)), # 35, 35
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 5), "same"),
             custom2DCNN(80, 80, (2, 5), "same"),
-            nn.MaxPool2d(2), # 17, 10
+            nn.MaxPool2d(2), # 17, 17
             nn.Dropout2d(0.25),
-            custom2DCNN(80, 160, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)), # 8, 10
+            custom2DCNN(80, 160, (2, 4), "same"),
+            nn.MaxPool2d(2), # 8, 8
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 4, 5
+            nn.MaxPool2d(2), # 4, 4
             nn.Dropout2d(0.25),
             custom2DCNN(160, 160, (1, 2), "same"),
-            nn.MaxPool2d((4, 5)),
+            nn.MaxPool2d(4), #2, 2 #old 2,1
             nn.Dropout2d(0.25),
         )
 
@@ -595,17 +595,15 @@ class v1_mi6_env2_mod_new_stack20(nn.Module):
         x_env = x_env[:, :, :-1]
         x_env = self.cnn_env(x_env)
 
-        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :20], 70, dim=2)
-        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 9:29], 70, dim=2)
-        x6_1, x6_2, x6_3, x6_4, x6_5, x6_6 = torch.split(self.logmel3(x)[:,:,:, 18:38], 70, dim=2)
-        x7_1, x7_2, x7_3, x7_4, x7_5, x7_6 = torch.split(self.logmel3(x)[:,:,:, 27:], 70, dim=2)
+        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :35], 70, dim=2)
+        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 22:], 70, dim=2)
 
-        c1 = torch.cat((x4_1, x5_1, x6_1, x7_1), dim=1)
-        c2 = torch.cat((x4_2, x5_2, x6_2, x7_2), dim=1)
-        c3 = torch.cat((x4_3, x5_3, x6_3, x7_3), dim=1)
-        c4 = torch.cat((x4_4, x5_4, x6_4, x7_4), dim=1)
-        c5 = torch.cat((x4_5, x5_5, x6_5, x7_5), dim=1)
-        c6 = torch.cat((x4_6, x5_6, x6_6, x7_6), dim=1)
+        c1 = torch.cat((x4_1, x5_1), dim=1)
+        c2 = torch.cat((x4_2, x5_2), dim=1)
+        c3 = torch.cat((x4_3, x5_3), dim=1)
+        c4 = torch.cat((x4_4, x5_4), dim=1)
+        c5 = torch.cat((x4_5, x5_5), dim=1)
+        c6 = torch.cat((x4_6, x5_6), dim=1)
 
         x1 = self.cnn1(c1) 
         x2 = self.cnn2(c2)
