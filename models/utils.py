@@ -52,7 +52,7 @@ class LoadModel:
             "ARNModel_mod_new": ARNModel_mod_new,
             'ARNModel_mix': ARNModel_mix,
             "v1_mi6_env2_mod_new_stack_mix": v1_mi6_env2_mod_new_stack_mix,
-            'v1_mi6_env2_mod_new_stack20': v1_mi6_env2_mod_new_stack2,
+            'v1_mi6_env2_mod_new_stack2': v1_mi6_env2_mod_new_stack2,
             'v1_mi6_env2_mod_new_stack_solo': v1_mi6_env2_mod_new_stack_solo
         }
     
