@@ -573,8 +573,8 @@ class v1_mi6_env2_mod_new_stack_solo(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            custom2DCNN(1, 40, (2, 9), "same"), 
-            custom2DCNN(40, 40, (2, 89), "same"),
+            custom2DCNN(1, 40, (3, 9), "same"), 
+            custom2DCNN(40, 40, (3, 9), "same"),
             nn.MaxPool2d((2, 1)), # 35, 57
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 7), "same"),
