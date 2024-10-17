@@ -268,8 +268,6 @@ class ARB1d(nn.Module):
         out += identity
         return out
 
-
-
 class customARB1D(nn.Module):
     def __init__(self, cin, cout, k, dilation=1, avgpool=None, dropout=0.25, first=False):
         super(customARB1D, self).__init__()
