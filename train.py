@@ -110,7 +110,8 @@ if __name__ == '__main__':
     csv_file_path = get_csv_file_path(args)
 
     dataPreparator = PrepareData(args, csv_file_path, SEGMENT_LENGTH)
-    train_loader, test_loader, val_loader, num_classes = dataPreparator.prepare()
+    train_loader, test_loader, val_loader, num_classes, classnames = dataPreparator.prepare()
+    args.classnames = classnames
 
     modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH)
     model = modelPreparator.prepare()
