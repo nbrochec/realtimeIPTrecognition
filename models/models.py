@@ -66,6 +66,63 @@ class v1(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+class v1b(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(v1b, self).__init__()
+
+        self.sr = args.sr
+        self.classnames = args.classnames
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_fft=2048, hop_length=128, n_mels=128)
+        
+        self.cnn = nn.Sequential(
+            custom2DCNN(1, 40, (2, 7), "same"),
+            custom2DCNN(40, 40, (2, 7), "same"),
+            nn.MaxPool2d((2, 1)), # 64, 57
+            nn.Dropout2d(0.25),
+            custom2DCNN(40, 80, (2, 5), "same"),
+            custom2DCNN(80, 80, (2, 5), "same"),
+            nn.MaxPool2d(2), # 32, 28
+            nn.Dropout2d(0.25),
+            custom2DCNN(80, 160, 2, "same"),
+            nn.MaxPool2d(2), # 16, 14
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 8, 7
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 4, 3
+            nn.Dropout2d(0.25),
+            custom2DCNN(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 3)),
+            nn.Dropout2d(0.25),
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(160, 80),
+            nn.BatchNorm1d(80),
+            nn.ReLU(),
+            nn.Linear(80, 40),
+            nn.BatchNorm1d(40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+
+    @torch.jit.export
+    def get_sr(self):
+        return self.sr
+    
+    @torch.jit.export
+    def get_classnames(self):
+        return self.classnames
+
+    def forward(self, x):
+        x = self.logmel(x)
+        x = self.cnn(x)
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
 
 class v2(nn.Module):
     def __init__(self, output_nbr, sr):
