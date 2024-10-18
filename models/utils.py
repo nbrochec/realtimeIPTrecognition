@@ -16,7 +16,7 @@ import sys
 import pandas as pd
 
 from models import v1, v2, v3, v1_mi6_env2_mod_stacks, v1_mi6_env2_mod_new, v1_mi6_env2_mod_new_stack8x8, ARNModel_new, ARNModel_mix, v1_mi6_env2_mod_new_stack_solo
-from models import v1_mi6, v1_mi6_env2_mod_new_stack, v1_mi6_env2_mod_new_stack8, ARNModel_mod_new, v1_mi6_env2_mod_new_stack_mix, v1_mi6_env2_mod_new_stack2
+from models import v1_mi6, v1_mi6_env2_mod_new_stack, v1_mi6_env2_mod_new_stack8, ARNModel_mod_new, v1_mi6_env2_mod_new_stack_mix, v1_mi6_env2_mod_new_stack2, v1_mi6_stack2
 
 from tqdm import tqdm
 
@@ -53,7 +53,8 @@ class LoadModel:
             'ARNModel_mix': ARNModel_mix,
             "v1_mi6_env2_mod_new_stack_mix": v1_mi6_env2_mod_new_stack_mix,
             'v1_mi6_env2_mod_new_stack2': v1_mi6_env2_mod_new_stack2,
-            'v1_mi6_env2_mod_new_stack_solo': v1_mi6_env2_mod_new_stack_solo
+            'v1_mi6_env2_mod_new_stack_solo': v1_mi6_env2_mod_new_stack_solo,
+            'v1_mi6_stack2': v1_mi6_stack2,
         }
     
     def get_model(self, model_name, output_nbr, args):
