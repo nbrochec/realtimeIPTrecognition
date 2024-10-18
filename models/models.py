@@ -740,7 +740,7 @@ class v1_mi6_stack2(nn.Module):
 
 
         self.fc = nn.Sequential(
-                nn.Linear(160 * 7, 320),
+                nn.Linear(160 * 6, 320),
                 nn.BatchNorm1d(320),
                 nn.ReLU(),
                 nn.Dropout1d(0.25),
@@ -777,10 +777,6 @@ class v1_mi6_stack2(nn.Module):
         )
 
     def forward(self, x):
-        x_env = self.env(x)
-        x_env = x_env[:, :, :-1]
-        x_env = self.cnn_env(x_env)
-
         x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :35], 70, dim=2)
         x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 22:], 70, dim=2)
 
