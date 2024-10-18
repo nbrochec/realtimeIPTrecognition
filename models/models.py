@@ -20,10 +20,13 @@ from models.layers import LogMelSpectrogramLayer, custom2DCNN
 from utils.constants import SEGMENT_LENGTH
 
 class v1(nn.Module):
-    def __init__(self, output_nbr, sr):
+    def __init__(self, output_nbr, args):
         super(v1, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        self.sr = args.sr
+        self.classnames = args.classnames
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 40, (2,3), "same"),
@@ -54,6 +57,14 @@ class v1(nn.Module):
             nn.Linear(40, output_nbr)
         )
 
+    @torch.jit.export
+    def get_sr(self):
+        return self.sr
+    
+    @torch.jit.export
+    def get_classnames(self):
+        return self.classnames
+
     def forward(self, x):
         x = self.logmel(x)
         x = self.cnn(x)
@@ -62,10 +73,13 @@ class v1(nn.Module):
         return z
 
 class v2(nn.Module):
-    def __init__(self, output_nbr, sr):
+    def __init__(self, output_nbr, args):
         super(v2, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        self.sr = args.sr
+        self.classnames = args.classnames
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -100,6 +114,14 @@ class v2(nn.Module):
             nn.ELU(),
             nn.Linear(128, output_nbr),
         )
+
+    @torch.jit.export
+    def get_sr(self):
+        return self.sr
+    
+    @torch.jit.export
+    def get_classnames(self):
+        return self.classnames
 
     def forward(self, x):
         x = self.logmel(x)
@@ -109,10 +131,13 @@ class v2(nn.Module):
         return z
     
 class v3(nn.Module):
-    def __init__(self, output_nbr, sr):
+    def __init__(self, output_nbr, args):
         super(v3, self).__init__()
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=sr)
+        self.sr = args.sr
+        self.classnames = args.classnames
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
         self.cnn = nn.Sequential(
             custom2DCNN(1, 64, (2,3), "same"),
@@ -152,6 +177,14 @@ class v3(nn.Module):
             nn.ELU(),
             nn.Linear(128, output_nbr),
         )
+   
+    @torch.jit.export
+    def get_sr(self):
+        return self.sr
+    
+    @torch.jit.export
+    def get_classnames(self):
+        return self.classnames
 
     def forward(self, x):
         x = self.logmel(x)

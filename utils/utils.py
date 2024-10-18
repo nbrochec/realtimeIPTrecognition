@@ -183,6 +183,10 @@ class DatasetValidator:
     def get_num_classes_from_csv(csv_file):
         data = pd.read_csv(csv_file)
         return len(data['label'].unique())
+    
+    def get_classnames_from_csv(csv_file):
+        data = pd.read_csv(csv_file)
+        return sorted(data['label'].unique())
 
 
 class ProcessDataset:
@@ -524,6 +528,7 @@ class PrepareData:
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
+        classnames = DatasetValidator.get_classnames_from_csv(self.csv)
         train_dataset = ProcessDataset('train', self.csv, self.args, self.seg_len)
         test_dataset = ProcessDataset('test', self.csv, self.args, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args, self.seg_len)
@@ -534,7 +539,7 @@ class PrepareData:
         
         print('Data successfully loaded into DataLoaders.')
 
-        return train_loader, test_loader, val_loader, num_classes
+        return train_loader, test_loader, val_loader, num_classes, classnames
 
 class SaveResultsToTensorboard:
     @staticmethod
