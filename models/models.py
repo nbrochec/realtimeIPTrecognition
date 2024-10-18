@@ -103,11 +103,11 @@ class v1b(nn.Module):
             nn.Linear(160, 80),
             nn.BatchNorm1d(80),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Dropout(0.5),
+            nn.Dropout(0.25),
             nn.Linear(80, 40),
             nn.BatchNorm1d(40),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Dropout(0.5),
+            nn.Dropout(0.25),
             nn.Linear(40, output_nbr)
         )
 
