@@ -290,9 +290,9 @@ class ProcessDataset:
                     aug1, aug2, aug3 = augmenter(segment)
                     self.X.extend([aug1, aug2, aug3])
                     self.y.extend([label] * 3)
-
-                self.X.append(segment)
-                self.y.append(label)
+                else:
+                    self.X.append(segment)
+                    self.y.append(label)
 
         self.X = torch.stack(self.X)
         self.y = torch.tensor(self.y)
