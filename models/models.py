@@ -79,7 +79,7 @@ class v1b(nn.Module):
         self.cnn = nn.Sequential(
             custom2DCNN(1, 40, (2, 7), "same"),
             custom2DCNN(40, 40, (2, 7), "same"),
-            nn.MaxPool2d((2, 1)), # 64, 57
+            nn.MaxPool2d(2), # 64, 57
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 5), "same"),
             custom2DCNN(80, 80, (2, 5), "same"),
@@ -788,7 +788,7 @@ class v1_mi6_stack2(nn.Module):
 
         self.sr = args.sr
 
-        self.logmel3 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=128)
+        self.logmel3 = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=420, n_fft=2048, hop_length=64)
         
         self.cnn1 = self._create_cnn_block()
         self.cnn2 = self._create_cnn_block()
@@ -814,7 +814,7 @@ class v1_mi6_stack2(nn.Module):
         return nn.Sequential(
             custom2DCNN(2, 40, (3, 7), "same"), 
             custom2DCNN(40, 40, (3, 7), "same"),
-            nn.MaxPool2d((2, 1)), # 35, 35
+            nn.MaxPool2d(2), # 35, 35
             nn.Dropout2d(0.25),
             custom2DCNN(40, 80, (2, 5), "same"),
             custom2DCNN(80, 80, (2, 5), "same"),
@@ -836,8 +836,8 @@ class v1_mi6_stack2(nn.Module):
         )
 
     def forward(self, x):
-        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :35], 70, dim=2)
-        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 22:], 70, dim=2)
+        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :70], 70, dim=2)
+        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 43:], 70, dim=2)
 
         c1 = torch.cat((x4_1, x5_1), dim=1)
         c2 = torch.cat((x4_2, x5_2), dim=1)
