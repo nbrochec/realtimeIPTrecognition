@@ -10,120 +10,61 @@
 # Implement data augmentation methods
 #############################################################################
 
-import torch
-from audiomentations import PitchShift, AddColorNoise, Shift, PolarityInversion, Gain, HighPassFilter, Trim
-from audiomentations import LowPassFilter, Mp3Compression, ClippingDistortion, BitCrush, AirAbsorption, Aliasing, TimeStretch
+import torch, librosa
+from torch_audiomentations import Compose, PitchShift, AddColoredNoise, Shift, PolarityInversion, HighPassFilter, LowPassFilter
 import numpy as np
-import librosa
 
 class AudioOnlineTransforms:
     def __init__(self, args):
         self.sr = args.sr
         self.device = args.device
         self.online_augment = args.online_augment.split()
+        self.pipeline = self.build_transform_pipeline()
 
-    def tensor_to_array(self, data):
-        data_numpy = data.cpu().squeeze(1).detach().numpy()
-        return data_numpy
+    def pitch_shift(self):
+        return PitchShift(min_transpose_semitones=-12.0, max_transpose_semitones=12.0, sample_rate=self.sr, p=1, output_type='tensor')
     
-    def pitch_shift(self, data):
-        transform = PitchShift(min_semitones=-12.0, max_semitones=12.0, p=1)
-        return transform(data, sample_rate= self.sr)
+    def shift(self):
+        return Shift(rollover=False, p=1, output_type='tensor')
     
-    def shift(self, data):
-        transform = Shift(rollover=False, p=1)
-        return transform(data, sample_rate=self.sr)
+    def add_noise(self):
+        return AddColoredNoise(p=1, output_type='tensor')
     
-    def add_noise(self, data):
-        transform = AddColorNoise(p=1)
-        return transform(data, sample_rate=self.sr)
+    def polarity_inversion(self):
+        return PolarityInversion(p=1, output_type='tensor')
     
-    def polarity_inversion(self, data):
-        transform = PolarityInversion(p=1)
-        return transform(data, sample_rate= self.sr)
+    def highpassfilter(self):
+        return HighPassFilter(p=1, output_type='tensor')
     
-    def gain(self, data):
-        transform = Gain(p=1)
-        return transform(data, sample_rate= self.sr)
+    def lowpassfilter(self):
+        return LowPassFilter(p=1, output_type='tensor')
     
-    def highpassfilter(self, data):
-        transform = HighPassFilter(p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def lowpassfilter(self, data):
-        transform = LowPassFilter(p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def clippingdisto(self, data):
-        transform = ClippingDistortion(p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def bitcrush(self, data):
-        transform = BitCrush(p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def airabso(self, data):
-        transform = AirAbsorption(p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def aliasing(self, data):
-        transform = Aliasing(min_sample_rate=8000, max_sample_rate=self.sr//2, p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def mp3comp(self, data):
-        transform = Mp3Compression(p=1)
-        return transform(data, sample_rate=self.sr)
-    
-    def trim(self, data):
-        transform = Trim(top_db=30.0,p=1)
-        return transform(data, sample_rate=self.sr)
+    def none(self):
+        return lambda x: x  
 
-    def pad_or_trim(self, data, original_size):
-        current_size = data.shape[1]
-        if current_size > original_size:
-            data = data[..., :original_size]
-        elif current_size < original_size:
-            padding = (0, original_size - current_size)
-            data = np.pad(data, pad_width=padding, mode='constant', constant_values=0)
-        return data
-    
-    def none(self, data):
-        return data
-    
-    def __call__(self, data):
-        data_numpy = self.tensor_to_array(data)
-        original_size = data_numpy.shape[1]
-        aug_data_list = []
-
+    def build_transform_pipeline(self):
         aug_dict = {
-            'None': self.none,
-            'pitchshift': self.pitch_shift,
-            'timeshift': self.shift,
-            'polarityinversion': self.polarity_inversion,
-            'hpf': self.highpassfilter,
-            'lpf': self.lowpassfilter,
-            'clipping': self.clippingdisto,
-            'bitcrush': self.bitcrush,
-            'airabso': self.airabso,
-            'aliasing': self.aliasing,
-            # 'mp3comp': self.mp3comp,
-            'trim': self.trim
+            'None': self.none(),
+            'pitchshift': self.pitch_shift(),
+            'timeshift': self.shift(),
+            'polarityinversion': self.polarity_inversion(),
+            'hpf': self.highpassfilter(),
+            'lpf': self.lowpassfilter(),
+            'addnoise': self.add_noise()
         }
 
-        if 'all' in self.online_augment:
-            self.online_augment = list(aug_dict.keys())
-
+        transforms = []
         for augmentation in self.online_augment:
-            if augmentation in aug_dict and np.random.rand() < 0.5:
-                if augmentation != 'None':
-                    data_numpy = aug_dict[augmentation](data_numpy)
-        
-        aug_data = self.pad_or_trim(data_numpy, original_size)
-        aug_data_list.append(aug_data)
+            if augmentation in aug_dict:
+                if np.random.rand() < 0.5:
+                    transforms.append(aug_dict[augmentation])
 
-        aug_data_tensor = torch.tensor(aug_data).unsqueeze(1).to(self.device).to(torch.float32)
+        return Compose(transforms)
 
-        return aug_data_tensor
+    def __call__(self, data):
+        transform_pipeline = self.pipeline
+        data = transform_pipeline(data, sample_rate=self.sr)
+        return data
     
 class AudioOfflineTransforms:
     def __init__(self, args):
@@ -135,7 +76,7 @@ class AudioOfflineTransforms:
         return data_numpy
 
     def custom_detune(self, data):
-        random_tuning= np.random.uniform(-100, 100) + 440
+        random_tuning = np.random.uniform(-100, 100) + 440
         change_tuning = librosa.A4_to_tuning(random_tuning)
         data = librosa.effects.pitch_shift(data, sr=self.sr, n_steps=change_tuning, bins_per_octave=12)
         return data
@@ -143,12 +84,13 @@ class AudioOfflineTransforms:
     def custom_gaussnoise(self, data):
         n_channels, length = data.shape
         data = data + np.random.normal(0, 0.01, size=(n_channels, length)) * np.random.randn(n_channels, length)
-        data = data[:, :length]
         return data
     
-    def timestretch(self, data):
-        transform = TimeStretch(min_rate=0.9, max_rate=1.1, p=1)
-        return transform(data, sample_rate=self.sr)
+    def lb_timestretch(self, data):
+        length = data.shape[1]
+        rate = np.random.uniform(0.9, 1.1)
+        data = librosa.effects.time_stretch(data, rate=rate)
+        return data[:, :length]
     
     def shift(self, data):
         transform = Shift(rollover=False, p=1)
@@ -160,7 +102,7 @@ class AudioOfflineTransforms:
             data = data[..., :original_size]
         elif current_size < original_size:
             padding = (0, original_size - current_size)
-            data = np.pad(data, pad_width=padding, mode='constant', constant_values=0)
+            data = np.pad(data, pad_width=((0, 0), (0, original_size - current_size)), mode='constant', constant_values=0)
         return data
     
     def __call__(self, data):
@@ -170,7 +112,7 @@ class AudioOfflineTransforms:
         aug_dict = {
             'detune': self.custom_detune,
             'gaussnoise': self.custom_gaussnoise,
-            'timestretch': self.timestretch,
+            'timestretch': self.lb_timestretch,
             # 'shift': self.shift,
         }
 
@@ -179,6 +121,7 @@ class AudioOfflineTransforms:
         stretched = aug_dict['timestretch'](data_numpy)
         # shifted = aug_dict['shift'](data_numpy)
 
+        # Ensure all outputs have the same size
         aug_detuned = self.pad_or_trim(detuned, original_size)
         aug_noised = self.pad_or_trim(noised, original_size)
         aug_stretched = self.pad_or_trim(stretched, original_size)
@@ -189,4 +132,4 @@ class AudioOfflineTransforms:
         aug3 = torch.tensor(aug_stretched).to(torch.float32)
         # aug4 = torch.tensor(aug_shifted).to(torch.float32)
 
-        return aug1, aug2, aug3, #aug4
+        return aug1, aug2, aug3  # aug4
