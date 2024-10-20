@@ -53,7 +53,8 @@ def parse_arguments():
     parser.add_argument('--save_logs', type=str, default='True', help='Save results and confusion matrix to disk. True or False.')
     parser.add_argument('--batch_size', type=int, default=128, help='Specify batch size.')
     parser.add_argument('--step_lr', type=str, default='False', help='Decays learning rate every 10 epochs.')
-    parser.add_argument('--fmax', default=None, type=int, help='Maximum frequency for logmelspec analysis.')
+    parser.add_argument('--fmax', type=int, default=None, help='Maximum frequency for logmelspec analysis.')
+    parser.add_argument('--use_original', type=str, default='True', help='Use original data for training.')
     
     args = parser.parse_args()
     
@@ -64,6 +65,7 @@ def parse_arguments():
     args.export_ts = args.export_ts.lower() in ['true', '1']
     args.save_logs = args.save_logs.lower() in ['true', '1']
     args.step_lr = args.step_lr.lower() in ['true', '1']
+    args.use_original = args.use_original.lower() in ['true', '1']
 
     return args
     # """Parse command-line arguments."""

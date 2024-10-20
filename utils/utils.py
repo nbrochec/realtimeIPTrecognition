@@ -214,6 +214,7 @@ class ProcessDataset:
         self.padding = args.padding
         self.args = args
         self.offline_aug = args.offline_augment
+        self.use_original = args.use_original
         
         #self.offline_aug = True
 
@@ -265,6 +266,9 @@ class ProcessDataset:
         if self.offline_aug and self.set_type == 'train':
             print(f'self offline augmentations: {self.offline_aug}')  
 
+        if self.use_original and self.set_type == 'train':
+            print(f'self use origina: {self.use_original}')
+
         for _, row in tqdm(self.data.iterrows()):
             file_path, label_name = row['file_path'], row['label']
             label = self.label_map[label_name]
@@ -290,6 +294,11 @@ class ProcessDataset:
                     aug1, aug2, aug3 = augmenter(segment)
                     self.X.extend([aug1, aug2, aug3])
                     self.y.extend([label] * 3)
+
+                    if self.use_original:
+                        self.X.append(segment)
+                        self.y.append(label)
+
                 else:
                     self.X.append(segment)
                     self.y.append(label)
