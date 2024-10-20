@@ -325,8 +325,8 @@ class v1_mi6_stack2(nn.Module):
         return self.classnames
 
     def forward(self, x):
-        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel3(x)[:,:,:, :35], 70, dim=2)
-        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel3(x)[:,:,:, 22:], 70, dim=2)
+        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x)[:,:,:, :35], 70, dim=2)
+        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel(x)[:,:,:, 22:], 70, dim=2)
 
         c1 = torch.cat((x4_1, x5_1), dim=1)
         c2 = torch.cat((x4_2, x5_2), dim=1)
