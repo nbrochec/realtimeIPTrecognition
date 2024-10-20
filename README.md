@@ -166,10 +166,12 @@ You can use the following arguments if you want to test different configurations
 | `--sr`              | Sampling rate for downsampling the audio files.                    | Integer (Hz)                   | `24000`         |
 | `--segment_overlap` | Overlap between audio segments. Increase the data samples by a factor 2. | `True`, `False`                | `False`         |
 | `--fmin`            | Minimum frequency for Mel filters.                                 | Integer (Hz)                    | `0`          |
+| `--fmax`            | Maximum frequency for Mel filters.                                 | Integer (Hz)                    | `None`          |
 | `--lr`              | Learning rate.                                                      | Float value > 0              | `0.001`         |
 | `--batch_size`       | Specify Batch Size                                               | Integer value > 0            | `128`         |
 | `--epochs`          | Number of training epochs.                                         | Integer value > 0            | `100`           |
 | `--offline_augment` | Use offline augmentations generated from original audio files using detuning, gaussian noise and time stretching. Stored in a Pytorch Dataset. | `True`, `False` | `True` |
+| `--use_original` | Use original data for the training set. | `True`, `False`                | `True`         |
 | `--online_augment`  | Specify which online augmentations to use. Applied in the training loop. Each augmentation has 50% chance to be applied. | `pitchshift`, `timeshift`, `polarityinversion`, `hpf`, `lpf`, `clipping`,`bitcrush`, `airabso`, `aliasing`, `mp3comp`, `trim` | `None` |
 | `--padding`         | Pad the arrays of audio samples with zeros. `minimal` only pads when audio file length is shorter than the model input length. | `full`, `minimal`, `None`  | `minimal`           |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | Integer value > 0, or `None`   | `None`          |
