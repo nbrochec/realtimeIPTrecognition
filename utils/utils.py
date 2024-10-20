@@ -474,13 +474,13 @@ class SaveResultsToDisk:
             if write_header:
                 writer.writerow([
                     'Run Name', 'Model Name', 'Sample Rate', 'Segment Overlap',
-                    'Fmin', 'Learning Rate', 'Epochs', 'Offline Augmentations', 'Online Augmentations', 'Early Stopping',
+                    'Fmin', 'Fmax', 'Learning Rate', 'Epochs', 'Offline Augmentations', 'Online Augmentations', 'Early Stopping',
                     'Reduce LR on Plateau', 'Reduce LR by steps', 'Padding', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Loss'
                 ])
 
             writer.writerow([
                 args.name, args.config, args.sr, args.segment_overlap,
-                args.fmin, args.lr, args.epochs, args.offline_augment, args.online_augment,
+                args.fmin, args.fmax, args.lr, args.epochs, args.offline_augment, args.online_augment,
                 args.early_stopping, args.reduce_lr,  args.step_lr, args.padding,
                 accuracy, precision, recall, f1, loss
             ])  
@@ -504,7 +504,7 @@ class SaveYAML:
             os.makedirs(path_to_run)
 
         current_config = {'Name':args.name, 'Model': args.config , 'Sampling Rate':args.sr,'Segment Overlap':args.segment_overlap,
-                      'Fmin':args.fmin, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Offline Augmentations':args.offline_augment,
+                      'Fmin':args.fmin, 'Fmax':args.fmax, 'Learning Rate': args.lr, 'Epochs': args.epochs, 'Offline Augmentations':args.offline_augment,
                       'Online Augmentations': args.online_augment.split(), 'Early Stopping':args.early_stopping,'Reduce LR on Plateau':args.reduce_lr, 'Step LR': args.step_lr,
                       'Number of Classes':num_classes}
 
