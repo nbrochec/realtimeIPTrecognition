@@ -162,7 +162,7 @@ You can use the following arguments if you want to test different configurations
 | `--name`             | Name of the project.                                              | String                         |           |
 | `--device`          | Specify the hardware on which computation should be performed.     | `cpu`, `cuda`, `mps`           | `cpu`           |
 | `--gpu`             | Specify which GPU to use.                                          | Integer                          | `0`             |
-| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`, `v2_1d`, `v1_mi4`, `v1_mi5_env2`, `v1_mi6`, `v1_mi6_env2`,  | `v2`   |
+| `--config`          | Name of the model's architecture.                                  | `v1`, `v2`, `v3`  | `v2`   |
 | `--sr`              | Sampling rate for downsampling the audio files.                    | Integer (Hz)                   | `24000`         |
 | `--segment_overlap` | Overlap between audio segments. Increase the data samples by a factor 2. | `True`, `False`                | `False`         |
 | `--fmin`            | Minimum frequency for Mel filters.                                 | Integer (Hz)                    | `0`          |
@@ -172,8 +172,8 @@ You can use the following arguments if you want to test different configurations
 | `--epochs`          | Number of training epochs.                                         | Integer value > 0            | `100`           |
 | `--offline_augment` | Use offline augmentations generated from original audio files using detuning, gaussian noise and time stretching. Stored in a Pytorch Dataset. | `True`, `False` | `True` |
 | `--use_original` | Use original data for the training set. | `True`, `False`                | `True`         |
-| `--online_augment`  | Specify which online augmentations to use. Applied in the training loop. Each augmentation has 50% chance to be applied. | `pitchshift`, `timeshift`, `polarityinversion`, `hpf`, `lpf`, `clipping`,`bitcrush`, `airabso`, `aliasing`, `mp3comp`, `trim` | `None` |
-| `--padding`         | Pad the arrays of audio samples with zeros. `minimal` only pads when audio file length is shorter than the model input length. | `full`, `minimal`, `None`  | `minimal`           |
+| `--online_augment`  | Specify which online augmentations to apply or apply them all with `all`. Each augmentation has 50% chance to be applied. | `pitchshift`, `timeshift`, `polarityinversion`, `hpf`, `lpf`, `addnoise` | `None` |
+| `--padding`         | Pad the arrays of audio samples with zeros. `minimal` only pads when audio file length is shorter than required input length. `full` pads any segment that has less than the required input length. | `full`, `minimal`, `None`  | `minimal`           |
 | `--early_stopping`  | Number of epochs without improvement before early stopping.         | Integer value > 0, or `None`   | `None`          |
 | `--reduce_lr`        | Reduce learning rate if validation plateaus.                       | `True`, `False`                | `False`         |
 | `--export_ts`       | Export the model as a TorchScript file (`.ts` format).              | `True`, `False`               | `True`         |
