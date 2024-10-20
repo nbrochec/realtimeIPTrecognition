@@ -267,7 +267,7 @@ class ProcessDataset:
             print(f'self offline augmentations: {self.offline_aug}')  
 
         if self.use_original and self.set_type == 'train':
-            print(f'self use origina: {self.use_original}')
+            print(f'self use original data: {self.use_original}')
 
         for _, row in tqdm(self.data.iterrows()):
             file_path, label_name = row['file_path'], row['label']
