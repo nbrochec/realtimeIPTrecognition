@@ -106,7 +106,7 @@ class AudioOnlineTransforms:
             'bitcrush': self.bitcrush,
             'airabso': self.airabso,
             'aliasing': self.aliasing,
-            'mp3comp': self.mp3comp,
+            # 'mp3comp': self.mp3comp,
             'trim': self.trim
         }
 
