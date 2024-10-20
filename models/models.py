@@ -295,24 +295,23 @@ class v1_mi6_stack2(nn.Module):
         return nn.Sequential(
             customCNN2D(2, 40, (3, 7), "same"), 
             customCNN2D(40, 40, (3, 7), "same"),
-            nn.MaxPool2d((2, 1)), # 35, 57
+            nn.MaxPool2d((2, 1)), # 35, 35
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (2, 5), "same"),
             customCNN2D(80, 80, (2, 5), "same"),
-            nn.MaxPool2d(2), # 17, 28
+            nn.MaxPool2d(2), # 17, 17
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d(2), # 8, 14
+            nn.MaxPool2d(2), # 8, 8
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 4, 7
+            nn.MaxPool2d(2), # 4, 4
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d(2), #2, 3 #old 2,1
+            nn.MaxPool2d(2), #2, 2
             nn.Dropout2d(0.25),
-            # added:
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d((2, 3)), #2, 3 #old 2,1
+            nn.MaxPool2d(2), 
             nn.Dropout2d(0.25),
         )
     
