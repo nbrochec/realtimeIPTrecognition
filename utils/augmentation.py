@@ -86,6 +86,7 @@ class AudioOnlineTransforms:
             padding = (0, original_size - current_size)
             data = np.pad(data, pad_width=padding, mode='constant', constant_values=0)
         return data
+    
     def none(self, data):
         return data
     
@@ -108,6 +109,9 @@ class AudioOnlineTransforms:
             'mp3comp': self.mp3comp,
             'trim': self.trim
         }
+
+        if 'all' in self.online_augment:
+            self.online_augment = list(aug_dict.keys())
 
         for augmentation in self.online_augment:
             if augmentation in aug_dict and np.random.rand() < 0.5:
