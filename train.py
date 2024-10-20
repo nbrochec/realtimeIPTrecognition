@@ -53,7 +53,7 @@ def parse_arguments():
     parser.add_argument('--save_logs', type=str, default='True', help='Save results and confusion matrix to disk. True or False.')
     parser.add_argument('--batch_size', type=int, default=128, help='Specify batch size.')
     parser.add_argument('--step_lr', type=str, default='False', help='Decays learning rate every 10 epochs.')
-    parser.add_argument('--fmax', type=int, help='Maximum frequency for logmelspec analysis.')
+    parser.add_argument('--fmax', default=None, type=int, help='Maximum frequency for logmelspec analysis.')
     
     args = parser.parse_args()
     
