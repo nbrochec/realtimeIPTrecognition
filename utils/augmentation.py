@@ -19,7 +19,6 @@ class AudioOnlineTransforms:
         self.sr = args.sr
         self.device = args.device
         self.online_augment = args.online_augment.split()
-        self.pipeline = self.build_transform_pipeline()
 
     def pitch_shift(self):
         return PitchShift(min_transpose_semitones=-12.0, max_transpose_semitones=12.0, sample_rate=self.sr, p=1, output_type='tensor')
@@ -62,7 +61,7 @@ class AudioOnlineTransforms:
         return Compose(transforms)
 
     def __call__(self, data):
-        transform_pipeline = self.pipeline
+        transform_pipeline = self.build_transform_pipeline()
         data = transform_pipeline(data, sample_rate=self.sr)
         return data
     
