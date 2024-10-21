@@ -45,25 +45,25 @@ class LogMelSpectrogramLayer(nn.Module):
 
         self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power')
 
-    def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
-        min_tensor = torch.as_tensor(min, dtype=t.dtype, device=t.device)
-        max_tensor = torch.as_tensor(max, dtype=t.dtype, device=t.device)
-        eps = 1e-5
-        t_min = torch.min(t)
-        t_max = torch.max(t)
-
-        if (t_max - t_min) == 0:
-            t_std = (t - t_min) / ((t_max - t_min) + eps)
-        else:
-            t_std = (t - t_min) / (t_max - t_min)
+    def min_max_normalize(self, tensor: torch.Tensor, min_val: float = 0.0, max_val: float = 1.0) -> torch.Tensor:
+        """Normalizes the input tensor to the specified range [min_val, max_val]."""
+        min_tensor = torch.as_tensor(min_val, dtype=tensor.dtype, device=tensor.device)
+        max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
+        eps = 1e-9
         
-        t_scaled = t_std * (max_tensor - min_tensor) + min_tensor
-        return t_scaled
+        t_min = tensor.min()
+        t_max = tensor.max()
+
+        t_range = t_max - t_min + eps
+        normalized_tensor = (tensor - t_min) / t_range
+        
+        scaled_tensor = normalized_tensor * (max_tensor - min_tensor) + min_tensor
+        return scaled_tensor
 
     def forward(self, x):
         x = self.mel_scale(x)
         x = self.amplitude_to_db(x)
-        # x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
+        x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
         x = self.min_max_normalize(x)
         return x.to(torch.float32)
 
@@ -106,19 +106,20 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         self.eps = 1e-8
         self.n_channels = 1
 
-    def min_max_normalize(self, t: torch.Tensor, min: float = 0.0, max: float = 1.0) -> torch.Tensor:
-        min_tensor = torch.as_tensor(min, dtype=t.dtype, device=t.device)
-        max_tensor = torch.as_tensor(max, dtype=t.dtype, device=t.device)
-        t_min = torch.min(t)
-        t_max = torch.max(t)
-
-        if (t_max - t_min) == 0:
-            t_std = (t - t_min) / ((t_max - t_min) + self.eps)
-        else:
-            t_std = (t - t_min) / (t_max - t_min)
+    # def min_max_normalize(self, tensor: torch.Tensor, min_val: float = 0.0, max_val: float = 1.0) -> torch.Tensor:
+    #     """Normalizes the input tensor to the specified range [min_val, max_val]."""
+    #     min_tensor = torch.as_tensor(min_val, dtype=tensor.dtype, device=tensor.device)
+    #     max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
+    #     eps = 1e-9
         
-        t_scaled = t_std * (max_tensor - min_tensor) + min_tensor
-        return t_scaled
+    #     t_min = tensor.min()
+    #     t_max = tensor.max()
+
+    #     t_range = t_max - t_min + eps
+    #     normalized_tensor = (tensor - t_min) / t_range
+        
+    #     scaled_tensor = normalized_tensor * (max_tensor - min_tensor) + min_tensor
+    #     return scaled_tensor
     
     def rms_normalize(self, signal):
         rms = torch.sqrt(torch.mean(signal ** 2, dim=-1, keepdim=True))
