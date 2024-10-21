@@ -51,8 +51,8 @@ class LogMelSpectrogramLayer(nn.Module):
         max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
         eps = 1e-9
         
-        t_min = tensor.min()
-        t_max = tensor.max()
+        t_min = tensor.min(dim=-1, keepdim=True)[0]  # Per-sample min
+        t_max = tensor.max(dim=-1, keepdim=True)[0]  # Per-sample max
 
         t_range = t_max - t_min + eps
         normalized_tensor = (tensor - t_min) / t_range
@@ -106,20 +106,20 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         self.eps = 1e-8
         self.n_channels = 1
 
-    # def min_max_normalize(self, tensor: torch.Tensor, min_val: float = 0.0, max_val: float = 1.0) -> torch.Tensor:
-    #     """Normalizes the input tensor to the specified range [min_val, max_val]."""
-    #     min_tensor = torch.as_tensor(min_val, dtype=tensor.dtype, device=tensor.device)
-    #     max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
-    #     eps = 1e-9
+    def min_max_normalize(self, tensor: torch.Tensor, min_val: float = 0.0, max_val: float = 1.0) -> torch.Tensor:
+        """Normalizes the input tensor to the specified range [min_val, max_val]."""
+        min_tensor = torch.as_tensor(min_val, dtype=tensor.dtype, device=tensor.device)
+        max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
+        eps = 1e-9
         
-    #     t_min = tensor.min()
-    #     t_max = tensor.max()
+        t_min = tensor.min(dim=-1, keepdim=True)[0]  # Per-sample min
+        t_max = tensor.max(dim=-1, keepdim=True)[0]  # Per-sample max
 
-    #     t_range = t_max - t_min + eps
-    #     normalized_tensor = (tensor - t_min) / t_range
+        t_range = t_max - t_min + eps
+        normalized_tensor = (tensor - t_min) / t_range
         
-    #     scaled_tensor = normalized_tensor * (max_tensor - min_tensor) + min_tensor
-    #     return scaled_tensor
+        scaled_tensor = normalized_tensor * (max_tensor - min_tensor) + min_tensor
+        return scaled_tensor
     
     def rms_normalize(self, signal):
         rms = torch.sqrt(torch.mean(signal ** 2, dim=-1, keepdim=True))
@@ -141,7 +141,7 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
             envelope = torch.abs(analytic_signal)
             # envelope = self.rms_normalize(envelope)
             # different normalisation
-            envelope = envelope / envelope.amax(dim=-1, keepdim=True)
+            # envelope = envelope / envelope.amax(dim=-1, keepdim=True)
             envelope_list.append(envelope.unsqueeze(1))
 
             #envelope_max = envelope.max(dim=-1, keepdim=True)[0]
@@ -155,7 +155,8 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
             envelope_output = F.pad(envelope_output, (self.smoothing_factor//2, self.smoothing_factor//2), mode='reflect')
             envelope_output = F.conv1d(envelope_output, kernel, stride=1)
 
-        # envelope_output = F.avg_pool1d(envelope_output, kernel_size=self.smoothing_factor, stride=1, padding=self.smoothing_factor//2)
+        envelope_output = self.min_max_normalize(envelope_output)
+        # print(envelope_output)
 
         # envelope = envelope_output[0, 0, :].cpu().numpy()
 
