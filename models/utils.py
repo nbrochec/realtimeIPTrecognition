@@ -15,7 +15,7 @@ import humanize
 import sys
 import pandas as pd
 
-from models import v1, v2, v3, v1_mi6_stack2, v1b
+from models import v1, v2, v3, v1_mi6_stack2, v1b, v1_mi6_env2_mod_new_stack2
 
 from tqdm import tqdm
 
@@ -42,7 +42,8 @@ class LoadModel:
             'v2': v2,
             'v3': v3,
             'v1_mi6_stack2': v1_mi6_stack2,
-            "v1b": v1b
+            "v1b": v1b,
+            'v1_mi6_env2_mod_new_stack2': v1_mi6_env2_mod_new_stack2
         }
     
     def get_model(self, model_name, output_nbr, args):
