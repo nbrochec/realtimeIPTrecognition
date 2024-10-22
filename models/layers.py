@@ -23,7 +23,7 @@ from typing import Tuple, Union, Dict
 import matplotlib.pyplot as plt
 
 class LogMelSpectrogramLayer(nn.Module):
-    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=12000):
+    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
         super(LogMelSpectrogramLayer, self).__init__()
         self.sample_rate = sample_rate
         self.n_fft = n_fft
@@ -63,9 +63,8 @@ class LogMelSpectrogramLayer(nn.Module):
     def forward(self, x):
         x = self.mel_scale(x)
         x = self.amplitude_to_db(x)
-        x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
+        # x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
         x = self.min_max_normalize(x)
-        print(x)
         return x.to(torch.float32)
 
 class customCNN2D(nn.Module):
