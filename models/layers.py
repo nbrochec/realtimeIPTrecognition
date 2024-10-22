@@ -51,8 +51,8 @@ class LogMelSpectrogramLayer(nn.Module):
         max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
         eps = 1e-9
         
-        t_min = tensor.min(dim=-1, keepdim=True)[0]  # Per-sample min
-        t_max = tensor.max(dim=-1, keepdim=True)[0]  # Per-sample max
+        t_min = tensor.min()
+        t_max = tensor.max()
 
         t_range = t_max - t_min + eps
         normalized_tensor = (tensor - t_min) / t_range
@@ -65,6 +65,7 @@ class LogMelSpectrogramLayer(nn.Module):
         x = self.amplitude_to_db(x)
         x = torch.where(torch.isinf(x), torch.tensor(0.0).to(x.device), x)
         x = self.min_max_normalize(x)
+        print(x)
         return x.to(torch.float32)
 
 class customCNN2D(nn.Module):
@@ -112,8 +113,8 @@ class EnvelopeFollowingLayerTorchScript(nn.Module):
         max_tensor = torch.as_tensor(max_val, dtype=tensor.dtype, device=tensor.device)
         eps = 1e-9
         
-        t_min = tensor.min(dim=-1, keepdim=True)[0]  # Per-sample min
-        t_max = tensor.max(dim=-1, keepdim=True)[0]  # Per-sample max
+        t_min = tensor.min()
+        t_max = tensor.max()
 
         t_range = t_max - t_min + eps
         normalized_tensor = (tensor - t_min) / t_range
