@@ -295,7 +295,7 @@ class v1_mi6_stack2(nn.Module):
         return nn.Sequential(
             customCNN2D(2, 40, (3, 7), "same"), 
             customCNN2D(40, 40, (3, 7), "same"),
-            nn.MaxPool2d((2, 1)), # 35, 35
+            nn.MaxPool2d(2), # 35, 35
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (2, 5), "same"),
             customCNN2D(80, 80, (2, 5), "same"),
@@ -324,9 +324,11 @@ class v1_mi6_stack2(nn.Module):
         return self.classnames
 
     def forward(self, x):
-        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x)[:,:,:, :35], 70, dim=2)
-        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel(x)[:,:,:, 22:], 70, dim=2)
-
+        # print(self.logmel(x).shape)
+        x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x)[:,:,:, :70], 70, dim=2)
+        x5_1, x5_2, x5_3, x5_4, x5_5, x5_6 = torch.split(self.logmel(x)[:,:,:, 43:], 70, dim=2)
+        # print(x4_1.shape)
+        # print(x5_1.shape)
         c1 = torch.cat((x4_1, x5_1), dim=1)
         c2 = torch.cat((x4_2, x5_2), dim=1)
         c3 = torch.cat((x4_3, x5_3), dim=1)
