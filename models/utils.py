@@ -13,9 +13,10 @@
 import torch
 import humanize
 import sys
+import os
 import pandas as pd
 
-from models import v1, v2, v3, v1_mi6_stack2, v1b, v1_mi6_env2_mod_new_stack2
+from models import ismir_A, ismir_B, ismir_C, ismir_D 
 
 from tqdm import tqdm
 
@@ -38,12 +39,10 @@ class LoadModel:
     """
     def __init__(self):
         self.models = {
-            'v1': v1,
-            'v2': v2,
-            'v3': v3,
-            'v1_mi6_stack2': v1_mi6_stack2,
-            "v1b": v1b,
-            'v1_mi6_env2_mod_new_stack2': v1_mi6_env2_mod_new_stack2
+            'ismir_A': ismir_A,
+            'ismir_B': ismir_B,
+            'ismir_C': ismir_C,
+            'ismir_D': ismir_D
         }
     
     def get_model(self, model_name, output_nbr, args):
@@ -278,7 +277,6 @@ class ModelTrainer:
         stacked_metrics = torch.stack([accuracy.to(self.device), precision.to(self.device), recall.to(self.device), f1.to(self.device), torch.tensor(running_loss).to(self.device)], dim=0)
 
         return stacked_metrics, cm
-    
 class PrepareModel:
     def __init__(self, args, num_classes, seg_len):
         self.args = args
@@ -300,5 +298,42 @@ class PrepareModel:
 
         model = ModelInit(model).initialize()
         return model
+class TestSavedModel:
+    def __init__(self, model_name, output_nbr, args, model_dir):
+        self.model_name = model_name
+        self.output_nbr = output_nbr
+        self.args = args
+        self.model_dir = model_dir
+        self.model_loader = LoadModel()
 
-        
+    def get_latest_checkpoint(self):
+        """Find the last model's checkpoint"""
+        pth_files = [f for f in os.listdir(self.model_dir) if f.endswith('.pth')]
+        if not pth_files:
+            raise ValueError("No model checkpoint found.")
+        latest_file = max(pth_files, key=lambda x: os.path.getmtime(os.path.join(self.model_dir, x)))
+        return os.path.join(self.model_dir, latest_file)
+
+    def load_model(self):
+        """Load last saved model."""
+        latest_checkpoint = self.get_latest_checkpoint()
+        model = self.model_loader.get_model(self.model_name, self.output_nbr, self.args)
+        model.load_state_dict(torch.load(latest_checkpoint))
+        model.eval()
+        return model
+
+    def test_model(self, test_loader, device):
+        """Test model with test_lodaer"""
+        loss_fn = torch.nn.CrossEntropyLoss()
+        model = self.load_model().to(device)
+        trainer = ModelTrainer(model, loss_fn, device)
+        stkd_mtrs, cm = trainer.test_model(test_loader)
+        return stkd_mtrs, cm
+    
+    def export_model_to_ts(self, run_name):
+        """Export model to ts"""
+        model_ts_path = os.path.join(self.model_dir, f'{run_name}.ts')
+        self.model.to('cpu')
+        scripted_model = torch.jit.script(self.model)
+        scripted_model.save(model_ts_path)
+        print(f'TorchScript model has been saved at {os.path.relpath(model_ts_path)}.')

@@ -1,10 +1,10 @@
-from .models import v1, v2, v3, v1_mi6_stack2, v1b, v1_mi6_env2_mod_new_stack2
+from .models import ismir_A, ismir_B, ismir_C, ismir_D
 from .layers import customCNN1D, customCNN2D, LogMelSpectrogramLayer, EnvelopeFollowingLayerTorchScript
-from .utils import LoadModel, ModelSummary, ModelTester, ModelInit, ModelTrainer, PrepareModel
+from .utils import LoadModel, ModelSummary, ModelTester, ModelInit, ModelTrainer, PrepareModel, TestSavedModel
 
 __all__=[
-    'v1', 'v2', 'v3', 'v1_mi6_stack2', 'v1b', 'v1_mi6_env2_mod_new_stack2',
+    'ismir_A', 'ismir_B', 'ismir_C', 'ismir_D',
     'customCNN1D', 'customCNN2D', 'LogMelSpectrogramLayer', 'EnvelopeFollowingLayerTorchScript',
-    'LoadModel', 'ModelSummary', 'ModelTester', 'ModelInit', 'ModelTrainer', 'PrepareModel',
+    'LoadModel', 'ModelSummary', 'ModelTester', 'ModelInit', 'ModelTrainer', 'PrepareModel', 'TestSavedModel'
 ]
 
