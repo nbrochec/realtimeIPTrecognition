@@ -48,23 +48,23 @@ class ismir_A(nn.Module):
         return nn.Sequential(
             customCNN2D(1, 40, (3, 7), "same"), 
             customCNN2D(40, 40, (3, 7), "same"),
-            nn.MaxPool2d(2), # 56, 64
+            nn.MaxPool2d(2), # 64, 56
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (2, 5), "same"),
             customCNN2D(80, 80, (2, 5), "same"),
-            nn.MaxPool2d(2), # 28, 32
+            nn.MaxPool2d(2), # 32, 28
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d(2), # 14, 16
+            nn.MaxPool2d(2), # 16, 14
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 7, 6
+            nn.MaxPool2d(2), # 8, 7
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d(2), # 3, 3
+            nn.MaxPool2d(2), # 4, 3
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d(3), 
+            nn.MaxPool2d((4, 3)), 
             nn.Dropout2d(0.25),
         )
     
@@ -77,7 +77,7 @@ class ismir_A(nn.Module):
         return self.classnames
 
     def forward(self, x):
-
+        x = self.logmel(x)
         x = self.cnn1(x) 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
@@ -112,14 +112,14 @@ class ismir_B(nn.Module):
         return nn.Sequential(
             customCNN2D(1, 40, (3, 7), "same"), 
             customCNN2D(40, 40, (3, 7), "same"),
-            nn.MaxPool2d((2, 4)), # 56, 105
+            nn.MaxPool2d((4, 2)), # 105, 56
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (2, 5), "same"),
             customCNN2D(80, 80, (2, 5), "same"),
-            nn.MaxPool2d((2, 4)), # 28, 26
+            nn.MaxPool2d((4, 2)), # 26, 28
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d(2), # 14, 13
+            nn.MaxPool2d(2), # 13, 14
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
             nn.MaxPool2d(2), # 7, 6
@@ -141,7 +141,7 @@ class ismir_B(nn.Module):
         return self.classnames
 
     def forward(self, x):
-
+        x = self.logmel(x)
         x = self.cnn1(x) 
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
@@ -182,23 +182,23 @@ class ismir_C(nn.Module):
         return nn.Sequential(
             customCNN2D(1, 40, (3, 7), "same"), 
             customCNN2D(40, 40, (3, 7), "same"),
-            nn.MaxPool2d(2), # 56, 35
+            nn.MaxPool2d(2), # 35, 113
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (2, 5), "same"),
             customCNN2D(80, 80, (2, 5), "same"),
-            nn.MaxPool2d(2), # 28, 17
+            nn.MaxPool2d(2), # 17, 28
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d(2), # 14, 8
+            nn.MaxPool2d(2), # 8, 14
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 7, 4
+            nn.MaxPool2d(2), # 4, 7
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d(2), # 3, 2
+            nn.MaxPool2d(2), # 2, 3
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d((3, 2)), 
+            nn.MaxPool2d((2, 3)), 
             nn.Dropout2d(0.25),
         )
     
