@@ -16,7 +16,7 @@ import sys
 import os
 import pandas as pd
 
-from models import ismir_A, ismir_B, ismir_C, ismir_D 
+from models import ismir_A, ismir_B, ismir_C, ismir_D, ismir_E, ismir_F
 
 from tqdm import tqdm
 
@@ -42,7 +42,9 @@ class LoadModel:
             'ismir_A': ismir_A,
             'ismir_B': ismir_B,
             'ismir_C': ismir_C,
-            'ismir_D': ismir_D
+            'ismir_D': ismir_D,
+            'ismir_E': ismir_E,
+            'ismir_F': ismir_F
         }
     
     def get_model(self, model_name, output_nbr, args):
