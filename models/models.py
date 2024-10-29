@@ -472,8 +472,8 @@ class ismir_G(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            customCNN2D(1, 40, (4, 10), "same"), 
-            customCNN2D(40, 40, (4, 10), "same"),
+            customCNN2D(1, 40, (5, 10), "same"), 
+            customCNN2D(40, 40, (5, 10), "same"),
             nn.MaxPool2d((4, 2)), # 105, 56
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (3, 7), "same"),
