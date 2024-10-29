@@ -444,7 +444,6 @@ class ismir_F(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
-    
 
 class ismir_G(nn.Module):
     def __init__(self, output_nbr, args):
@@ -455,7 +454,7 @@ class ismir_G(nn.Module):
         self.fmin = args.fmin
         self.fmax = args.fmax
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr//2, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
         
         self.cnn1 = self._create_cnn_block()
 
