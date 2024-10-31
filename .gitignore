@@ -21,3 +21,4 @@ data/raw_data/train/flatterzunge
 data/raw_data/train/key-click
 data/raw_data/train/multiphonics
 
+*.wav
