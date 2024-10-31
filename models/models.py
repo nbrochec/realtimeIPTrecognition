@@ -323,7 +323,7 @@ class ismir_E(nn.Module):
         self.fmin = args.fmin
         self.fmax = args.fmax
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=4096, hop_length=128)
         
         self.cnn1 = self._create_cnn_block()
 
