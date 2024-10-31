@@ -23,7 +23,7 @@ from typing import Tuple, Union, Dict
 import matplotlib.pyplot as plt
 
 class LogMelSpectrogramLayer(nn.Module):
-    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None):
+    def __init__(self, sample_rate=24000, n_fft=2048, win_length=None, hop_length=512, n_mels=128, f_min=150, f_max=None, center=True):
         super(LogMelSpectrogramLayer, self).__init__()
         self.sample_rate = sample_rate
         self.n_fft = n_fft
@@ -32,6 +32,7 @@ class LogMelSpectrogramLayer(nn.Module):
         self.n_mels = n_mels
         self.f_min = f_min
         self.f_max = f_max
+        self.center = center
         
         self.mel_scale = Taudio.MelSpectrogram(
             sample_rate=self.sample_rate,
@@ -41,6 +42,7 @@ class LogMelSpectrogramLayer(nn.Module):
             n_mels=self.n_mels,
             f_min=self.f_min,
             f_max=self.f_max,
+            center=self.center,
         )
 
         self.amplitude_to_db = Taudio.AmplitudeToDB(stype='power')

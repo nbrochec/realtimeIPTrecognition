@@ -17,7 +17,6 @@ import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
 from models.layers import LogMelSpectrogramLayer, customCNN2D
-from utils.constants import SEGMENT_LENGTH
 
 class ismir_A(nn.Module):
     def __init__(self, output_nbr, args):
@@ -27,6 +26,7 @@ class ismir_A(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=128, n_fft=2048, hop_length=128)
         
@@ -75,6 +75,10 @@ class ismir_A(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
@@ -91,6 +95,7 @@ class ismir_B(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
         
@@ -139,6 +144,10 @@ class ismir_B(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
@@ -155,6 +164,7 @@ class ismir_C(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
         
@@ -210,6 +220,10 @@ class ismir_C(nn.Module):
     def get_classnames(self):
         return self.classnames
 
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
+
     def forward(self, x):
         x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x), 70, dim=2)
 
@@ -234,6 +248,7 @@ class ismir_D(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
         
@@ -288,6 +303,10 @@ class ismir_D(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x4_1, x4_2, x4_3, x4_4, x4_5, x4_6 = torch.split(self.logmel(x)[:,:,:, :70], 70, dim=2)
@@ -322,6 +341,7 @@ class ismir_E(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=4096, hop_length=128)
         
@@ -370,6 +390,10 @@ class ismir_E(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
@@ -386,6 +410,7 @@ class ismir_F(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
         
@@ -434,6 +459,10 @@ class ismir_F(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x1 = self.logmel(x)[:,:,:,:70]
@@ -453,6 +482,7 @@ class ismir_G(nn.Module):
         self.classnames = args.classnames
         self.fmin = args.fmin
         self.fmax = args.fmax
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
         
@@ -501,6 +531,10 @@ class ismir_G(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
@@ -508,3 +542,74 @@ class ismir_G(nn.Module):
         x_flat = x.view(x.size(0), -1)
         z = self.fc(x_flat)
         return z
+    
+
+class ismir_Eb(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(ismir_Eb, self).__init__()
+
+        self.sr = args.sr
+        self.classnames = args.classnames
+        self.fmin = args.fmin
+        self.fmax = args.fmax
+        self.seglen = args.seglen
+
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128, center=False)
+        
+        self.cnn1 = self._create_cnn_block()
+
+        self.fc = nn.Sequential(
+                nn.Linear(160, 80),
+                nn.BatchNorm1d(80),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(80, 40),
+                nn.BatchNorm1d(40),
+                nn.ReLU(),
+                nn.Dropout1d(0.25),
+                nn.Linear(40, output_nbr)
+            )
+
+    def _create_cnn_block(self):
+        return nn.Sequential(
+            customCNN2D(1, 40, (4, 8), "same"), 
+            customCNN2D(40, 40, (4, 8), "same"),
+            nn.MaxPool2d((4, 2)), # 105, 40
+            nn.Dropout2d(0.25),
+            customCNN2D(40, 80, (3, 7), "same"),
+            customCNN2D(80, 80, (3, 7), "same"),
+            nn.MaxPool2d((4, 2)), # 26, 20
+            nn.Dropout2d(0.25),
+            customCNN2D(80, 160, (2, 4), "same"),
+            nn.MaxPool2d(2), # 13, 10
+            nn.Dropout2d(0.25),
+            customCNN2D(160, 160, 2, "same"),
+            nn.MaxPool2d(2), # 7, 5
+            nn.Dropout2d(0.25),
+            customCNN2D(160, 160, (1, 2), "same"),
+            nn.MaxPool2d(2), # 3, 2
+            nn.Dropout2d(0.25),
+            customCNN2D(160, 160, (1, 2), "same"),
+            nn.MaxPool2d((3, 2)), 
+            nn.Dropout2d(0.25),
+        )
+    
+    @torch.jit.export
+    def get_attributes(self):
+        return self.sr
+    
+    @torch.jit.export
+    def get_classnames(self):
+        return self.classnames
+
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
+
+    def forward(self, x):
+        x = self.logmel(x)
+        x = self.cnn1(x) 
+        x_flat = x.view(x.size(0), -1)
+        z = self.fc(x_flat)
+        return z
+    
