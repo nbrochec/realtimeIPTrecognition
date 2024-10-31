@@ -17,7 +17,6 @@ import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
 from models.layers import LogMelSpectrogramLayer, custom2DCNN
-from utils.constants import SEGMENT_LENGTH
 
 class v1(nn.Module):
     def __init__(self, output_nbr, args):
@@ -25,6 +24,7 @@ class v1(nn.Module):
 
         self.sr = args.sr
         self.classnames = args.classnames
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
@@ -64,6 +64,10 @@ class v1(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
@@ -78,6 +82,7 @@ class v2(nn.Module):
 
         self.sr = args.sr
         self.classnames = args.classnames
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
@@ -122,6 +127,10 @@ class v2(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
@@ -136,6 +145,7 @@ class v3(nn.Module):
 
         self.sr = args.sr
         self.classnames = args.classnames
+        self.seglen = args.seglen
 
         self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr)
         
@@ -185,6 +195,10 @@ class v3(nn.Module):
     @torch.jit.export
     def get_classnames(self):
         return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
 
     def forward(self, x):
         x = self.logmel(x)
