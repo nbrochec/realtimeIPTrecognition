@@ -12,3 +12,12 @@ data/raw_data/HB-couple
 data/raw_data/HB-neck
 models/trash_models.py
 models/trash_layers.py
+data/raw_data/test/aeolian
+data/raw_data/test/flatterzunge
+data/raw_data/test/key-click
+data/raw_data/test/multiphonics
+data/raw_data/train/aeolian
+data/raw_data/train/flatterzunge
+data/raw_data/train/key-click
+data/raw_data/train/multiphonics
+
