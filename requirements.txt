@@ -1,5 +1,4 @@
 absl-py==2.1.0
-audiomentations==0.37.0
 audioread==3.0.1
 certifi==2024.8.30
 cffi==1.17.0
@@ -56,8 +55,10 @@ sympy==1.13.2
 tensorboard==2.17.1
 tensorboard-data-server==0.7.2
 threadpoolctl==3.5.0
-torch==2.4.0
-torchaudio==2.4.0
+torch==2.2.2
+torch-audiomentations==0.11.1
+torch_pitch_shift==1.2.5
+torchaudio==2.2.2
 torchmetrics==1.4.1
 tqdm==4.66.5
 typing_extensions==4.12.2
