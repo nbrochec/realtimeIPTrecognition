@@ -100,7 +100,7 @@ class AudioOfflineTransforms:
         if current_size > original_size:
             data = data[..., :original_size]
         elif current_size < original_size:
-            padding = (0, original_size - current_size)
+            # padding = (0, original_size - current_size)
             data = np.pad(data, pad_width=((0, 0), (0, original_size - current_size)), mode='constant', constant_values=0)
         return data
     
