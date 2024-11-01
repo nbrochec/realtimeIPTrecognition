@@ -4,6 +4,6 @@ from .utils import LoadModel, ModelSummary, ModelTester, ModelInit, ModelTrainer
 
 __all__=[
     'ismir_Ea', 'ismir_Eb', 'ismir_Ec',
-    'customCNN1D', 'customCNN2D', 'LogMelSpectrogramLayer', 'EnvelopeFollowingLayerTorchScript',
+    'customCNN2D', 'LogMelSpectrogramLayer', 
     'LoadModel', 'ModelSummary', 'ModelTester', 'ModelInit', 'ModelTrainer', 'PrepareModel', 'TestSavedModel'
 ]
