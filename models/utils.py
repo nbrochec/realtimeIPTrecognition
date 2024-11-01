@@ -7,7 +7,7 @@
 # GNU General Public License v3.0
 #############################################################################
 # Code description:
-# Implement utility functions
+# Implement utility functions for models
 #############################################################################
 
 import torch
@@ -16,7 +16,7 @@ import sys
 import os
 import pandas as pd
 
-from models import ismir_A, ismir_B, ismir_C, ismir_D, ismir_E, ismir_F, ismir_G, ismir_Eb
+from models import ismir_Ea, ismir_Eb, ismir_Ec
 
 from tqdm import tqdm
 
@@ -39,14 +39,9 @@ class LoadModel:
     """
     def __init__(self):
         self.models = {
-            'ismir_A': ismir_A,
-            'ismir_B': ismir_B,
-            'ismir_C': ismir_C,
-            'ismir_D': ismir_D,
-            'ismir_E': ismir_E,
-            'ismir_F': ismir_F,
-            'ismir_G': ismir_G,
-            'ismir_Eb': ismir_Eb
+            'ismir_Ea': ismir_Ea,
+            'ismir_Eb': ismir_Eb,
+            'ismir_Ec': ismir_Ec
         }
     
     def get_model(self, model_name, output_nbr, args):
