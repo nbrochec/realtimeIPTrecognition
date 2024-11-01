@@ -388,7 +388,7 @@ class PrepareData:
 
     def prepare(self):
         num_classes = DatasetValidator.get_num_classes_from_csv(self.csv)
-        classnames = DatasetValidator.get_num_classes_from_csv(self.csv)
+        classnames = DatasetValidator.get_classnames_from_csv(self.csv)
         train_dataset = ProcessDataset('train', self.csv, self.args, self.seg_len)
         test_dataset = ProcessDataset('test', self.csv, self.args, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args, self.seg_len)
