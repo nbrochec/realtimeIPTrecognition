@@ -447,7 +447,7 @@ class ismir_Ee(nn.Module):
         self.fmax = args.fmax
         self.seglen = args.seglen
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=384, n_fft=2048, hop_length=128)
         
         self.cnn1 = self._create_cnn_block()
 
@@ -467,17 +467,17 @@ class ismir_Ee(nn.Module):
         return nn.Sequential(
             customCNN2D(1, 40, (4, 8), "same"), 
             # customCNN2D(40, 40, (4, 8), "same"),
-            nn.MaxPool2d((4, 2)), # 105, 56
+            nn.MaxPool2d((4, 2)), # 105, 56 // 96 
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (3, 7), "same"),
             # customCNN2D(80, 80, (3, 7), "same"),
-            nn.MaxPool2d((4, 2)), # 26, 28
+            nn.MaxPool2d((4, 2)), # 26, 28 // 24
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d(2), # 13, 14
+            nn.MaxPool2d(2), # 13, 14 // 12
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(13, 14), # 6, 7
+            nn.MaxPool2d(12, 14), # 6, 7 
             nn.Dropout2d(0.25),
             # customCNN2D(160, 160, (1, 2), "same"),
             # nn.MaxPool2d(6), # 3, 3
@@ -516,7 +516,7 @@ class ismir_Ef(nn.Module):
         self.fmax = args.fmax
         self.seglen = args.seglen
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=420, n_fft=2048, hop_length=128)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=384, n_fft=2048, hop_length=128)
         
         self.cnn1 = self._create_cnn_block()
 
@@ -536,14 +536,14 @@ class ismir_Ef(nn.Module):
         return nn.Sequential(
             customCNN2D(1, 40, (4, 8), "same"), 
             # customCNN2D(40, 40, (4, 8), "same"),
-            nn.MaxPool2d((4, 2)), # 105, 56
+            nn.MaxPool2d((4, 2)), # 105, 56 // 96
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (3, 7), "same"),
             # customCNN2D(80, 80, (3, 7), "same"),
-            nn.MaxPool2d((4, 2)), # 26, 28
+            nn.MaxPool2d((4, 2)), # 26, 28 // 24
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d((26, 28)), # 13, 14
+            nn.MaxPool2d((24, 28)), # 12, 14
             nn.Dropout2d(0.25),
             # customCNN2D(160, 160, 2, "same"),
             # nn.MaxPool2d(13, 14), # 6, 7
