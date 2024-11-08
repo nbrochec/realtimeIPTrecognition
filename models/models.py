@@ -610,7 +610,7 @@ class ismir_Eg(nn.Module):
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (3, 7), "same"),
             # customCNN2D(80, 80, (3, 7), "same"),
-            nn.MaxPool2d(2), # 24, 28
+            nn.MaxPool2d((4, 2)), # 24, 28
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
             nn.MaxPool2d(2), # 12, 14
