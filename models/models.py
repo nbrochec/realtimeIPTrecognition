@@ -586,7 +586,7 @@ class ismir_Eg(nn.Module):
         self.fmax = args.fmax
         self.seglen = args.seglen
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=256, n_fft=2048, hop_length=128)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=384, n_fft=2048, hop_length=128)
         
         self.cnn1 = self._create_cnn_block()
 
@@ -606,23 +606,23 @@ class ismir_Eg(nn.Module):
         return nn.Sequential(
             customCNN2D(1, 40, (4, 8), "same"), 
             # customCNN2D(40, 40, (4, 8), "same"),
-            nn.MaxPool2d((4, 2)), # 64, 56
+            nn.MaxPool2d((4, 2)), # 96, 56
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (3, 7), "same"),
             # customCNN2D(80, 80, (3, 7), "same"),
-            nn.MaxPool2d(2), # 32, 28
+            nn.MaxPool2d(2), # 24, 28
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
-            nn.MaxPool2d(2), # 16, 14
+            nn.MaxPool2d(2), # 12, 14
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 8, 7
+            nn.MaxPool2d(2), # 6, 7
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d(2), # 4, 3
+            nn.MaxPool2d(2), # 3, 3
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, (1, 2), "same"),
-            nn.MaxPool2d((4, 3)), 
+            nn.MaxPool2d(3), 
             nn.Dropout2d(0.25),
         )
     
