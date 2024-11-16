@@ -198,6 +198,7 @@ class ModelTrainer:
             all_targets.append(targets.cpu())
         all_targets = torch.cat(all_targets)
         class_nbr = len(torch.unique(all_targets))
+        print(class_nbr)
 
         val_acc = MultilabelAccuracy(num_labels=class_nbr, average='micro').to(self.device)
         val_f1 = MultilabelF1Score(num_labels=class_nbr, average='macro').to(self.device)
