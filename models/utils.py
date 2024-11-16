@@ -210,8 +210,12 @@ class ModelTrainer:
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 running_loss += loss.item() * data.size(0)
-                outputs = torch.sigmoid(outputs)
+                print(outputs)
+                
+                # outputs = torch.sigmoid(outputs)
                 predicted = (outputs > 0.5).float()
+                print(predicted.shape)
+                print(targets.shape)
 
                 val_acc.update(preds=predicted, target=targets)
                 val_pre.update(preds=predicted, target=targets)
