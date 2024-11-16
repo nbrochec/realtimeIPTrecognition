@@ -267,6 +267,9 @@ class ModelTrainer:
                 precision_metric.update(preds=outputs, target=targets)
                 recall_metric.update(preds=outputs, target=targets)
                 f1_metric.update(preds=outputs, target=targets)
+
+                outputs = outputs.long()
+                targets = targets.long()
                 cm_metric.update(preds=outputs, target=targets)
 
                 running_loss += loss.item() * batch_size
