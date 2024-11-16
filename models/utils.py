@@ -20,7 +20,7 @@ from models import ismir_Ea, ismir_Eb, ismir_Ec, ismir_Ed, ismir_Ee, ismir_Ef, i
 
 from tqdm import tqdm
 
-from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score, ConfusionMatrix
+from torchmetrics.classification import MultilabelAccuracy, MultilabelPrecision, MultilabelRecall, MultilabelF1Score, ConfusionMatrix
 
 class LoadModel:
     """
@@ -199,10 +199,10 @@ class ModelTrainer:
         all_targets = torch.cat(all_targets)
         class_nbr = len(torch.unique(all_targets))
 
-        val_acc = MulticlassAccuracy(num_classes=class_nbr, average='micro').to(self.device)
-        val_f1 = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
-        val_pre = MulticlassPrecision(num_classes=class_nbr).to(self.device).to(self.device)
-        val_rec = MulticlassRecall(num_classes=class_nbr).to(self.device).to(self.device)
+        val_acc = MultilabelAccuracy(num_labels=class_nbr, average='micro').to(self.device)
+        val_f1 = MultilabelF1Score(num_labels=class_nbr, average='macro').to(self.device)
+        val_pre = MultilabelPrecision(num_labels=class_nbr).to(self.device).to(self.device)
+        val_rec = MultilabelRecall(num_labels=class_nbr).to(self.device).to(self.device)
 
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Validation", leave=False):
@@ -241,10 +241,10 @@ class ModelTrainer:
         all_targets = torch.cat(all_targets)
         class_nbr = len(torch.unique(all_targets))
 
-        accuracy_metric = MulticlassAccuracy(num_classes=class_nbr, average='micro').to(self.device)
-        precision_metric = MulticlassPrecision(num_classes=class_nbr).to(self.device)
-        recall_metric = MulticlassRecall(num_classes=class_nbr).to(self.device)
-        f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
+        accuracy_metric = MultilabelAccuracy(num_labels=class_nbr, average='micro').to(self.device)
+        precision_metric = MultilabelPrecision(num_labels=class_nbr).to(self.device)
+        recall_metric = MultilabelRecall(num_labels=class_nbr).to(self.device)
+        f1_metric = MultilabelF1Score(num_labels=class_nbr, average='macro').to(self.device)
         cm_metric = ConfusionMatrix(num_classes=class_nbr, multilabel=True).to(self.device)
 
         with torch.no_grad():
