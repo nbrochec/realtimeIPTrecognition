@@ -212,7 +212,7 @@ class ModelTrainer:
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 running_loss += loss.item() * data.size(0)
-                print(outputs)
+                # print(outputs)
                 
                 # outputs = torch.sigmoid(outputs)
                 # predicted = (outputs > 0.5).float()
