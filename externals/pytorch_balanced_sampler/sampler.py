@@ -179,11 +179,23 @@ class WeightedFixedBatchSampler(BatchSampler):
         assert len(self.class_samples_per_batch) == len(self.class_idxs)
         assert isinstance(self.n_batches, int)
 
+    # def _get_batch(self, start_idxs):
+    #     selected = []
+    #     for c, size in enumerate(self.class_samples_per_batch):
+    #         selected.extend(self.class_idxs[c][start_idxs[c]:start_idxs[c] + size])
+    #     np.random.shuffle(selected)
+    #     return selected
+
+    # In the _get_batch method, ensure start_idxs and indexing are correct:
     def _get_batch(self, start_idxs):
         selected = []
-        for c, size in enumerate(self.class_samples_per_batch):
-            selected.extend(self.class_idxs[c][start_idxs[c]:start_idxs[c] + size])
-        np.random.shuffle(selected)
+        for c in range(len(self.class_idxs)):
+            # Ensure start_idxs[c] is an integer
+            if isinstance(start_idxs[c], int):
+                size = self.batch_size // len(self.class_idxs)
+                selected.extend(self.class_idxs[c][start_idxs[c]:start_idxs[c] + size])
+            else:
+                raise TypeError(f"Expected integer index, but got {type(start_idxs[c])}")
         return selected
 
     def __iter__(self):
@@ -209,7 +221,20 @@ class CircularList:
     def shuffle(self):
         np.random.shuffle(self._items)
 
+    # def __getitem__(self, key):
+    #     if isinstance(key, slice):
+    #         return [self[i] for i in range(key.start, key.stop)]
+    #     return self._items[key % self._mod]
+
+    # In your sampler's __getitem__ method:
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return [self[i] for i in range(key.start, key.stop)]
-        return self._items[key % self._mod]
+            # If `key` is a slice, handle it by creating a list of indices
+            start, stop, step = key.indices(len(self._items))
+            return [self._items[i % self._mod] for i in range(start, stop, step)]
+        elif isinstance(key, int):
+            if self._mod == 0:  # Guard against zero-division error
+                raise ValueError("Attempting to use a sampler with empty classes or zero-length data.")
+            return self._items[key % self._mod]
+        else:
+            raise TypeError(f"Unsupported key type: {type(key)}")

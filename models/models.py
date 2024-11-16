@@ -17,7 +17,84 @@ import torch.nn.functional as F
 import torchaudio.functional as Faudio
 
 from models.layers import LogMelSpectrogramLayer, customCNN2D
+import torch
+import torch.nn as nn
 
+class v1(nn.Module):
+    def __init__(self, output_nbr, args):
+        super(v1, self).__init__()
+
+        self.sr = args.sr
+        self.classnames = args.classnames
+        self.seglen = args.seglen
+
+        # Log-Mel Spectrogram Layer
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=128, hop_length=512)
+        
+        # CNN Block
+        self.cnn = nn.Sequential(
+            customCNN2D(1, 40, (2, 3), "same"),
+            customCNN2D(40, 40, (2, 3), "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            customCNN2D(40, 80, (2, 3), "same"),
+            customCNN2D(80, 80, (2, 3), "same"),
+            nn.MaxPool2d((2, 3)),
+            nn.Dropout2d(0.25),
+            customCNN2D(80, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            customCNN2D(160, 160, 2, "same"),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(0.25),
+            customCNN2D(160, 160, 2, "same"),
+            nn.MaxPool2d((2, 1)),
+            nn.Dropout2d(0.25),
+            customCNN2D(160, 160, 2, "same"),
+            nn.MaxPool2d((4, 2)),
+            nn.Dropout2d(0.25),
+        )
+
+        # Fully Connected Block for Multi-label Output
+        self.fc = nn.Sequential(
+            nn.Linear(160, 80),
+            nn.ReLU(),
+            nn.Linear(80, 40),
+            nn.ReLU(),
+            nn.Linear(40, output_nbr)
+        )
+        
+        # Adding Sigmoid activation for multi-label classification
+        self.sigmoid = nn.Sigmoid()
+
+    @torch.jit.export
+    def get_sr(self):
+        return self.sr
+    
+    @torch.jit.export
+    def get_classnames(self):
+        return self.classnames
+    
+    @torch.jit.export
+    def get_seglen(self):
+        return self.seglen
+
+    def forward(self, x):
+        # Compute Log-Mel Spectrogram
+        x = self.logmel(x)
+
+        # Pass through CNN layers
+        x = self.cnn(x)
+
+        # Flatten the CNN output
+        x_flat = x.view(x.size(0), -1)
+
+        # Fully connected layers
+        z = self.fc(x_flat)
+
+        # Sigmoid activation for multi-label prediction
+        output = self.sigmoid(z)
+        return output
 class ismir_Ea(nn.Module):
     def __init__(self, output_nbr, args):
         super(ismir_Ea, self).__init__()

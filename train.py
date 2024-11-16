@@ -120,7 +120,8 @@ if __name__ == '__main__':
     modelPreparator = PrepareModel(args, num_classes, SEGMENT_LENGTH)
     model = modelPreparator.prepare()
 
-    loss_fn = nn.CrossEntropyLoss()
+    # loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.BCEWithLogitsLoss()
     optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     if args.reduce_lr == True:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.1)

@@ -16,11 +16,11 @@ import sys
 import os
 import pandas as pd
 
-from models import ismir_Ea, ismir_Eb, ismir_Ec, ismir_Ed, ismir_Ee, ismir_Ef, ismir_Eg
+from models import ismir_Ea, ismir_Eb, ismir_Ec, ismir_Ed, ismir_Ee, ismir_Ef, ismir_Eg, v1
 
 from tqdm import tqdm
 
-from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score, MulticlassConfusionMatrix
+from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score, ConfusionMatrix
 
 class LoadModel:
     """
@@ -45,7 +45,8 @@ class LoadModel:
             'ismir_Ed': ismir_Ed,
             'ismir_Ee': ismir_Ee,
             'ismir_Ef': ismir_Ef,
-            'ismir_Eg': ismir_Eg
+            'ismir_Eg': ismir_Eg,
+            'v1': v1
         }
     
     def get_model(self, model_name, output_nbr, args):
@@ -244,7 +245,7 @@ class ModelTrainer:
         precision_metric = MulticlassPrecision(num_classes=class_nbr).to(self.device)
         recall_metric = MulticlassRecall(num_classes=class_nbr).to(self.device)
         f1_metric = MulticlassF1Score(num_classes=class_nbr, average='macro').to(self.device)
-        cm_metric = MulticlassConfusionMatrix(num_classes=class_nbr).to(self.device)
+        cm_metric = ConfusionMatrix(num_classes=class_nbr, multilabel=True).to(self.device)
 
         with torch.no_grad():
             for data, targets in tqdm(loader, desc="Test", leave=False):

@@ -182,16 +182,160 @@ class DatasetValidator:
 
     def get_num_classes_from_csv(csv_file):
         data = pd.read_csv(csv_file)
-        return len(data['label'].unique())
+        
+        unique_labels = []
+        for label in data['label']:
+            if pd.notna(label):  # Ensure the label is not NaN
+                # Split multi-label entries by underscores
+                attributes = label.split('_')
+                for attr in attributes:
+                    cleaned_attr = attr.strip()
+                    if cleaned_attr and cleaned_attr not in unique_labels:
+                        if cleaned_attr != 'none':
+                            unique_labels.append(cleaned_attr)
+                            print(f"Added unique attribute: {cleaned_attr}") 
+
+        print(f"Total unique attribute: {len(unique_labels)}")
+        return len(unique_labels)
     
     def get_classnames_from_csv(csv_file):
         data = pd.read_csv(csv_file)
         return sorted(data['label'].unique())
 
+# class ProcessDataset:
+#     def __init__(self, set_type, csv_path, args, segment_length):
+#         """
+#         Initialize the ProcessDataset class.
+
+#         Parameters
+#         ----------
+#         set_type : str
+#             The type of dataset to process ('train', 'test', or 'val').
+#         csv_path : str
+#             Path to the CSV file containing file paths, labels, and set information.
+#         args : Arguments
+#             Arguments object containing settings for augmentations and other configurations.
+#         segment_length : int
+#             The length of each audio segment to be extracted.
+#         """
+#         self.set_type = set_type
+#         self.csv_path = csv_path
+#         self.target_sr = args.sr
+#         self.segment_length = segment_length
+#         # self.silence_threshold = silence_threshold
+#         # self.min_silence_len = min_silence_len
+#         self.segment_overlap = args.segment_overlap
+#         self.padding = args.padding
+#         self.args = args
+#         self.offline_aug = args.offline_augment
+#         self.use_original = args.use_original
+        
+#         #self.offline_aug = True
+
+#         self.data = pd.read_csv(self.csv_path)
+        
+#         self.data = self.data[self.data['set'] == self.set_type]
+        
+#         self.label_map = {label: idx for idx, label in enumerate(sorted(self.data['label'].unique()))}
+
+#         self.X = []
+#         self.y = []
+
+#         self.process_all_files()
+
+#     def remove_silence(self, waveform):
+#         """Remove silence from the audio waveform."""
+#         wav = waveform.detach().cpu().numpy()
+#         wav = librosa.effects.trim(wav)
+#         return torch.tensor(wav[0])
+    
+#     def pad_waveform(self, waveform, target_length):
+#         """Add silence to the waveform to match the target length."""
+#         extra_length = target_length - waveform.size(1)
+#         if extra_length > 0:
+#             silence = torch.zeros((waveform.size(0), extra_length))
+#             waveform = torch.cat((waveform, silence), dim=1)
+#         return waveform
+    
+#     def process_segment(self, waveform):
+#         """Process the waveform by dividing it into segments with or without overlap."""
+#         segments = []
+#         num_samples = waveform.size(1)
+
+#         for i in range(0, num_samples, self.segment_length if not self.segment_overlap else self.segment_length // 2):
+#             if i + self.segment_length <= num_samples:
+#                 segment = waveform[:, i:i + self.segment_length]
+#             else:
+#                 if self.padding == 'full':
+#                     valid_length = num_samples - i
+#                     segment = torch.zeros((waveform.size(0), self.segment_length))
+#                     segment[:, :valid_length] = waveform[:, i:i + valid_length]
+#             segments.append(segment)
+
+#         return segments
+    
+#     def process_all_files(self):
+#         """Process all audio files and store them in X and y."""
+#         augmenter = AudioOfflineTransforms(self.args) if self.offline_aug else None
+#         if self.offline_aug and self.set_type == 'train':
+#             print(f'self offline augmentations: {self.offline_aug}')  
+
+#         if self.use_original and self.set_type == 'train':
+#             print(f'self use original data: {self.use_original}')
+
+#         for _, row in tqdm(self.data.iterrows()):
+#             file_path, label_name = row['file_path'], row['label']
+#             label = self.label_map[label_name]
+
+#             waveform, original_sr = torchaudio.load(file_path)
+
+#             if original_sr != self.target_sr:
+#                 waveform = torchaudio.transforms.Resample(orig_freq=original_sr, new_freq=self.target_sr)(waveform)
+
+#             if label_name != 'silence':
+#                 waveform = self.remove_silence(waveform)
+
+#             if waveform.shape[0] == 2:
+#                 waveform = waveform[0, :].unsqueeze(0)
+
+#             if self.padding == 'minimal' and waveform.size(1) < self.segment_length:
+#                 waveform = self.pad_waveform(waveform, self.segment_length)
+
+#             segments = self.process_segment(waveform)
+
+#             for segment in segments:
+#                 if augmenter and self.set_type == 'train':
+#                     aug1, aug2, aug3 = augmenter(segment)
+#                     self.X.extend([aug1, aug2, aug3])
+#                     self.y.extend([label] * 3)
+
+#                     if self.use_original:
+#                         self.X.append(segment)
+#                         self.y.append(label)
+
+#                 else:
+#                     self.X.append(segment)
+#                     self.y.append(label)
+
+#         self.X = torch.stack(self.X)
+#         self.y = torch.tensor(self.y)
+    
+#     def get_data(self):
+#         return TensorDataset(self.X, self.y)
+
+import os
+import pandas as pd
+import torch
+import torchaudio
+import librosa
+from torch.utils.data import TensorDataset
+from tqdm import tqdm
+from sklearn.preprocessing import MultiLabelBinarizer
+
 class ProcessDataset:
     def __init__(self, set_type, csv_path, args, segment_length):
         """
-        Initialize the ProcessDataset class.
+        Initialize the ProcessDataset class with multi-faceted labels.
 
         Parameters
         ----------
@@ -208,32 +352,80 @@ class ProcessDataset:
         self.csv_path = csv_path
         self.target_sr = args.sr
         self.segment_length = segment_length
-        # self.silence_threshold = silence_threshold
-        # self.min_silence_len = min_silence_len
         self.segment_overlap = args.segment_overlap
         self.padding = args.padding
         self.args = args
         self.offline_aug = args.offline_augment
         self.use_original = args.use_original
-        
-        #self.offline_aug = True
 
+        # Load data
         self.data = pd.read_csv(self.csv_path)
-        
         self.data = self.data[self.data['set'] == self.set_type]
-        
-        self.label_map = {label: idx for idx, label in enumerate(sorted(self.data['label'].unique()))}
+
+        # Extract and encode labels from the folder naming structure
+        self.label_map = self.build_label_map(self.data['label'])
+        print("Label Map:", self.label_map)
+
+        # Collect all unique labels, ignoring 'none'
+        unique_labels = self.get_unique_labels(self.label_map)
+        print("Unique Labels:", unique_labels)
+
+        # Create a MultiLabelBinarizer object to encode labels
+        self.mlb = MultiLabelBinarizer(classes=sorted(unique_labels))
+        self.mlb.fit([sorted(unique_labels)]) 
+
+        # After fitting the MultiLabelBinarizer, check the classes
+        print(f"MultiLabelBinarizer Classes: {self.mlb.classes_}")
 
         self.X = []
         self.y = []
 
         self.process_all_files()
 
+    def build_label_map(self, labels):
+        """
+        Build a label map from folder names, parsing facets and attributes.
+        :param labels: A list of folder names containing labels in the format facet1_facet2_..._facet5.
+        :return: A dictionary mapping folder names to a list of facet attributes.
+        """
+        label_map = {}
+        for label in labels:
+            parsed_attributes = self.parse_folder_name(label)
+            label_map[label] = parsed_attributes
+        return label_map
+
+    def parse_folder_name(self, folder_name):
+        """
+        Parse folder names to extract multi-faceted attributes.
+        :param folder_name: Folder name formatted as facet1_facet2_facet3_facet4_facet5.
+        :return: A list of parsed attributes (multi-label format).
+        """
+        # Split by underscores to get each facet's attributes
+        attributes = folder_name.split('_')
+        
+        parsed_attributes = []
+        for attr in attributes:
+            parsed_attributes.extend(attr.split('+'))  # Handle multi-labels with '+'
+        
+        # Remove irrelevant labels like 'none'
+        parsed_attributes = [attr for attr in parsed_attributes if attr.lower() != 'none']
+        
+        return parsed_attributes
+    
+    def get_unique_labels(self, label_map):
+        """
+        Collect all unique labels from the parsed attributes, excluding irrelevant ones like 'none'.
+        """
+        unique_labels = set()
+        for parsed_labels in label_map.values():
+            unique_labels.update(parsed_labels)
+        return unique_labels
+
     def remove_silence(self, waveform):
         """Remove silence from the audio waveform."""
         wav = waveform.detach().cpu().numpy()
-        wav = librosa.effects.trim(wav)
-        return torch.tensor(wav[0])
+        wav = librosa.effects.trim(wav)[0]  # Keep the trimmed waveform
+        return torch.tensor(wav)
     
     def pad_waveform(self, waveform, target_length):
         """Add silence to the waveform to match the target length."""
@@ -263,16 +455,16 @@ class ProcessDataset:
     def process_all_files(self):
         """Process all audio files and store them in X and y."""
         augmenter = AudioOfflineTransforms(self.args) if self.offline_aug else None
-        if self.offline_aug and self.set_type == 'train':
-            print(f'self offline augmentations: {self.offline_aug}')  
-
-        if self.use_original and self.set_type == 'train':
-            print(f'self use original data: {self.use_original}')
 
         for _, row in tqdm(self.data.iterrows()):
             file_path, label_name = row['file_path'], row['label']
-            label = self.label_map[label_name]
+            
+            # Get the multi-label encoding for the parsed attributes
+            parsed_labels = self.label_map[label_name]
+            label_vector = self.mlb.transform([parsed_labels])[0]
 
+            # Debugging: Print the label vector
+            # print(f"Parsed Labels: {parsed_labels}, Label Vector: {label_vector}")
             waveform, original_sr = torchaudio.load(file_path)
 
             if original_sr != self.target_sr:
@@ -293,22 +485,59 @@ class ProcessDataset:
                 if augmenter and self.set_type == 'train':
                     aug1, aug2, aug3 = augmenter(segment)
                     self.X.extend([aug1, aug2, aug3])
-                    self.y.extend([label] * 3)
+                    self.y.extend([label_vector] * 3)
 
                     if self.use_original:
                         self.X.append(segment)
-                        self.y.append(label)
+                        self.y.append(label_vector)
 
                 else:
                     self.X.append(segment)
-                    self.y.append(label)
+                    self.y.append(label_vector)
 
         self.X = torch.stack(self.X)
-        self.y = torch.tensor(self.y)
+        self.y = torch.tensor(self.y, dtype=torch.float32)  # Multi-label format
     
     def get_data(self):
         return TensorDataset(self.X, self.y)
 
+import torch
+from torch.utils.data import Dataset, DataLoader
+
+class SimpleDataset:
+    """
+    A simple dataset class for PyTorch that takes in data samples and their corresponding labels.
+
+    Parameters
+    ----------
+    data : list or np.ndarray or torch.Tensor
+        A list, NumPy array, or PyTorch tensor of data samples.
+    labels : list or np.ndarray or torch.Tensor
+        A list, NumPy array, or PyTorch tensor of labels.
+    """
+    def __init__(self, dataset):
+        super(SimpleDataset, self).__init__()
+
+        self.dataset = dataset
+
+    def __len__(self):
+        """Return the total number of samples."""
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        """Get a data sample and its corresponding label by index."""
+        sample = self.data[idx]
+        label = self.labels[idx]
+        return sample, label
+    
+    def get_dataloader(self, batch_size=64, shuffle=True, num_workers=0):
+        """Returns a DataLoader for the dataset."""
+        return DataLoader(
+            self.dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers
+        )
 class BalancedDataLoader:
     """
     A class for creating a balanced DataLoader from a PyTorch dataset.
@@ -323,51 +552,89 @@ class BalancedDataLoader:
     def __init__(self, dataset, args):
         self.dataset = dataset
         self.num_classes = self.get_num_classes()
-        # self.device = device
         self.args = args
-        # self.batch_size = args.batch_size
         self.batch_size = self.args.batch_size
 
+        # Collect all labels from the dataset
         all_targets = [dataset[i][1].unsqueeze(0) if dataset[i][1].dim() == 0 else dataset[i][1] for i in range(len(dataset))]
         all_targets = torch.cat(all_targets)
 
+        # Adjust class_idxs for multi-label data
         class_idxs = [[] for _ in range(self.num_classes)]
-        for i in range(self.num_classes):
-            indexes = torch.nonzero(all_targets == i, as_tuple=True)
-            if indexes[0].numel() > 0:
-                class_idxs[i] = indexes[0].tolist()
-            else:
-                print(f"Class {i} has no indices")
+        for idx, label in enumerate(all_targets):
+            if label.dim() == 1:  # Multi-label (e.g., one-hot or multi-hot)
+                active_classes = torch.nonzero(label, as_tuple=False).squeeze().tolist()
+                if not isinstance(active_classes, list):
+                    active_classes = [active_classes]
+                for cls in active_classes:
+                    cls = int(cls)  # Ensure cls is an integer
+                    class_idxs[cls].append(idx)
+            else:  # Single-label scenario
+                cls = int(label.item())  # Convert to integer to avoid float indexing
+                class_idxs[cls].append(idx)
+
+        # Remove empty classes and adjust num_classes accordingly
+        non_empty_class_idxs = [idxs for idxs in class_idxs if len(idxs) > 0]
+        self.num_classes = len(non_empty_class_idxs)
+
+        # If there are empty classes, print a warning
+        for i, idxs in enumerate(class_idxs):
+            if len(idxs) == 0:
+                print(f"Warning: Class {i} has no indices. It will be ignored.")
+
+        self.class_idxs = non_empty_class_idxs
 
         total_samples = len(self.dataset)
         n_batches = total_samples // self.batch_size
 
+        # Calculate class distribution (multi-label aware)
         class_counts = [0] * self.num_classes
-        for i in range(len(self.dataset)):
-            _, label = self.dataset[i]
-            if label.dim() == 0:
-                label = label.item()
-            else:
-                label = label.argmax().item()
-            if 0 <= label < self.num_classes:
-                class_counts[label] += 1
+        for _, label in self.dataset:
+            if label.dim() == 1:  # Multi-label
+                active_classes = torch.nonzero(label, as_tuple=False).squeeze().tolist()
+                if not isinstance(active_classes, list):
+                    active_classes = [active_classes]
+                for cls in active_classes:
+                    cls = int(cls)  # Ensure cls is an integer
+                    if cls < self.num_classes:
+                        class_counts[cls] += 1
+            else:  # Single-label
+                cls = int(label.item())
+                if 0 <= cls < self.num_classes:
+                    class_counts[cls] += 1
 
-        print(f"Class distribution: {class_counts}")
+        print(f"Class distribution after filtering empty classes: {class_counts}")
 
         self.batch_sampler = SamplerFactory().get(
-            class_idxs=class_idxs,
+            class_idxs=self.class_idxs,
             batch_size=self.batch_size,
             n_batches=n_batches,
             alpha=1,
             kind='fixed'
         )
 
+    # def get_num_classes(self):
+    #     """ Determines the number of unique classes in the dataset. """
+    #     all_labels = [label.item() for label in self.dataset.tensors[1]]
+    #     unique_classes = set(all_labels)
+    #     num_classes = len(unique_classes)
+    #     print(f"Unique classes detected: {unique_classes}")
+    #     return num_classes
+
     def get_num_classes(self):
-        """ Determines the number of unique classes in the dataset. """
-        all_labels = [label.item() for label in self.dataset.tensors[1]]
-        unique_classes = set(all_labels)
-        num_classes = len(unique_classes)
-        print(f"Unique classes detected: {unique_classes}")
+        """ Determines the number of unique classes in a multi-label dataset. """
+        # Assuming the labels are one-hot encoded or multi-hot
+        all_labels = self.dataset.tensors[1]  # Shape should be [num_samples, num_classes]
+        
+        if len(all_labels.shape) == 2:  # Multi-label scenario
+            num_classes = all_labels.shape[1]
+        else:
+            # In case of single-label dataset
+            all_labels = [label.item() for label in all_labels]
+            unique_classes = set(all_labels)
+            num_classes = len(unique_classes)
+        
+        print(f"Number of classes detected: {num_classes}")
         return num_classes
 
     def get_dataloader(self):
@@ -393,9 +660,9 @@ class PrepareData:
         test_dataset = ProcessDataset('test', self.csv, self.args, self.seg_len)
         val_dataset = ProcessDataset('val', self.csv, self.args, self.seg_len)
 
-        train_loader = BalancedDataLoader(train_dataset.get_data(), self.args).get_dataloader()
-        test_loader = DataLoader(test_dataset.get_data(), batch_size=64)
-        val_loader = DataLoader(val_dataset.get_data(), batch_size=64)
+        train_loader = DataLoader(train_dataset.get_data(), batch_size=64, shuffle=True)
+        test_loader = DataLoader(test_dataset.get_data(), batch_size=64, shuffle=True)
+        val_loader = DataLoader(val_dataset.get_data(), batch_size=64, shuffle=True)
         
         print('Data successfully loaded into DataLoaders.')
 
