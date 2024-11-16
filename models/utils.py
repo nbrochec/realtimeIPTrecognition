@@ -210,7 +210,8 @@ class ModelTrainer:
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 running_loss += loss.item() * data.size(0)
-                _, predicted = torch.max(outputs, 1)
+                outputs = torch.sigmoid(outputs)
+                predicted = (outputs > 0.5).float()
 
                 val_acc.update(preds=predicted, target=targets)
                 val_pre.update(preds=predicted, target=targets)
