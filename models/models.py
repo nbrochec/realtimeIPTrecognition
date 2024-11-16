@@ -92,9 +92,7 @@ class v1(nn.Module):
         # Fully connected layers
         z = self.fc(x_flat)
 
-        # Sigmoid activation for multi-label prediction
-        output = self.sigmoid(z)
-        return output
+        return z
 class ismir_Ea(nn.Module):
     def __init__(self, output_nbr, args):
         super(ismir_Ea, self).__init__()

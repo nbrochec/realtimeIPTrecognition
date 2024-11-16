@@ -214,15 +214,15 @@ class ModelTrainer:
                 running_loss += loss.item() * data.size(0)
                 # print(outputs)
                 
-                # outputs = torch.sigmoid(outputs)
-                # predicted = (outputs > 0.5).float()
-                # print(predicted.shape)
-                # print(targets.shape)
+                 # Apply sigmoid to get probabilities
+                outputs = torch.sigmoid(outputs)
+                # Threshold the outputs (e.g., 0.5 threshold)
+                predicted = (outputs > 0.5).float()
 
-                val_acc.update(preds=outputs, target=targets)
-                val_pre.update(preds=outputs, target=targets)
-                val_rec.update(preds=outputs, target=targets)
-                val_f1.update(preds=outputs, target=targets)
+                val_acc.update(preds=predicted, target=targets)
+                val_pre.update(preds=predicted, target=targets)
+                val_rec.update(preds=predicted, target=targets)
+                val_f1.update(preds=predicted, target=targets)
 
         val_loss = running_loss / len(loader.dataset)
         val_loss = torch.tensor(val_loss).to(self.device)
@@ -261,16 +261,18 @@ class ModelTrainer:
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, targets)
                 batch_size = data.size(0)
-                # _, predicted = torch.max(outputs, 1)
+                
+                # Apply sigmoid to get probabilities
+                outputs = torch.sigmoid(outputs)
+                # Threshold the outputs (e.g., 0.5 threshold)
+                predicted = (outputs > 0.5).float()
 
-                accuracy_metric.update(preds=outputs, target=targets)
-                precision_metric.update(preds=outputs, target=targets)
-                recall_metric.update(preds=outputs, target=targets)
-                f1_metric.update(preds=outputs, target=targets)
+                accuracy_metric.update(preds=predicted, target=targets)
+                precision_metric.update(preds=predicted, target=targets)
+                recall_metric.update(preds=predicted, target=targets)
+                f1_metric.update(preds=predicted, target=targets)
 
-                outputs = outputs.long()
-                targets = targets.long()
-                cm_metric.update(preds=outputs, target=targets)
+                cm_metric.update(preds=predicted.long(), target=targets.long())
 
                 running_loss += loss.item() * batch_size
                 total_samples += batch_size
