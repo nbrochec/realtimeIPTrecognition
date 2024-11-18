@@ -29,29 +29,27 @@ class v1(nn.Module):
         self.seglen = args.seglen
 
         # Log-Mel Spectrogram Layer
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=128, hop_length=512)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, n_mels=128, hop_length=256)
         
         # CNN Block
         self.cnn = nn.Sequential(
-            customCNN2D(1, 40, (2, 3), "same"),
-            customCNN2D(40, 40, (2, 3), "same"),
-            nn.MaxPool2d((2, 1)),
+            customCNN2D(1, 40, (2, 8), "same"),
+            nn.MaxPool2d((2, 1)), # 64, 30
             nn.Dropout2d(0.25),
-            customCNN2D(40, 80, (2, 3), "same"),
-            customCNN2D(80, 80, (2, 3), "same"),
-            nn.MaxPool2d((2, 3)),
+            customCNN2D(40, 80, (2, 8), "same"),
+            nn.MaxPool2d((2, 1)), # 32, 30
             nn.Dropout2d(0.25),
-            customCNN2D(80, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
+            customCNN2D(80, 160, (2, 3), "same"),
+            nn.MaxPool2d(2), # 16, 15
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(2), # 8, 7
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d((2, 1)),
+            nn.MaxPool2d(2), # 4, 3
             nn.Dropout2d(0.25),
             customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 2)),
+            nn.MaxPool2d((4, 3)), # 1, 1
             nn.Dropout2d(0.25),
         )
 
