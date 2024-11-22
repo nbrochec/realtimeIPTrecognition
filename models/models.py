@@ -657,7 +657,7 @@ class icmc(nn.Module):
         self.fmax = args.fmax
         self.seglen = args.seglen
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=256, n_fft=2048, hop_length=256)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=256, n_fft=2048, hop_length=512)
         
         self.cnn1 = self._create_cnn_block()
 
