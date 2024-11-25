@@ -55,7 +55,10 @@ def parse_arguments():
     parser.add_argument('--step_lr', type=str, default='False', help='Decays learning rate every 10 epochs.')
     parser.add_argument('--fmax', type=int, default=None, help='Maximum frequency for logmelspec analysis.')
     parser.add_argument('--use_original', type=str, default='True', help='Use original data for training.')
-    
+    parser.add_argument('--n_mels', type=int, default=128, help='Number of Mel bands.')
+    parser.add_argument('--n_fft', type=int, default=2048, help='FFT Window.')
+    parser.add_argument('--hop_length', type=int, default=512, help='Hop length.')
+
     args = parser.parse_args()
     
     # Convert string to boolean

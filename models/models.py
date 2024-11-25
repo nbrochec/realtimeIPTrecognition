@@ -656,8 +656,11 @@ class icmc(nn.Module):
         self.fmin = args.fmin
         self.fmax = args.fmax
         self.seglen = args.seglen
+        self.n_mels = args.n_mels
+        self.n_fft = args.n_fft
+        self.hop_length = args.hop_length
 
-        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=256, n_fft=2048, hop_length=512)
+        self.logmel = LogMelSpectrogramLayer(sample_rate=self.sr, f_min=self.fmin, f_max=self.fmax, n_mels=self.n_mels , n_fft=self.n_fft , hop_length=self.hop_length)
         
         self.cnn1 = self._create_cnn_block()
 
@@ -676,7 +679,7 @@ class icmc(nn.Module):
     def _create_cnn_block(self):
         return nn.Sequential(
             customCNN2D(1, 40, (3, 7), "same"), 
-            nn.MaxPool2d((4, 1)), # 64, 29
+            nn.MaxPool2d((4, 2)), # 64, 28
             nn.Dropout2d(0.25),
             customCNN2D(40, 80, (2, 6), "same"),
             nn.MaxPool2d((4, 2)), # 16, 14
