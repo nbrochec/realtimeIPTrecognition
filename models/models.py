@@ -69,7 +69,7 @@ class ismir_Ea(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -138,7 +138,7 @@ class ismir_Eb(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -208,7 +208,7 @@ class ismir_Ec(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -278,7 +278,7 @@ class ismir_Ed(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -349,7 +349,7 @@ class ismir_Ed_3072(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -419,7 +419,7 @@ class ismir_Ed(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -488,7 +488,7 @@ class ismir_Ee(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -557,7 +557,7 @@ class ismir_Ef(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -627,7 +627,7 @@ class ismir_Eg(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
@@ -693,7 +693,7 @@ class icmc(nn.Module):
         )
     
     @torch.jit.export
-    def get_attributes(self):
+    def get_sr(self):
         return self.sr
     
     @torch.jit.export
