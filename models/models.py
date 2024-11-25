@@ -678,20 +678,17 @@ class icmc(nn.Module):
 
     def _create_cnn_block(self):
         return nn.Sequential(
-            customCNN2D(1, 40, (3, 7), "same"), 
+            customCNN2D(1, 40, (4, 8), "same"), 
             nn.MaxPool2d((4, 2)), # 64, 28
             nn.Dropout2d(0.25),
-            customCNN2D(40, 80, (2, 6), "same"),
+            customCNN2D(40, 80, (3, 6), "same"),
             nn.MaxPool2d((4, 2)), # 16, 14
             nn.Dropout2d(0.25),
             customCNN2D(80, 160, (2, 4), "same"),
             nn.MaxPool2d(2), # 8, 7
             nn.Dropout2d(0.25),
-            customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d(2), # 4, 3 
-            nn.Dropout2d(0.25),
-            customCNN2D(160, 160, 2, "same"),
-            nn.MaxPool2d((4, 3)),
+            customCNN2D(160, 160, (1, 2), "same"),
+            nn.MaxPool2d((8, 7)), # 1, 1
             nn.Dropout2d(0.25),
         )
     
