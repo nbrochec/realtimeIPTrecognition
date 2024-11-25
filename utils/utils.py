@@ -481,7 +481,7 @@ class SaveResultsToDisk:
 
             writer.writerow([
                 args.name, args.config, args.sr, args.segment_overlap,
-                args.fmin, args.fmax, args.n_mel, args.n_fft, args.hop_length,
+                args.fmin, args.fmax, args.n_mels, args.n_fft, args.hop_length,
                 args.lr, args.epochs, args.offline_augment, args.online_augment,
                 args.early_stopping, args.reduce_lr,  args.step_lr, args.padding,
                 accuracy, precision, recall, f1, loss
