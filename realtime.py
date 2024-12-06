@@ -10,8 +10,10 @@
 # Run a personnal model in real time.
 #############################################################################
 
+import sounddevice
+import pyaudio
 import argparse
-import pyaudio, os, librosa, time, pythonosc, math, time, glob
+import os, time, pythonosc, math, time, glob
 import torch
 import torchaudio
 from pythonosc import udp_client, osc_message_builder
@@ -64,14 +66,23 @@ yaml_dict = yaml.load(yaml_file, Loader=Loader)
 
 ckpt = torch.load(latest_model, map_location=args.device, weights_only=True)
 
+args.sr = int(yaml_dict['Sampling Rate'])
+args.classnames = 'classnames'
+args.fmin = int(yaml_dict['Fmin'])
+args.fmax = None
+args.seglen = SEGMENT_LENGTH
+args.n_mels = yaml_dict['Mel Bands']
+args.n_fft = int(yaml_dict['FFT Window'])
+args.hop_length = int(yaml_dict['Hop Length'])
+
 model_loader = LoadModel()
-model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes']), int(yaml_dict['Sampling Rate']))
+model = model_loader.get_model(yaml_dict['Model'], int(yaml_dict['Number of Classes']), args=args)
 model.load_state_dict(ckpt)
 model.eval()
 
 audioFlux = pyaudio.PyAudio() 
 SR_ORIGINAL = int(audioFlux.get_device_info_by_index(args.input)['defaultSampleRate'])
-SR_TARGET = yaml_dict['Sampling Rate']
+SR_TARGET = args.sr
 NUM_CLASSES = yaml_dict['Number of Classes']
 SMOOTH_WINDOW = 10
 
@@ -84,23 +95,25 @@ def callback(in_data, frame_count, time_info, flag):
 
     audioSample = torch.frombuffer(in_data, dtype=torch.float32)
 
-    audioSample = Resample.resample(audioSample, SR_ORIGINAL, SR_TARGET)
+    # audioSample = Resample.resample(audioSample, SR_ORIGINAL, SR_TARGET)
 
     concat = torch.concatenate((cumulativeAudio, audioSample.unsqueeze(0).unsqueeze(0)), axis=2)
     
     if concat.shape[2] >= SEGMENT_LENGTH:
         concat = concat[:,:,-SEGMENT_LENGTH:]
-
         audioON = torch.sum(torch.abs(audioSample))
 
         if audioON > 0:
             print('Now running!')
+            startTime = time.time()
             out_prob = MakeInference.make_inference(model, concat)
-            pred_buffer.update_buffer(out_prob)
-            smooth_average = torch.mean(pred_buffer.get_buffer(), dim=0)
-            pred = torch.argmax(smooth_average).item()
-
-            sender.send_message(pred=pred)
+            latency= Latency.measure(startTime)
+            # pred_buffer.update_buffer(out_prob)
+            # smooth_average = torch.mean(pred_buffer.get_buffer(), dim=0)
+            # pred = torch.argmax(smooth_average).item()
+            pred = torch.argmax(out_prob).item()
+            
+            sender.send_message(pred=pred, latency=latency)
         else:
             print('Waiting for audio...')
             time.sleep(0.5)

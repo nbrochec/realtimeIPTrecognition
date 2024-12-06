@@ -11,6 +11,7 @@
 #############################################################################
 
 import torch
+import time
 import torchaudio
 from pythonosc import udp_client, osc_message_builder
 import torch.nn.functional as F
@@ -19,6 +20,11 @@ class Resample:
     @staticmethod
     def resample(tensor, original_sr, target_sr):
         return torchaudio.functional.resample(tensor, original_sr, target_sr)
+
+class Latency:
+    @staticmethod
+    def measure(start_time):
+        return round((time.time() - start_time) * 1000)
     
 class SendOSCMessage:
     def __init__(self, args):
@@ -26,12 +32,17 @@ class SendOSCMessage:
         self.port = args.port
         self.client = udp_client.SimpleUDPClient(self.ip, self.port)
 
-    def send_message(self, pred):
+    def send_message(self, pred, latency):
         classMSG = osc_message_builder.OscMessageBuilder(address= '/class')
         classMSG.add_arg(pred, arg_type='i')
         classMSG = classMSG.build()
 
+        totalDelayMSG = osc_message_builder.OscMessageBuilder(address= '/delay')
+        totalDelayMSG.add_arg(latency, arg_type='f')
+        totalDelayMSG = totalDelayMSG.build()
+
         self.client.send(classMSG)
+        self.client.send(totalDelayMSG)
 
 class PredictionBuffer:
     def __init__(self, num_classes, window_size):

@@ -10,6 +10,7 @@
 # Print available audio input devices for PyAudio 
 #############################################################################
 
+import sounddevice
 import pyaudio
 
 p = pyaudio.PyAudio()

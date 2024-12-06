@@ -705,8 +705,17 @@ class icmc(nn.Module):
         return self.seglen
 
     def forward(self, x):
+        # print(x.shape)
         x = self.logmel(x)
-        x = self.cnn1(x) 
+        # print(x.shape)
+        x = self.cnn1(x)
+        # print(x.shape)
         x_flat = x.view(x.size(0), -1)
+        # print(x_flat.shape)
         z = self.fc(x_flat)
+        # print(z.shape)  # After fully connected layer
+        w = nn.functional.softmax(z, dim=1)  # Softmax along class dimension
+        # print(w.shape)  # After softmax
+        v = torch.argmax(w, dim=1)  # Argmax over the classes (batch dimension)
+        # print(v.shape)  # The predicted class indices
         return z
